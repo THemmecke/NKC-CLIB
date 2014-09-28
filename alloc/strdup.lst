@@ -1,0 +1,44 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"strdup.c"
+   3               	.text
+   4               	.align2
+   5               	.globlstrdup
+   7               	strdup:
+   8 0000 4E56 FFFC 	link.w %fp,#-4
+   9 0004 2F2E 0008 	move.l 8(%fp),-(%sp)
+  10 0008 4EB9 0000 	jsr strlen
+  10      0000 
+  11 000e 588F      	addq.l #4,%sp
+  12 0010 5280      	addq.l #1,%d0
+  13 0012 2F00      	move.l %d0,-(%sp)
+  14 0014 4EB9 0000 	jsr malloc
+  14      0000 
+  15 001a 588F      	addq.l #4,%sp
+  16 001c 2008      	move.l %a0,%d0
+  17 001e 2D40 FFFC 	move.l %d0,-4(%fp)
+  18 0022 2F2E 0008 	move.l 8(%fp),-(%sp)
+  19 0026 2F2E FFFC 	move.l -4(%fp),-(%sp)
+  20 002a 4EB9 0000 	jsr strcpy
+  20      0000 
+  21 0030 508F      	addq.l #8,%sp
+  22 0032 202E FFFC 	move.l -4(%fp),%d0
+  23 0036 2200      	move.l %d0,%d1
+  24 0038 2041      	move.l %d1,%a0
+  25 003a 4E5E      	unlk %fp
+  26 003c 4E75      	rts
+  28               	.ident"GCC: (GNU) 4.5.1"
+  29               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 strdup.c
+    {standard input}:7      .text:00000000 strdup
+
+UNDEFINED SYMBOLS
+strlen
+malloc
+strcpy

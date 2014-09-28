@@ -1,0 +1,44 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               		.global memmove
+   3               	
+   4               	/*
+   5               		void *memmove(void *dest, const void *src, size_t n)
+   6               	*/
+   7               		
+   8               	memmove:
+   9 0000 222F 000C 		move.l	(12,%a7),%d1	/* count	*/
+  10 0004 226F 0008 		move.l	(8,%a7),%a1	/* src		*/
+  11 0008 206F 0004 		move.l	(4,%a7),%a0	/* dest		*/
+  12 000c 2008      		move.l	%a0,%d0		/* dest		*/
+  13 000e B1C9      		cmp.l	%a1,%a0
+  14 0010 6400 000E 		bcc	negmove
+  15               	lp:
+  16 0014 10D9      		move.b	(%a1)+,(%a0)+
+  17 0016 5341      		subq	#1,%d1
+  18 0018 6600 FFFA 		bne	lp
+  19 001c 2040      		move.l %d0,%a0
+  20 001e 4E75      		rts
+  21               	negmove:
+  22 0020 D3C1      		add.l	%d1,%a1
+  23 0022 D1C1      		add.l	%d1,%a0
+  24               	lp1:
+  25 0024 1121      		move.b	-(%a1),-(%a0)
+  26 0026 5341      		subq	#1,%d1
+  27 0028 6600 FFFA 		bne	lp1
+  28 002c 2040      		move.l %d0,%a0
+  29 002e 4E75      		rts
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+           memmove.S:8      .text:00000000 memmove
+           memmove.S:21     .text:00000020 negmove
+           memmove.S:15     .text:00000014 lp
+           memmove.S:24     .text:00000024 lp1
+
+NO UNDEFINED SYMBOLS

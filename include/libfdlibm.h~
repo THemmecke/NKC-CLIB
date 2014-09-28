@@ -1,0 +1,12 @@
+/*  libfdlibm.h
+
+    Definitions for the math soft-floating point package.
+
+*/
+
+#ifndef  __LIB_FDLIBM_H
+#define  __LIB_FDLIBM_H
+
+
+
+#endif

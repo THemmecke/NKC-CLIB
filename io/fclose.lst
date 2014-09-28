@@ -1,0 +1,246 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"fclose.c"
+   3               	.globl_pstreams
+   4               	.section.bss
+   5               	.align2
+   8               	_pstreams:
+   9 0000 0000 0000 	.zero80
+   9      0000 0000 
+   9      0000 0000 
+   9      0000 0000 
+   9      0000 0000 
+  10               	.globl_filenames
+  11               	.align2
+  14               	_filenames:
+  15 0050 0000 0000 	.zero80
+  15      0000 0000 
+  15      0000 0000 
+  15      0000 0000 
+  15      0000 0000 
+  16               	.globlmaxfiles
+  17               	.align2
+  20               	maxfiles:
+  21 00a0 0000 0000 	.zero4
+  22               	.text
+  23               	.align2
+  24               	.globlfileinit
+  26               	fileinit:
+  27 0000 4E56 0000 	link.w %fp,#0
+  28 0004 4EB9 0000 	jsr _ll_init_std
+  28      0000 
+  29 000a 4EB9 0000 	jsr _ll_init_fs
+  29      0000 
+  30 0010 4E5E      	unlk %fp
+  31 0012 4E75      	rts
+  33               	.align2
+  34               	.globlcloseall
+  36               	closeall:
+  37 0014 4E56 FFFC 	link.w %fp,#-4
+  38 0018 2039 0000 	move.l _abterm,%d0
+  38      0000 
+  39 001e 4A80      	tst.l %d0
+  40 0020 662E      	jne .L2
+  41 0022 2039 0000 	move.l maxfiles,%d0
+  41      0000 
+  42 0028 2200      	move.l %d0,%d1
+  43 002a 5381      	subq.l #1,%d1
+  44 002c 2D41 FFFC 	move.l %d1,-4(%fp)
+  45 0030 6018      	jra .L4
+  46               	.L5:
+  47 0032 202E FFFC 	move.l -4(%fp),%d0
+  48 0036 2030 0DB0 	move.l _pstreams(%d0.l*4),%d0
+  48      0000 0000 
+  49 003e 2F00      	move.l %d0,-(%sp)
+  50 0040 4EBA 018A 	jsr fclose
+  51 0044 588F      	addq.l #4,%sp
+  52 0046 53AE FFFC 	subq.l #1,-4(%fp)
+  53               	.L4:
+68K GAS   			page 2
+
+
+  54 004a 4AAE FFFC 	tst.l -4(%fp)
+  55 004e 6CE2      	jge .L5
+  56               	.L2:
+  57 0050 4E5E      	unlk %fp
+  58 0052 4E75      	rts
+  60               	.align2
+  61               	.globl_basefclose
+  63               	_basefclose:
+  64 0054 4E56 FFF0 	link.w %fp,#-16
+  65 0058 202E 0008 	move.l 8(%fp),%d0
+  66 005c 2040      	move.l %d0,%a0
+  67 005e 3028 001A 	move.w 26(%a0),%d0
+  68 0062 0C40 444C 	cmp.w #17484,%d0
+  69 0066 6600 015E 	jne .L7
+  70 006a 2039 0000 	move.l maxfiles,%d0
+  70      0000 
+  71 0070 4A80      	tst.l %d0
+  72 0072 6700 0152 	jeq .L7
+  73 0076 202E 0008 	move.l 8(%fp),%d0
+  74 007a 2040      	move.l %d0,%a0
+  75 007c 2028 0016 	move.l 22(%a0),%d0
+  76 0080 2D40 FFF0 	move.l %d0,-16(%fp)
+  77 0084 202E 0008 	move.l 8(%fp),%d0
+  78 0088 2040      	move.l %d0,%a0
+  79 008a 2028 0004 	move.l 4(%a0),%d0
+  80 008e 0280 0000 	and.l #256,%d0
+  80      0100 
+  81 0094 4A80      	tst.l %d0
+  82 0096 670C      	jeq .L8
+  83 0098 2F2E 0008 	move.l 8(%fp),-(%sp)
+  84 009c 4EB9 0000 	jsr fflush
+  84      0000 
+  85 00a2 588F      	addq.l #4,%sp
+  86               	.L8:
+  87 00a4 202E 0008 	move.l 8(%fp),%d0
+  88 00a8 2040      	move.l %d0,%a0
+  89 00aa 317C FFFF 	move.w #-1,26(%a0)
+  89      001A 
+  90 00b0 2039 0000 	move.l maxfiles,%d0
+  90      0000 
+  91 00b6 7201      	moveq #1,%d1
+  92 00b8 B280      	cmp.l %d0,%d1
+  93 00ba 6C7C      	jge .L9
+  94 00bc 42AE FFF8 	clr.l -8(%fp)
+  95 00c0 605C      	jra .L10
+  96               	.L12:
+  97 00c2 202E FFF8 	move.l -8(%fp),%d0
+  98 00c6 2030 0DB0 	move.l _pstreams(%d0.l*4),%d0
+  98      0000 0000 
+  99 00ce B0AE 0008 	cmp.l 8(%fp),%d0
+ 100 00d2 6646      	jne .L11
+ 101 00d4 202E FFF8 	move.l -8(%fp),%d0
+ 102 00d8 2D70 0DB0 	move.l _filenames(%d0.l*4),-12(%fp)
+ 102      0000 0000 
+ 102      FFF4 
+ 103 00e2 2039 0000 	move.l maxfiles,%d0
+ 103      0000 
+68K GAS   			page 3
+
+
+ 104 00e8 5380      	subq.l #1,%d0
+ 105 00ea 2230 0DB0 	move.l _pstreams(%d0.l*4),%d1
+ 105      0000 0000 
+ 106 00f2 202E FFF8 	move.l -8(%fp),%d0
+ 107 00f6 2181 0DB0 	move.l %d1,_pstreams(%d0.l*4)
+ 107      0000 0000 
+ 108 00fe 2039 0000 	move.l maxfiles,%d0
+ 108      0000 
+ 109 0104 5380      	subq.l #1,%d0
+ 110 0106 2230 0DB0 	move.l _filenames(%d0.l*4),%d1
+ 110      0000 0000 
+ 111 010e 202E FFF8 	move.l -8(%fp),%d0
+ 112 0112 2181 0DB0 	move.l %d1,_filenames(%d0.l*4)
+ 112      0000 0000 
+ 113               	.L11:
+ 114 011a 52AE FFF8 	addq.l #1,-8(%fp)
+ 115               	.L10:
+ 116 011e 2039 0000 	move.l maxfiles,%d0
+ 116      0000 
+ 117 0124 B0AE FFF8 	cmp.l -8(%fp),%d0
+ 118 0128 6E98      	jgt .L12
+ 119 012a 2039 0000 	move.l maxfiles,%d0
+ 119      0000 
+ 120 0130 5380      	subq.l #1,%d0
+ 121 0132 23C0 0000 	move.l %d0,maxfiles
+ 121      0000 
+ 122               	.L9:
+ 123 0138 202E 0008 	move.l 8(%fp),%d0
+ 124 013c 2040      	move.l %d0,%a0
+ 125 013e 1028 0008 	move.b 8(%a0),%d0
+ 126 0142 49C0      	extb.l %d0
+ 127 0144 2F00      	move.l %d0,-(%sp)
+ 128 0146 4EB9 0000 	jsr _ll_close
+ 128      0000 
+ 129 014c 588F      	addq.l #4,%sp
+ 130 014e 2D40 FFFC 	move.l %d0,-4(%fp)
+ 131 0152 4AAE FFF0 	tst.l -16(%fp)
+ 132 0156 6716      	jeq .L13
+ 133 0158 4AAE FFF4 	tst.l -12(%fp)
+ 134 015c 6710      	jeq .L13
+ 135 015e 2F2E FFF4 	move.l -12(%fp),-(%sp)
+ 136 0162 4EB9 0000 	jsr remove
+ 136      0000 
+ 137 0168 588F      	addq.l #4,%sp
+ 138 016a C1AE FFFC 	and.l %d0,-4(%fp)
+ 139               	.L13:
+ 140 016e 4AAE FFF4 	tst.l -12(%fp)
+ 141 0172 670C      	jeq .L14
+ 142 0174 2F2E FFF4 	move.l -12(%fp),-(%sp)
+ 143 0178 4EB9 0000 	jsr free
+ 143      0000 
+ 144 017e 588F      	addq.l #4,%sp
+ 145               	.L14:
+ 146 0180 202E 0008 	move.l 8(%fp),%d0
+ 147 0184 2040      	move.l %d0,%a0
+ 148 0186 2028 0004 	move.l 4(%a0),%d0
+ 149 018a 7204      	moveq #4,%d1
+68K GAS   			page 4
+
+
+ 150 018c C081      	and.l %d1,%d0
+ 151 018e 4A80      	tst.l %d0
+ 152 0190 6714      	jeq .L15
+ 153 0192 202E 0008 	move.l 8(%fp),%d0
+ 154 0196 2040      	move.l %d0,%a0
+ 155 0198 2028 000E 	move.l 14(%a0),%d0
+ 156 019c 2F00      	move.l %d0,-(%sp)
+ 157 019e 4EB9 0000 	jsr free
+ 157      0000 
+ 158 01a4 588F      	addq.l #4,%sp
+ 159               	.L15:
+ 160 01a6 4AAE 000C 	tst.l 12(%fp)
+ 161 01aa 670C      	jeq .L16
+ 162 01ac 2F2E 0008 	move.l 8(%fp),-(%sp)
+ 163 01b0 4EB9 0000 	jsr free
+ 163      0000 
+ 164 01b6 588F      	addq.l #4,%sp
+ 165               	.L16:
+ 166 01b8 4AAE FFFC 	tst.l -4(%fp)
+ 167 01bc 6604      	jne .L17
+ 168 01be 4280      	clr.l %d0
+ 169 01c0 6006      	jra .L18
+ 170               	.L17:
+ 171 01c2 70FF      	moveq #-1,%d0
+ 172 01c4 6002      	jra .L18
+ 173               	.L7:
+ 174 01c6 70FF      	moveq #-1,%d0
+ 175               	.L18:
+ 176 01c8 4E5E      	unlk %fp
+ 177 01ca 4E75      	rts
+ 179               	.align2
+ 180               	.globlfclose
+ 182               	fclose:
+ 183 01cc 4E56 0000 	link.w %fp,#0
+ 184 01d0 4878 0001 	pea 1.w
+ 185 01d4 2F2E 0008 	move.l 8(%fp),-(%sp)
+ 186 01d8 4EBA FE7A 	jsr _basefclose
+ 187 01dc 508F      	addq.l #8,%sp
+ 188 01de 4E5E      	unlk %fp
+ 189 01e0 4E75      	rts
+ 191               	.ident"GCC: (GNU) 4.5.1"
+ 192               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 5
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 fclose.c
+    {standard input}:8      .bss:00000000 _pstreams
+    {standard input}:14     .bss:00000050 _filenames
+    {standard input}:20     .bss:000000a0 maxfiles
+    {standard input}:26     .text:00000000 fileinit
+    {standard input}:36     .text:00000014 closeall
+    {standard input}:182    .text:000001cc fclose
+    {standard input}:63     .text:00000054 _basefclose
+
+UNDEFINED SYMBOLS
+_ll_init_std
+_ll_init_fs
+_abterm
+fflush
+_ll_close
+remove
+free

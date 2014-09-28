@@ -1,0 +1,611 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"fs_fat.c"
+   3               	.globlfat_file_operations
+   4               	.section.rodata
+   5               	.align2
+   8               	fat_file_operations:
+   9 0000 0000 0000 	.longfatfs_open
+  10 0004 0000 0000 	.longfatfs_close
+  11 0008 0000 0000 	.longfatfs_read
+  12 000c 0000 0000 	.longfatfs_write
+  13 0010 0000 0000 	.longfatfs_seek
+  14 0014 0000 0000 	.longfatfs_ioctl
+  15 0018 0000 0000 	.longfatfs_remove
+  16 001c 0000 0000 	.longfatfs_getpos
+  17 0020 0000 0000 	.longfatfs_opendir
+  18 0024 0000 0000 	.longfatfs_closedir
+  19 0028 0000 0000 	.longfatfs_readdir
+  20 002c 0000 0000 	.longfatfs_mkdir
+  21 0030 0000 0000 	.longfatfs_rmdir
+  22 0034 0000 0000 	.longfatfs_rename
+  23               	.globlVolToPart
+  24               	.data
+  27               	VolToPart:
+  28 0000 00        	.byte0
+  29 0001 01        	.byte1
+  30 0002 00        	.byte0
+  31 0003 02        	.byte2
+  32 0004 00        	.byte0
+  33 0005 03        	.byte3
+  34 0006 00        	.byte0
+  35 0007 04        	.byte4
+  36               	.localFatFs
+  37               	.commFatFs,16800,2
+  38               	.localBuff
+  39               	.commBuff,262144,1
+  40               	.localCurrDirPath
+  41               	.commCurrDirPath,300,1
+  42               	.text
+  43               	.align2
+  44               	.globlget_fattime
+  46               	get_fattime:
+  47 0000 4E56 FFF8 	link.w %fp,#-8
+  48 0004 2F02      	move.l %d2,-(%sp)
+  49 0006 200E      	move.l %fp,%d0
+  50 0008 5180      	subq.l #8,%d0
+  51 000a 2F00      	move.l %d0,-(%sp)
+  52 000c 4EB9 0000 	jsr time
+  52      0000 
+  53 0012 588F      	addq.l #4,%sp
+  54 0014 200E      	move.l %fp,%d0
+  55 0016 5180      	subq.l #8,%d0
+  56 0018 2F00      	move.l %d0,-(%sp)
+  57 001a 4EB9 0000 	jsr localtime
+  57      0000 
+  58 0020 588F      	addq.l #4,%sp
+  59 0022 2D48 FFFC 	move.l %a0,-4(%fp)
+  60 0026 202E FFFC 	move.l -4(%fp),%d0
+68K GAS   			page 2
+
+
+  61 002a 2040      	move.l %d0,%a0
+  62 002c 2028 0014 	move.l 20(%a0),%d0
+  63 0030 0680 FFFF 	add.l #-1980,%d0
+  63      F844 
+  64 0036 2200      	move.l %d0,%d1
+  65 0038 7419      	moveq #25,%d2
+  66 003a E5A9      	lsl.l %d2,%d1
+  67 003c 202E FFFC 	move.l -4(%fp),%d0
+  68 0040 2040      	move.l %d0,%a0
+  69 0042 2028 0010 	move.l 16(%a0),%d0
+  70 0046 7415      	moveq #21,%d2
+  71 0048 E5A8      	lsl.l %d2,%d0
+  72 004a 8280      	or.l %d0,%d1
+  73 004c 202E FFFC 	move.l -4(%fp),%d0
+  74 0050 2040      	move.l %d0,%a0
+  75 0052 2028 000C 	move.l 12(%a0),%d0
+  76 0056 4840      	swap %d0
+  77 0058 4240      	clr.w %d0
+  78 005a 8280      	or.l %d0,%d1
+  79 005c 202E FFFC 	move.l -4(%fp),%d0
+  80 0060 2040      	move.l %d0,%a0
+  81 0062 2028 0008 	move.l 8(%a0),%d0
+  82 0066 3000      	move.w %d0,%d0
+  83 0068 740B      	moveq #11,%d2
+  84 006a E568      	lsl.w %d2,%d0
+  85 006c 3000      	move.w %d0,%d0
+  86 006e 0280 0000 	and.l #65535,%d0
+  86      FFFF 
+  87 0074 8280      	or.l %d0,%d1
+  88 0076 202E FFFC 	move.l -4(%fp),%d0
+  89 007a 2040      	move.l %d0,%a0
+  90 007c 2028 0004 	move.l 4(%a0),%d0
+  91 0080 3000      	move.w %d0,%d0
+  92 0082 EB48      	lsl.w #5,%d0
+  93 0084 3000      	move.w %d0,%d0
+  94 0086 0280 0000 	and.l #65535,%d0
+  94      FFFF 
+  95 008c 8280      	or.l %d0,%d1
+  96 008e 202E FFFC 	move.l -4(%fp),%d0
+  97 0092 2040      	move.l %d0,%a0
+  98 0094 2010      	move.l (%a0),%d0
+  99 0096 E280      	asr.l #1,%d0
+ 100 0098 3000      	move.w %d0,%d0
+ 101 009a 3000      	move.w %d0,%d0
+ 102 009c 0280 0000 	and.l #65535,%d0
+ 102      FFFF 
+ 103 00a2 8081      	or.l %d1,%d0
+ 104 00a4 242E FFF4 	move.l -12(%fp),%d2
+ 105 00a8 4E5E      	unlk %fp
+ 106 00aa 4E75      	rts
+ 108               	.align2
+ 110               	fatfs_open:
+ 111 00ac 4E56 FFF4 	link.w %fp,#-12
+ 112 00b0 4AAE 0008 	tst.l 8(%fp)
+ 113 00b4 6606      	jne .L3
+ 114 00b6 7002      	moveq #2,%d0
+ 115 00b8 6000 00AA 	jra .L4
+68K GAS   			page 3
+
+
+ 116               	.L3:
+ 117 00bc 42AE FFFC 	clr.l -4(%fp)
+ 118 00c0 202E 0008 	move.l 8(%fp),%d0
+ 119 00c4 2040      	move.l %d0,%a0
+ 120 00c6 2010      	move.l (%a0),%d0
+ 121 00c8 4A80      	tst.l %d0
+ 122 00ca 6706      	jeq .L5
+ 123 00cc 7001      	moveq #1,%d0
+ 124 00ce 81AE FFFC 	or.l %d0,-4(%fp)
+ 125               	.L5:
+ 126 00d2 202E 0008 	move.l 8(%fp),%d0
+ 127 00d6 2040      	move.l %d0,%a0
+ 128 00d8 2010      	move.l (%a0),%d0
+ 129 00da 4A80      	tst.l %d0
+ 130 00dc 6706      	jeq .L6
+ 131 00de 7002      	moveq #2,%d0
+ 132 00e0 81AE FFFC 	or.l %d0,-4(%fp)
+ 133               	.L6:
+ 134 00e4 202E 0008 	move.l 8(%fp),%d0
+ 135 00e8 2040      	move.l %d0,%a0
+ 136 00ea 2010      	move.l (%a0),%d0
+ 137 00ec 4A80      	tst.l %d0
+ 138 00ee 6706      	jeq .L7
+ 139 00f0 7004      	moveq #4,%d0
+ 140 00f2 81AE FFFC 	or.l %d0,-4(%fp)
+ 141               	.L7:
+ 142 00f6 4878 0824 	pea 2084.w
+ 143 00fa 4EB9 0000 	jsr malloc
+ 143      0000 
+ 144 0100 588F      	addq.l #4,%sp
+ 145 0102 2008      	move.l %a0,%d0
+ 146 0104 2D40 FFF8 	move.l %d0,-8(%fp)
+ 147 0108 4AAE FFF8 	tst.l -8(%fp)
+ 148 010c 6604      	jne .L8
+ 149 010e 7002      	moveq #2,%d0
+ 150 0110 6052      	jra .L4
+ 151               	.L8:
+ 152 0112 202E FFFC 	move.l -4(%fp),%d0
+ 153 0116 1000      	move.b %d0,%d0
+ 154 0118 1000      	move.b %d0,%d0
+ 155 011a 0280 0000 	and.l #255,%d0
+ 155      00FF 
+ 156 0120 222E 0008 	move.l 8(%fp),%d1
+ 157 0124 2041      	move.l %d1,%a0
+ 158 0126 2228 0014 	move.l 20(%a0),%d1
+ 159 012a 2F00      	move.l %d0,-(%sp)
+ 160 012c 2F01      	move.l %d1,-(%sp)
+ 161 012e 2F2E FFF8 	move.l -8(%fp),-(%sp)
+ 162 0132 4EB9 0000 	jsr f_open
+ 162      0000 
+ 163 0138 4FEF 000C 	lea (12,%sp),%sp
+ 164 013c 2D40 FFF4 	move.l %d0,-12(%fp)
+ 165 0140 4AAE FFF4 	tst.l -12(%fp)
+ 166 0144 6710      	jeq .L9
+ 167 0146 2F2E FFF8 	move.l -8(%fp),-(%sp)
+ 168 014a 4EB9 0000 	jsr free
+ 168      0000 
+68K GAS   			page 4
+
+
+ 169 0150 588F      	addq.l #4,%sp
+ 170 0152 7002      	moveq #2,%d0
+ 171 0154 600E      	jra .L4
+ 172               	.L9:
+ 173 0156 202E 0008 	move.l 8(%fp),%d0
+ 174 015a 2040      	move.l %d0,%a0
+ 175 015c 216E FFF8 	move.l -8(%fp),24(%a0)
+ 175      0018 
+ 176 0162 4280      	clr.l %d0
+ 177               	.L4:
+ 178 0164 4E5E      	unlk %fp
+ 179 0166 4E75      	rts
+ 181               	.align2
+ 183               	fatfs_close:
+ 184 0168 4E56 FFF8 	link.w %fp,#-8
+ 185 016c 4AAE 0008 	tst.l 8(%fp)
+ 186 0170 6604      	jne .L11
+ 187 0172 7002      	moveq #2,%d0
+ 188 0174 6036      	jra .L12
+ 189               	.L11:
+ 190 0176 202E 0008 	move.l 8(%fp),%d0
+ 191 017a 2040      	move.l %d0,%a0
+ 192 017c 2028 0018 	move.l 24(%a0),%d0
+ 193 0180 2D40 FFFC 	move.l %d0,-4(%fp)
+ 194 0184 2F2E FFFC 	move.l -4(%fp),-(%sp)
+ 195 0188 4EB9 0000 	jsr f_close
+ 195      0000 
+ 196 018e 588F      	addq.l #4,%sp
+ 197 0190 2D40 FFF8 	move.l %d0,-8(%fp)
+ 198 0194 2F2E FFFC 	move.l -4(%fp),-(%sp)
+ 199 0198 4EB9 0000 	jsr free
+ 199      0000 
+ 200 019e 588F      	addq.l #4,%sp
+ 201 01a0 4AAE FFF8 	tst.l -8(%fp)
+ 202 01a4 6704      	jeq .L13
+ 203 01a6 7002      	moveq #2,%d0
+ 204 01a8 6002      	jra .L12
+ 205               	.L13:
+ 206 01aa 4280      	clr.l %d0
+ 207               	.L12:
+ 208 01ac 4E5E      	unlk %fp
+ 209 01ae 4E75      	rts
+ 211               	.align2
+ 213               	fatfs_read:
+ 214 01b0 4E56 FFF4 	link.w %fp,#-12
+ 215 01b4 42AE FFF4 	clr.l -12(%fp)
+ 216 01b8 4AAE 0008 	tst.l 8(%fp)
+ 217 01bc 6604      	jne .L15
+ 218 01be 7002      	moveq #2,%d0
+ 219 01c0 6034      	jra .L16
+ 220               	.L15:
+ 221 01c2 202E 0008 	move.l 8(%fp),%d0
+ 222 01c6 2040      	move.l %d0,%a0
+ 223 01c8 2028 0018 	move.l 24(%a0),%d0
+ 224 01cc 2D40 FFFC 	move.l %d0,-4(%fp)
+ 225 01d0 222E 0010 	move.l 16(%fp),%d1
+ 226 01d4 70F4      	moveq #-12,%d0
+68K GAS   			page 5
+
+
+ 227 01d6 D08E      	add.l %fp,%d0
+ 228 01d8 2F00      	move.l %d0,-(%sp)
+ 229 01da 2F01      	move.l %d1,-(%sp)
+ 230 01dc 2F2E 000C 	move.l 12(%fp),-(%sp)
+ 231 01e0 2F2E FFFC 	move.l -4(%fp),-(%sp)
+ 232 01e4 4EB9 0000 	jsr f_read
+ 232      0000 
+ 233 01ea 4FEF 0010 	lea (16,%sp),%sp
+ 234 01ee 2D40 FFF8 	move.l %d0,-8(%fp)
+ 235 01f2 202E FFF4 	move.l -12(%fp),%d0
+ 236               	.L16:
+ 237 01f6 4E5E      	unlk %fp
+ 238 01f8 4E75      	rts
+ 240               	.align2
+ 242               	fatfs_write:
+ 243 01fa 4E56 0000 	link.w %fp,#0
+ 244 01fe 4E5E      	unlk %fp
+ 245 0200 4E75      	rts
+ 247               	.align2
+ 249               	fatfs_seek:
+ 250 0202 4E56 0000 	link.w %fp,#0
+ 251 0206 4E5E      	unlk %fp
+ 252 0208 4E75      	rts
+ 254               	.align2
+ 256               	fatfs_remove:
+ 257 020a 4E56 0000 	link.w %fp,#0
+ 258 020e 4E5E      	unlk %fp
+ 259 0210 4E75      	rts
+ 261               	.align2
+ 263               	fatfs_getpos:
+ 264 0212 4E56 0000 	link.w %fp,#0
+ 265 0216 4E5E      	unlk %fp
+ 266 0218 4E75      	rts
+ 268               	.align2
+ 270               	fatfs_rename:
+ 271 021a 4E56 0000 	link.w %fp,#0
+ 272 021e 4E5E      	unlk %fp
+ 273 0220 4E75      	rts
+ 275               	.align2
+ 277               	fatfs_ioctl:
+ 278 0222 4E56 0000 	link.w %fp,#0
+ 279 0226 4E5E      	unlk %fp
+ 280 0228 4E75      	rts
+ 282               	.align2
+ 284               	fatfs_mkdir:
+ 285 022a 4E56 0000 	link.w %fp,#0
+ 286 022e 4E5E      	unlk %fp
+ 287 0230 4E75      	rts
+ 289               	.align2
+ 291               	fatfs_rmdir:
+ 292 0232 4E56 0000 	link.w %fp,#0
+ 293 0236 4E5E      	unlk %fp
+ 294 0238 4E75      	rts
+ 296               	.align2
+ 298               	fatfs_opendir:
+ 299 023a 4E56 0000 	link.w %fp,#0
+ 300 023e 4E5E      	unlk %fp
+68K GAS   			page 6
+
+
+ 301 0240 4E75      	rts
+ 303               	.align2
+ 305               	fatfs_closedir:
+ 306 0242 4E56 0000 	link.w %fp,#0
+ 307 0246 4E5E      	unlk %fp
+ 308 0248 4E75      	rts
+ 310               	.align2
+ 312               	fatfs_readdir:
+ 313 024a 4E56 0000 	link.w %fp,#0
+ 314 024e 4E5E      	unlk %fp
+ 315 0250 4E75      	rts
+ 317               	.section.rodata
+ 318               	.LC0:
+ 319 0038 414E 5349 	.string"ANSI"
+ 319      00
+ 320               	.LC1:
+ 321 003d 5346 4E00 	.string"SFN"
+ 322               	.LC2:
+ 323 0041 4661 7446 	.string"FatFs module (%s, CP:%u/%s)\n\n"
+ 323      7320 6D6F 
+ 323      6475 6C65 
+ 323      2028 2573 
+ 323      2C20 4350 
+ 324               	.LC3:
+ 325 005f 0A20 4D75 	.string"\n Multiple partition feature is enabled.\n Each logical drive is tied to the patition as follows:\n"
+ 325      6C74 6970 
+ 325      6C65 2070 
+ 325      6172 7469 
+ 325      7469 6F6E 
+ 326               	.LC4:
+ 327 00c1 6175 746F 	.string"auto detect"
+ 327      2064 6574 
+ 327      6563 7400 
+ 328               	.LC5:
+ 329 00cd 3173 7420 	.string"1st partition"
+ 329      7061 7274 
+ 329      6974 696F 
+ 329      6E00 
+ 330               	.LC6:
+ 331 00db 326E 6420 	.string"2nd partition"
+ 331      7061 7274 
+ 331      6974 696F 
+ 331      6E00 
+ 332               	.LC7:
+ 333 00e9 3372 6420 	.string"3rd partition"
+ 333      7061 7274 
+ 333      6974 696F 
+ 333      6E00 
+ 334               	.LC8:
+ 335 00f7 3474 6820 	.string"4th partition"
+ 335      7061 7274 
+ 335      6974 696F 
+ 335      6E00 
+ 336               	.LC9:
+ 337 0105 2225 753A 	.string"\"%u:\" <== Disk# %u, %s\n"
+ 337      2220 3C3D 
+ 337      3D20 4469 
+68K GAS   			page 7
+
+
+ 337      736B 2320 
+ 337      2575 2C20 
+ 338               	.LC10:
+ 339 011d 0A00      	.string"\n"
+ 340               	.LC11:
+ 341 011f 2064 6973 	.string" disk_initialize(%d) => (rc=%d)\n"
+ 341      6B5F 696E 
+ 341      6974 6961 
+ 341      6C69 7A65 
+ 341      2825 6429 
+ 342               	.LC12:
+ 343 0140 2053 6563 	.string" Sector size = %u\n"
+ 343      746F 7220 
+ 343      7369 7A65 
+ 343      203D 2025 
+ 343      750A 00
+ 344               	.LC13:
+ 345 0153 204E 756D 	.string" Number of sectors = %u\n"
+ 345      6265 7220 
+ 345      6F66 2073 
+ 345      6563 746F 
+ 345      7273 203D 
+ 346               	.LC14:
+ 347 016c 303A 00   	.string"0:"
+ 348               	.LC15:
+ 349 016f 4641 5400 	.string"FAT"
+ 350               	.LC16:
+ 351 0173 6864 6130 	.string"hda0"
+ 351      00
+ 352               	.text
+ 353               	.align2
+ 354               	.globlfatfs_init_fs
+ 356               	fatfs_init_fs:
+ 357 0252 4E56 FFD8 	link.w %fp,#-40
+ 358 0256 4879 0000 	pea .LC0
+ 358      0000 
+ 359 025c 4878 03A4 	pea 932.w
+ 360 0260 4879 0000 	pea .LC1
+ 360      0000 
+ 361 0266 4879 0000 	pea .LC2
+ 361      0000 
+ 362 026c 4EB9 0000 	jsr printf
+ 362      0000 
+ 363 0272 4FEF 0010 	lea (16,%sp),%sp
+ 364 0276 4879 0000 	pea .LC3
+ 364      0000 
+ 365 027c 4EB9 0000 	jsr printf
+ 365      0000 
+ 366 0282 588F      	addq.l #4,%sp
+ 367 0284 42AE FFFC 	clr.l -4(%fp)
+ 368 0288 6070      	jra .L29
+ 369               	.L30:
+ 370 028a 2D7C 0000 	move.l #.LC4,-38(%fp)
+ 370      0000 FFDA 
+ 371 0292 2D7C 0000 	move.l #.LC5,-34(%fp)
+ 371      0000 FFDE 
+ 372 029a 2D7C 0000 	move.l #.LC6,-30(%fp)
+68K GAS   			page 8
+
+
+ 372      0000 FFE2 
+ 373 02a2 2D7C 0000 	move.l #.LC7,-26(%fp)
+ 373      0000 FFE6 
+ 374 02aa 2D7C 0000 	move.l #.LC8,-22(%fp)
+ 374      0000 FFEA 
+ 375 02b2 202E FFFC 	move.l -4(%fp),%d0
+ 376 02b6 1030 0BB0 	move.b VolToPart+1(%d0.l*2),%d0
+ 376      0000 0000 
+ 377 02be 1000      	move.b %d0,%d0
+ 378 02c0 0280 0000 	and.l #255,%d0
+ 378      00FF 
+ 379 02c6 2236 0CDA 	move.l -38(%fp,%d0.l*4),%d1
+ 380 02ca 202E FFFC 	move.l -4(%fp),%d0
+ 381 02ce 1030 0BB0 	move.b VolToPart(%d0.l*2),%d0
+ 381      0000 0000 
+ 382 02d6 1000      	move.b %d0,%d0
+ 383 02d8 0280 0000 	and.l #255,%d0
+ 383      00FF 
+ 384 02de 2F01      	move.l %d1,-(%sp)
+ 385 02e0 2F00      	move.l %d0,-(%sp)
+ 386 02e2 2F2E FFFC 	move.l -4(%fp),-(%sp)
+ 387 02e6 4879 0000 	pea .LC9
+ 387      0000 
+ 388 02ec 4EB9 0000 	jsr printf
+ 388      0000 
+ 389 02f2 4FEF 0010 	lea (16,%sp),%sp
+ 390 02f6 52AE FFFC 	addq.l #1,-4(%fp)
+ 391               	.L29:
+ 392 02fa 7003      	moveq #3,%d0
+ 393 02fc B0AE FFFC 	cmp.l -4(%fp),%d0
+ 394 0300 6488      	jcc .L30
+ 395 0302 4879 0000 	pea .LC10
+ 395      0000 
+ 396 0308 4EB9 0000 	jsr printf
+ 396      0000 
+ 397 030e 588F      	addq.l #4,%sp
+ 398 0310 4EB9 0000 	jsr init_ff
+ 398      0000 
+ 399 0316 42AE FFF8 	clr.l -8(%fp)
+ 400 031a 202E FFF8 	move.l -8(%fp),%d0
+ 401 031e 1000      	move.b %d0,%d0
+ 402 0320 1000      	move.b %d0,%d0
+ 403 0322 0280 0000 	and.l #255,%d0
+ 403      00FF 
+ 404 0328 2F00      	move.l %d0,-(%sp)
+ 405 032a 4EB9 0000 	jsr disk_initialize
+ 405      0000 
+ 406 0330 588F      	addq.l #4,%sp
+ 407 0332 4281      	clr.l %d1
+ 408 0334 1200      	move.b %d0,%d1
+ 409 0336 202E FFF8 	move.l -8(%fp),%d0
+ 410 033a 1000      	move.b %d0,%d0
+ 411 033c 1000      	move.b %d0,%d0
+ 412 033e 0280 0000 	and.l #255,%d0
+ 412      00FF 
+ 413 0344 2F01      	move.l %d1,-(%sp)
+ 414 0346 2F00      	move.l %d0,-(%sp)
+68K GAS   			page 9
+
+
+ 415 0348 4879 0000 	pea .LC11
+ 415      0000 
+ 416 034e 4EB9 0000 	jsr printf
+ 416      0000 
+ 417 0354 4FEF 000C 	lea (12,%sp),%sp
+ 418 0358 202E FFF8 	move.l -8(%fp),%d0
+ 419 035c 1000      	move.b %d0,%d0
+ 420 035e 1000      	move.b %d0,%d0
+ 421 0360 0280 0000 	and.l #255,%d0
+ 421      00FF 
+ 422 0366 72F2      	moveq #-14,%d1
+ 423 0368 D28E      	add.l %fp,%d1
+ 424 036a 2F01      	move.l %d1,-(%sp)
+ 425 036c 4878 0002 	pea 2.w
+ 426 0370 2F00      	move.l %d0,-(%sp)
+ 427 0372 4EB9 0000 	jsr disk_ioctl
+ 427      0000 
+ 428 0378 4FEF 000C 	lea (12,%sp),%sp
+ 429 037c 4A80      	tst.l %d0
+ 430 037e 661C      	jne .L31
+ 431 0380 302E FFF2 	move.w -14(%fp),%d0
+ 432 0384 3000      	move.w %d0,%d0
+ 433 0386 0280 0000 	and.l #65535,%d0
+ 433      FFFF 
+ 434 038c 2F00      	move.l %d0,-(%sp)
+ 435 038e 4879 0000 	pea .LC12
+ 435      0000 
+ 436 0394 4EB9 0000 	jsr printf
+ 436      0000 
+ 437 039a 508F      	addq.l #8,%sp
+ 438               	.L31:
+ 439 039c 202E FFF8 	move.l -8(%fp),%d0
+ 440 03a0 1000      	move.b %d0,%d0
+ 441 03a2 1000      	move.b %d0,%d0
+ 442 03a4 0280 0000 	and.l #255,%d0
+ 442      00FF 
+ 443 03aa 72EE      	moveq #-18,%d1
+ 444 03ac D28E      	add.l %fp,%d1
+ 445 03ae 2F01      	move.l %d1,-(%sp)
+ 446 03b0 4878 0001 	pea 1.w
+ 447 03b4 2F00      	move.l %d0,-(%sp)
+ 448 03b6 4EB9 0000 	jsr disk_ioctl
+ 448      0000 
+ 449 03bc 4FEF 000C 	lea (12,%sp),%sp
+ 450 03c0 4A80      	tst.l %d0
+ 451 03c2 6614      	jne .L32
+ 452 03c4 202E FFEE 	move.l -18(%fp),%d0
+ 453 03c8 2F00      	move.l %d0,-(%sp)
+ 454 03ca 4879 0000 	pea .LC13
+ 454      0000 
+ 455 03d0 4EB9 0000 	jsr printf
+ 455      0000 
+ 456 03d6 508F      	addq.l #8,%sp
+ 457               	.L32:
+ 458 03d8 4878 0001 	pea 1.w
+ 459 03dc 4879 0000 	pea .LC14
+ 459      0000 
+68K GAS   			page 10
+
+
+ 460 03e2 4879 0000 	pea FatFs
+ 460      0000 
+ 461 03e8 4EB9 0000 	jsr f_mount
+ 461      0000 
+ 462 03ee 4FEF 000C 	lea (12,%sp),%sp
+ 463 03f2 2D40 FFF4 	move.l %d0,-12(%fp)
+ 464 03f6 4878 0100 	pea 256.w
+ 465 03fa 4879 0000 	pea CurrDirPath
+ 465      0000 
+ 466 0400 4EB9 0000 	jsr f_getcwd
+ 466      0000 
+ 467 0406 508F      	addq.l #8,%sp
+ 468 0408 2D40 FFF4 	move.l %d0,-12(%fp)
+ 469 040c 4879 0000 	pea fat_file_operations
+ 469      0000 
+ 470 0412 4879 0000 	pea .LC15
+ 470      0000 
+ 471 0418 4879 0000 	pea .LC16
+ 471      0000 
+ 472 041e 4EB9 0000 	jsr register_driver
+ 472      0000 
+ 473 0424 4FEF 000C 	lea (12,%sp),%sp
+ 474 0428 4E5E      	unlk %fp
+ 475 042a 4E75      	rts
+ 477               	.ident"GCC: (GNU) 4.5.1"
+ 478               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 11
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 fs_fat.c
+    {standard input}:8      .rodata:00000000 fat_file_operations
+    {standard input}:110    .text:000000ac fatfs_open
+    {standard input}:183    .text:00000168 fatfs_close
+    {standard input}:213    .text:000001b0 fatfs_read
+    {standard input}:242    .text:000001fa fatfs_write
+    {standard input}:249    .text:00000202 fatfs_seek
+    {standard input}:277    .text:00000222 fatfs_ioctl
+    {standard input}:256    .text:0000020a fatfs_remove
+    {standard input}:263    .text:00000212 fatfs_getpos
+    {standard input}:298    .text:0000023a fatfs_opendir
+    {standard input}:305    .text:00000242 fatfs_closedir
+    {standard input}:312    .text:0000024a fatfs_readdir
+    {standard input}:284    .text:0000022a fatfs_mkdir
+    {standard input}:291    .text:00000232 fatfs_rmdir
+    {standard input}:270    .text:0000021a fatfs_rename
+    {standard input}:27     .data:00000000 VolToPart
+    {standard input}:37     .bss:00000000 FatFs
+    {standard input}:37     .bss:000041a0 Buff
+    {standard input}:39     .bss:000441a0 CurrDirPath
+    {standard input}:46     .text:00000000 get_fattime
+    {standard input}:356    .text:00000252 fatfs_init_fs
+
+UNDEFINED SYMBOLS
+time
+localtime
+malloc
+f_open
+free
+f_close
+f_read
+printf
+init_ff
+disk_initialize
+disk_ioctl
+f_mount
+f_getcwd
+register_driver

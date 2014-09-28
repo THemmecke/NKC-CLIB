@@ -1,0 +1,47 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"s_significand.c"
+   3               	.text
+   4               	.align2
+   5               	.globlsignificand
+   7               	significand:
+   8 0000 4E56 0000 	link.w %fp,#0
+   9 0004 2F2E 000C 	move.l 12(%fp),-(%sp)
+  10 0008 2F2E 0008 	move.l 8(%fp),-(%sp)
+  11 000c 4EB9 0000 	jsr ilogb
+  11      0000 
+  12 0012 508F      	addq.l #8,%sp
+  13 0014 4480      	neg.l %d0
+  14 0016 F200 4000 	fmove.l %d0,%fp0
+  15 001a F227 7400 	fmove.d %fp0,-(%sp)
+  16 001e 201F      	move.l (%sp)+,%d0
+  17 0020 221F      	move.l (%sp)+,%d1
+  18 0022 2F01      	move.l %d1,-(%sp)
+  19 0024 2F00      	move.l %d0,-(%sp)
+  20 0026 2F2E 000C 	move.l 12(%fp),-(%sp)
+  21 002a 2F2E 0008 	move.l 8(%fp),-(%sp)
+  22 002e 4EB9 0000 	jsr __ieee754_scalb
+  22      0000 
+  23 0034 4FEF 0010 	lea (16,%sp),%sp
+  24 0038 F227 7400 	fmove.d %fp0,-(%sp)
+  25 003c 201F      	move.l (%sp)+,%d0
+  26 003e 221F      	move.l (%sp)+,%d1
+  27 0040 2F01      	move.l %d1,-(%sp)
+  28 0042 2F00      	move.l %d0,-(%sp)
+  29 0044 F21F 5400 	fmove.d (%sp)+,%fp0
+  30 0048 4E5E      	unlk %fp
+  31 004a 4E75      	rts
+  33               	.ident"GCC: (GNU) 4.5.1"
+  34               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 s_significand.c
+    {standard input}:7      .text:00000000 significand
+
+UNDEFINED SYMBOLS
+ilogb
+__ieee754_scalb

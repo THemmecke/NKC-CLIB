@@ -1,0 +1,27 @@
+#ifndef __FS_FAT_H
+#define __FS_FAT_H
+
+
+
+/* Public Prototypes */
+
+static int     fatfs_open(struct _file *filp);
+static int     fatfs_close(struct _file *filp);
+static int     fatfs_read(struct _file *filp, char *buffer, int buflen);
+static int     fatfs_write(struct _file *filp, const char *buffer, int buflen);
+static int     fatfs_seek(struct _file *filp, int offset, int whence);
+static int     fatfs_remove(struct _file *filp);
+static int     fatfs_getpos(struct _file *filp);
+static int     fatfs_rename(struct _file *filp, const char *oldrelpath, const char *newrelpath);
+static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg);
+static int     fatfs_mkdir(struct _file *filp, const char *relpath);
+static int     fatfs_rmdir(struct _file *filp, const char *relpath);
+static int     fatfs_opendir(struct _file *filp, const char *relpath, void *dir);
+static int     fatfs_closedir(struct _file *filp, void *dir);
+static int     fatfs_readdir(struct _file *filp, void *dir);
+
+void    fatfs_init_fs(void);
+
+
+
+#endif

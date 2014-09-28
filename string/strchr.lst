@@ -1,0 +1,35 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               		.global	strchr
+   3               		
+   4               	/*
+   5               		char * strchr(const char *string, int character);
+   6               	*/		
+   7               	
+   8               	strchr:
+   9 0000 202F 0008 		move.l	(8,%a7),%d0	/* char	*/
+  10 0004 206F 0004 		move.l	(4,%A7),%a0	/* buf	*/
+  11               	lp:
+  12 0008 4A10      		tst.b	(%a0)
+  13 000a 670A      		beq.b	zerout
+  14 000c B018      		cmp.b	(%a0)+,%d0
+  15 000e 6600 FFF8 		bne	lp
+  16 0012 5388      		subq.l  #1,%a0
+  17 0014 4E75      		rts
+  18               	zerout:
+  19 0016 207C 0000 		movea.l	#0,%a0
+  19      0000 
+  20 001c 4E75      		rts
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+            strchr.S:8      .text:00000000 strchr
+            strchr.S:11     .text:00000008 lp
+            strchr.S:18     .text:00000016 zerout
+
+NO UNDEFINED SYMBOLS

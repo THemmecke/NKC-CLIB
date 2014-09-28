@@ -1,0 +1,77 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"strtok.c"
+   3               	.localpos
+   4               	.commpos,4,2
+   5               	.text
+   6               	.align2
+   7               	.globlstrtok
+   9               	strtok:
+  10 0000 4E56 0000 	link.w %fp,#0
+  11 0004 4AAE 0008 	tst.l 8(%fp)
+  12 0008 6612      	jne .L2
+  13 000a 2D79 0000 	move.l pos,8(%fp)
+  13      0000 0008 
+  14 0012 4AAE 0008 	tst.l 8(%fp)
+  15 0016 6604      	jne .L2
+  16 0018 4280      	clr.l %d0
+  17 001a 6056      	jra .L3
+  18               	.L2:
+  19 001c 4AAE 0008 	tst.l 8(%fp)
+  20 0020 670C      	jeq .L4
+  21 0022 202E 0008 	move.l 8(%fp),%d0
+  22 0026 2040      	move.l %d0,%a0
+  23 0028 1010      	move.b (%a0),%d0
+  24 002a 4A00      	tst.b %d0
+  25 002c 6604      	jne .L5
+  26               	.L4:
+  27 002e 4280      	clr.l %d0
+  28 0030 6040      	jra .L3
+  29               	.L5:
+  30 0032 2F2E 000C 	move.l 12(%fp),-(%sp)
+  31 0036 2F2E 0008 	move.l 8(%fp),-(%sp)
+  32 003a 4EB9 0000 	jsr strpbrk
+  32      0000 
+  33 0040 508F      	addq.l #8,%sp
+  34 0042 2008      	move.l %a0,%d0
+  35 0044 23C0 0000 	move.l %d0,pos
+  35      0000 
+  36 004a 2039 0000 	move.l pos,%d0
+  36      0000 
+  37 0050 2040      	move.l %d0,%a0
+  38 0052 1010      	move.b (%a0),%d0
+  39 0054 4A00      	tst.b %d0
+  40 0056 6604      	jne .L6
+  41 0058 4280      	clr.l %d0
+  42 005a 6016      	jra .L3
+  43               	.L6:
+  44 005c 2039 0000 	move.l pos,%d0
+  44      0000 
+  45 0062 2040      	move.l %d0,%a0
+  46 0064 4210      	clr.b (%a0)
+  47 0066 5280      	addq.l #1,%d0
+  48 0068 23C0 0000 	move.l %d0,pos
+  48      0000 
+  49 006e 202E 0008 	move.l 8(%fp),%d0
+  50               	.L3:
+  51 0072 2200      	move.l %d0,%d1
+  52 0074 2041      	move.l %d1,%a0
+68K GAS   			page 2
+
+
+  53 0076 4E5E      	unlk %fp
+  54 0078 4E75      	rts
+  56               	.ident"GCC: (GNU) 4.5.1"
+  57               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 3
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 strtok.c
+    {standard input}:4      .bss:00000000 pos
+    {standard input}:9      .text:00000000 strtok
+
+UNDEFINED SYMBOLS
+strpbrk

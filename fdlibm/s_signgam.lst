@@ -1,0 +1,20 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"s_signgam.c"
+   3               	.globlsigngam
+   4               	.section.bss
+   5               	.align2
+   8               	signgam:
+   9 0000 0000 0000 	.zero4
+  10               	.ident"GCC: (GNU) 4.5.1"
+  11               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 s_signgam.c
+    {standard input}:8      .bss:00000000 signgam
+
+NO UNDEFINED SYMBOLS

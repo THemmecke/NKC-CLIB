@@ -1,0 +1,274 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"ctype.c"
+   3               	.globl_ctype
+   4               	.data
+   7               	_ctype:
+   8 0000 20        	.byte32
+   9 0001 20        	.byte32
+  10 0002 20        	.byte32
+  11 0003 20        	.byte32
+  12 0004 20        	.byte32
+  13 0005 20        	.byte32
+  14 0006 20        	.byte32
+  15 0007 20        	.byte32
+  16 0008 20        	.byte32
+  17 0009 21        	.byte33
+  18 000a 20        	.byte32
+  19 000b 20        	.byte32
+  20 000c 20        	.byte32
+  21 000d 20        	.byte32
+  22 000e 20        	.byte32
+  23 000f 20        	.byte32
+  24 0010 20        	.byte32
+  25 0011 20        	.byte32
+  26 0012 20        	.byte32
+  27 0013 20        	.byte32
+  28 0014 20        	.byte32
+  29 0015 20        	.byte32
+  30 0016 20        	.byte32
+  31 0017 20        	.byte32
+  32 0018 20        	.byte32
+  33 0019 20        	.byte32
+  34 001a 20        	.byte32
+  35 001b 20        	.byte32
+  36 001c 20        	.byte32
+  37 001d 20        	.byte32
+  38 001e 20        	.byte32
+  39 001f 20        	.byte32
+  40 0020 81        	.byte-127
+  41 0021 40        	.byte64
+  42 0022 40        	.byte64
+  43 0023 00        	.byte0
+  44 0024 00        	.byte0
+  45 0025 00        	.byte0
+  46 0026 00        	.byte0
+  47 0027 40        	.byte64
+  48 0028 40        	.byte64
+  49 0029 40        	.byte64
+  50 002a 00        	.byte0
+  51 002b 00        	.byte0
+  52 002c 40        	.byte64
+  53 002d 00        	.byte0
+  54 002e 40        	.byte64
+  55 002f 00        	.byte0
+  56 0030 12        	.byte18
+  57 0031 12        	.byte18
+  58 0032 12        	.byte18
+  59 0033 12        	.byte18
+68K GAS   			page 2
+
+
+  60 0034 12        	.byte18
+  61 0035 12        	.byte18
+  62 0036 12        	.byte18
+  63 0037 12        	.byte18
+  64 0038 12        	.byte18
+  65 0039 12        	.byte18
+  66 003a 40        	.byte64
+  67 003b 40        	.byte64
+  68 003c 00        	.byte0
+  69 003d 00        	.byte0
+  70 003e 00        	.byte0
+  71 003f 40        	.byte64
+  72 0040 00        	.byte0
+  73 0041 14        	.byte20
+  74 0042 14        	.byte20
+  75 0043 14        	.byte20
+  76 0044 14        	.byte20
+  77 0045 14        	.byte20
+  78 0046 14        	.byte20
+  79 0047 04        	.byte4
+  80 0048 04        	.byte4
+  81 0049 04        	.byte4
+  82 004a 04        	.byte4
+  83 004b 04        	.byte4
+  84 004c 04        	.byte4
+  85 004d 04        	.byte4
+  86 004e 04        	.byte4
+  87 004f 04        	.byte4
+  88 0050 04        	.byte4
+  89 0051 04        	.byte4
+  90 0052 04        	.byte4
+  91 0053 04        	.byte4
+  92 0054 04        	.byte4
+  93 0055 04        	.byte4
+  94 0056 04        	.byte4
+  95 0057 04        	.byte4
+  96 0058 04        	.byte4
+  97 0059 04        	.byte4
+  98 005a 04        	.byte4
+  99 005b 40        	.byte64
+ 100 005c 40        	.byte64
+ 101 005d 40        	.byte64
+ 102 005e 00        	.byte0
+ 103 005f 40        	.byte64
+ 104 0060 40        	.byte64
+ 105 0061 18        	.byte24
+ 106 0062 18        	.byte24
+ 107 0063 18        	.byte24
+ 108 0064 18        	.byte24
+ 109 0065 18        	.byte24
+ 110 0066 18        	.byte24
+ 111 0067 08        	.byte8
+ 112 0068 08        	.byte8
+ 113 0069 08        	.byte8
+ 114 006a 08        	.byte8
+ 115 006b 08        	.byte8
+ 116 006c 08        	.byte8
+68K GAS   			page 3
+
+
+ 117 006d 08        	.byte8
+ 118 006e 08        	.byte8
+ 119 006f 08        	.byte8
+ 120 0070 08        	.byte8
+ 121 0071 08        	.byte8
+ 122 0072 08        	.byte8
+ 123 0073 08        	.byte8
+ 124 0074 08        	.byte8
+ 125 0075 08        	.byte8
+ 126 0076 08        	.byte8
+ 127 0077 08        	.byte8
+ 128 0078 08        	.byte8
+ 129 0079 08        	.byte8
+ 130 007a 08        	.byte8
+ 131 007b 40        	.byte64
+ 132 007c 00        	.byte0
+ 133 007d 40        	.byte64
+ 134 007e 00        	.byte0
+ 135 007f 20        	.byte32
+ 136 0080 00        	.byte0
+ 137 0081 00        	.byte0
+ 138 0082 00        	.byte0
+ 139 0083 00        	.byte0
+ 140 0084 00        	.byte0
+ 141 0085 00        	.byte0
+ 142 0086 00        	.byte0
+ 143 0087 00        	.byte0
+ 144 0088 00        	.byte0
+ 145 0089 00        	.byte0
+ 146 008a 00        	.byte0
+ 147 008b 00        	.byte0
+ 148 008c 00        	.byte0
+ 149 008d 00        	.byte0
+ 150 008e 00        	.byte0
+ 151 008f 00        	.byte0
+ 152 0090 00        	.byte0
+ 153 0091 00        	.byte0
+ 154 0092 00        	.byte0
+ 155 0093 00        	.byte0
+ 156 0094 00        	.byte0
+ 157 0095 00        	.byte0
+ 158 0096 00        	.byte0
+ 159 0097 00        	.byte0
+ 160 0098 00        	.byte0
+ 161 0099 00        	.byte0
+ 162 009a 00        	.byte0
+ 163 009b 00        	.byte0
+ 164 009c 00        	.byte0
+ 165 009d 00        	.byte0
+ 166 009e 00        	.byte0
+ 167 009f 00        	.byte0
+ 168 00a0 00        	.byte0
+ 169 00a1 00        	.byte0
+ 170 00a2 00        	.byte0
+ 171 00a3 00        	.byte0
+ 172 00a4 00        	.byte0
+ 173 00a5 00        	.byte0
+68K GAS   			page 4
+
+
+ 174 00a6 00        	.byte0
+ 175 00a7 00        	.byte0
+ 176 00a8 00        	.byte0
+ 177 00a9 00        	.byte0
+ 178 00aa 00        	.byte0
+ 179 00ab 00        	.byte0
+ 180 00ac 00        	.byte0
+ 181 00ad 00        	.byte0
+ 182 00ae 00        	.byte0
+ 183 00af 00        	.byte0
+ 184 00b0 00        	.byte0
+ 185 00b1 00        	.byte0
+ 186 00b2 00        	.byte0
+ 187 00b3 00        	.byte0
+ 188 00b4 00        	.byte0
+ 189 00b5 00        	.byte0
+ 190 00b6 00        	.byte0
+ 191 00b7 00        	.byte0
+ 192 00b8 00        	.byte0
+ 193 00b9 00        	.byte0
+ 194 00ba 00        	.byte0
+ 195 00bb 00        	.byte0
+ 196 00bc 00        	.byte0
+ 197 00bd 00        	.byte0
+ 198 00be 00        	.byte0
+ 199 00bf 00        	.byte0
+ 200 00c0 0000 0000 	.zero64
+ 200      0000 0000 
+ 200      0000 0000 
+ 200      0000 0000 
+ 200      0000 0000 
+ 201               	.text
+ 202               	.align2
+ 203               	.globltolower
+ 205               	tolower:
+ 206 0000 4E56 0000 	link.w %fp,#0
+ 207 0004 202E 0008 	move.l 8(%fp),%d0
+ 208 0008 0680 0000 	add.l #_ctype,%d0
+ 208      0000 
+ 209 000e 2040      	move.l %d0,%a0
+ 210 0010 1010      	move.b (%a0),%d0
+ 211 0012 1000      	move.b %d0,%d0
+ 212 0014 0280 0000 	and.l #255,%d0
+ 212      00FF 
+ 213 001a 7204      	moveq #4,%d1
+ 214 001c C081      	and.l %d1,%d0
+ 215 001e 4A80      	tst.l %d0
+ 216 0020 6706      	jeq .L2
+ 217 0022 7020      	moveq #32,%d0
+ 218 0024 D1AE 0008 	add.l %d0,8(%fp)
+ 219               	.L2:
+ 220 0028 202E 0008 	move.l 8(%fp),%d0
+ 221 002c 4E5E      	unlk %fp
+ 222 002e 4E75      	rts
+ 224               	.align2
+ 225               	.globltoupper
+ 227               	toupper:
+68K GAS   			page 5
+
+
+ 228 0030 4E56 0000 	link.w %fp,#0
+ 229 0034 202E 0008 	move.l 8(%fp),%d0
+ 230 0038 0680 0000 	add.l #_ctype,%d0
+ 230      0000 
+ 231 003e 2040      	move.l %d0,%a0
+ 232 0040 1010      	move.b (%a0),%d0
+ 233 0042 1000      	move.b %d0,%d0
+ 234 0044 0280 0000 	and.l #255,%d0
+ 234      00FF 
+ 235 004a 7208      	moveq #8,%d1
+ 236 004c C081      	and.l %d1,%d0
+ 237 004e 4A80      	tst.l %d0
+ 238 0050 6706      	jeq .L4
+ 239 0052 70E0      	moveq #-32,%d0
+ 240 0054 D1AE 0008 	add.l %d0,8(%fp)
+ 241               	.L4:
+ 242 0058 202E 0008 	move.l 8(%fp),%d0
+ 243 005c 4E5E      	unlk %fp
+ 244 005e 4E75      	rts
+ 246               	.ident"GCC: (GNU) 4.5.1"
+ 247               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 6
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 ctype.c
+    {standard input}:7      .data:00000000 _ctype
+    {standard input}:205    .text:00000000 tolower
+    {standard input}:227    .text:00000030 toupper
+
+NO UNDEFINED SYMBOLS

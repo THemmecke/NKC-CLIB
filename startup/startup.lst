@@ -1,0 +1,1078 @@
+68K GAS   			page 1
+
+
+   1               	#include "../nkc/nkc.h"
+   0               	
+   0               	
+   1               	#ifndef __EQU_H
+   2               	#include "../nkc/macros.h"
+   1               	#ifndef __MACROS_H
+   2               	#define __MACROS_H
+   3               	
+   4               	
+   5               	/* DEBUG MACROS */
+   6               	#ifdef CONFIG_DEBUG_GIDE_S
+   7               	
+   8               	.macro dbg msg
+   9               	        writeln \msg
+  10               	.endm   
+  11               	
+  12               	.macro dbgwait
+  13               	        waitcr
+  14               	.endm
+  15               	
+  16               	
+  17               	#else
+  18               	.macro dbg msg
+  19               	.endm
+  20               	
+  21               	.macro dbgwait
+  22               	.endm
+  23               	#endif     
+  24               	
+  25               	/*
+  26               	   Ermittelt die PC-realtive effekive Addresse von var und legt sie in a0 ab.
+  27               	   Wird für 68000 gebraucht, da dieser nur 64KB Addressierung kennt:
+  28               		lea var(pc),a0 ; funktioniert i.A. nur ab 68020
+  29               		LEA32A0 var    ; erledigt das für den 68000
+  30               	
+  31               		Die Subroutine _LEA32A0 liegt in start00.S
+  32               	*/
+  33               	
+  34               	#ifdef M68000
+  35               	.macro LEA32A0 var
+  36               		move.l #\var,-(%sp)
+  37               		move.l #1f,-(%sp)
+  38               		jsr _LEA32A0
+  39               	1:	addq.l #8,%sp
+  40               	.endm
+  41               	
+  42               	.macro LEA32 var,reg
+  43               		move.l #\var,-(%sp)
+  44               		move.l #1f,-(%sp)
+  45               		jsr _LEA32A0
+  46               	1:	addq.l #8,%sp
+  47               		movea.l %a0,\reg
+  48               	.endm
+  49               	
+  50               	/* pea kann auch nur mit 16Bit Displacements ! i.e. "pea d16(pc)" */
+  51               	.macro _LEA var,reg
+  52               		pea #\var
+68K GAS   			page 2
+
+
+  53               		move.l (%sp)+,\reg
+  54               	.endm
+  55               	#endif
+  56               	
+  57               	
+  58               	/* Gibt Text an momentaner Cursor Position aus */
+  59               	.macro writeln  text             
+  60               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+  61               	#ifdef M68000
+  62               		LEA32A0 \text
+  63               	#else
+  64               	        lea \text,%a0
+  65               	#endif
+  66               	1:
+  67               	        move.b (%a0)+,%d0
+  68               	        beq 2f
+  69               	        moveq #_CO2,%d7
+  70               	        trap #1
+  71               	        bra 1b
+  72               	2:
+  73               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+  74               	.endm
+  75               	
+  76               	.macro prntdot             
+  77               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+  78               	        move.b #'.',%d0
+  79               	        moveq #_CO2,%d7
+  80               	        trap #1
+  81               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+  82               	.endm
+  83               	
+  84               	
+  85               	.macro crlf                      
+  86               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+  87               	        moveq #_CRLF,%d7
+  88               	        trap #1
+  89               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+  90               	.endm
+  91               	
+  92               	
+  93               	/* jumps to x,y position */
+  94               	
+  95               	.macro gotoxy x y           
+  96               	 	movem.l %a0-%a6/%d0-%d7,-(%a7)
+  97               	 	move.b #\x,%d1           /* d1=X (0..79)*/
+  98               	 	move.b #\y,%d2           /* d2=Y (0..23)*/
+  99               	 	moveq #_SETCURXY,%d7
+ 100               	 	trap #1
+ 101               	 	movem.l (%a7)+,%a0-%a6/%d0-%d7
+ 102               	.endm
+ 103               	
+ 104               	
+ 105               	.macro getxy x y           
+ 106               	 	movem.l %a0-%a6/%d0-%d7,-(%a7)
+ 107               	 	moveq #_GETCURXY,%d7
+ 108               	 	trap #1
+ 109               	 	move.b %d1,#\x           /* d1=X (0..79)*/
+68K GAS   			page 3
+
+
+ 110               	 	move.b %d2,#\y           /* d2=Y (0..23)*/
+ 111               	 	movem.l (%a7)+,%a0-%a6/%d0-%d7
+ 112               	.endm
+ 113               	
+ 114               	.macro writexy size x y text            /* gibt einen text an x/y position aus*/
+ 115               	                            	   	/* TextGrüsse,X,Y,TextAddr (Nullterminiert)*/
+ 116               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+ 117               	        move.b #\size,%d0
+ 118               	        move.w #\x,%d1
+ 119               	        move.w #\y,%d2
+ 120               	        lea \text,%a0
+ 121               	        moveq #_WRITE,%d7
+ 122               	        trap #1
+ 123               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+ 124               	.endm
+ 125               	
+ 126               	
+ 127               	
+ 128               	.macro clrscr                    /* loescht den Bildschirm */
+ 129               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+ 130               	        moveq #_CLRSCREEN,%d7
+ 131               	        trap #1
+ 132               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+ 133               	.endm
+ 134               	
+ 135               	
+ 136               	
+ 137               	
+ 138               	.macro prthex2  value                 	/* gibt 2stellige HEX Zahl aus*/
+ 139               	                                	/* IN: WERT*/
+ 140               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+ 141               	        move.l \value,%d0
+ 142               	        lea buffer(%pc),%a0
+ 143               	        moveq #_PRINT2X,%d7
+ 144               	        trap #1
+ 145               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+ 146               	.endm
+ 147               	
+ 148               	
+ 149               	.macro prthex8  value            /* gibt 8stellige Hex Zahl aus */
+ 150               	                                 /* In: WERT */
+ 151               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+ 152               	        move.l \value,%d0
+ 153               	#ifdef M68000
+ 154               		LEA32A0 buffer
+ 155               	#else
+ 156               	        lea buffer(%pc),%a0
+ 157               	#endif
+ 158               	        moveq #_PRINT8X,%d7
+ 159               	        trap #1
+ 160               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+ 161               	.endm
+ 162               	
+ 163               	.macro waitcr                    /* Wartet auf CR (Enter) */
+ 164               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+ 165               	1:
+ 166               	        moveq #_CI,%d7
+68K GAS   			page 4
+
+
+ 167               	        trap #1
+ 168               	        cmp.b #0xd,%d0
+ 169               	        bne.s 1b
+ 170               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+ 171               	.endm
+ 172               	
+ 173               	
+ 174               	.macro CMOS_READ index
+ 175               		movem.l %a0-%a1,-(%a7)
+ 176               		clr.l %d0
+ 177               		move.b \index,RTC_DS12887_INDEX.w
+ 178               		move.b RTC_DS12887_DATA.w,%d0
+ 179               		movem.l (%a7)+,%a0-%a1
+ 180               	.endm
+ 181               	
+ 182               	.macro BCD_TO_BIN
+ 183               		movem.l %d1,-(%a7)
+ 184               		move.l %d0,%d1
+ 185               		andi #0x0f,%d0
+ 186               		lsr #4,%d1
+ 187               		mulu #10,%d1
+ 188               		add %d1,%d0
+ 189               		movem.l (%a7)+,%d1
+ 190               	.endm
+ 191               	
+ 192               	.macro BIN_TO_BCD		/*ist zwar 2 Befehle länger, aber schneller und für alle 68xxx*/
+ 193               		movem.l %d1,-(%a7)
+ 194               		and.l #0xff,%d0		/*nur Byte gültig*/
+ 195               		divu #10,%d0
+ 196               		move %d0,%d1
+ 197               		lsl #4, %d1
+ 198               		swap %d0
+ 199               		add %d0, %d1
+ 200               		exg %d0, %d1
+ 201               		movem.l (%a7)+,%d1
+ 202               	.endm
+ 203               	
+   3               	
+   4               		.text
+   5               		.global _start,__rexit,__main,__getErrno
+   6               	/*	
+   7               	;
+   8               	; Main program
+   9               	;
+  10               	*/
+  11               	_start:
+  12               	
+  13               		// save old stackvalue
+  14               		
+  15 0000 41FB 0170 	        lea _OLDSTACK(%pc),%a0
+  15      0000 0000 
+  16 0008 208F      		move.l %sp,(%a0)	
+  17               	/*
+  18               	       writeln msg00(%pc)
+  19               	       
+  20               	       writeln msg08(%pc)
+  21               	       lea _start(%pc),%a0
+68K GAS   			page 5
+
+
+  22               	       prthex8 %a0
+  23               	       writeln buffer(%pc)
+  24               	       crlf
+  25               	       writeln msg09(%pc)
+  26               	       lea _sbss(%pc),%a0                 
+  27               	       prthex8 %a0
+  28               	       writeln buffer(%pc)
+  29               	       crlf
+  30               	       writeln msg24(%pc)
+  31               	       lea _ebss(%pc),%a0      
+  32               	       prthex8 %a0
+  33               	       writeln buffer(%pc)
+  34               	       crlf	
+  35               	       waitcr
+  36               	 */
+  37               	     
+  38               	/* Clear errno system variable */
+  39 000a 41FB 0170 		lea errno(%pc),%a0
+  39      0000 0000 
+  40 0012 20BC 0000 		movel	#0, (%a0)
+  40      0000 
+  41               	
+  42               	       
+  43 0018 61FF 0000 	       bsr.l relocate		// do program relocation 1st
+  43      0154 
+  44 001e 0C42 0000 	       cmp #0,%d2		// continue if successful
+  45 0022 6600 0116 	       bne __end		// exit otherwise
+  46               	       				// from now on all addresses are relocated !     			      
+  47               	       
+  48               	/*	
+  49               	;
+  50               	; Clear BSS
+  51               	;
+  52               	*/
+  53               			
+  54 0026 41FB 0170 		lea _sbss(%pc),%a0            
+  54      0000 0000 
+  55 002e 43FB 0170 	        lea _ebss(%pc),%a1      
+  55      0000 0000 
+  56               	       
+  57               	       /* 
+  58               	        writeln msg09(%pc)
+  59               	        prthex8 %a0
+  60               	        writeln buffer(%pc)
+  61               	        crlf
+  62               	        prthex8 %a1
+  63               	        writeln buffer(%pc)
+  64               	        crlf
+  65               	        waitcr
+  66               	        */
+  67               	LD2:
+  68 0036 20FC 0000 		movel	#0, (%a0)+
+  68      0000 
+  69 003c B3C8      		cmpal	%a0, %a1
+  70 003e 6200 FFF6 		bhi	LD2
+  71               	/*	
+  72               		writeln msg01(%pc)
+68K GAS   			page 6
+
+
+  73               	*/
+  74               	
+  75               	/*
+  76               	;
+  77               	;  Initialize HEAP
+  78               	;
+  79               	*/
+  80 0042 41FB 0170 		lea _ebss(%pc),%a0		/* save _HEAP variable (HEAP base) */
+  80      0000 0000 
+  81 004a 20BC 0000 		move.l #0,(%a0)	
+  81      0000 
+  82 0050 43FB 0170 		lea _HEAP(%pc),%a1
+  82      0000 0000 
+  83 0058 2288      		move.l %a0,(%a1)	/* _HEAP is already relocated, but... */
+  84               		
+  85 005a 7E3E      		moveq #62,%d7            /* get _RAM_TOP from JADOS */
+  86 005c 4E46      	        trap #6
+  87 005e 2008      	        move.l %a0,%d0
+  88 0060 41FB 0170 	        lea _RAM_TOP(%pc),%a0
+  88      0000 0000 
+  89 0068 2080      	        move.l %d0,(%a0)
+  90               	/*       
+  91               	       writeln msg25(%pc)       
+  92               	       prthex8 %d0
+  93               	       writeln buffer(%pc)
+  94               	       crlf	
+  95               	       waitcr
+  96               	*/
+  97               	       /*
+  98               	       	prthex8 _HEAP(%pc)
+  99               	       	writeln buffer(%pc)
+ 100               	       	writeln TAB(%pc)
+ 101               	       	prthex8 _RAM_TOP(%pc)
+ 102               	       	writeln buffer(%pc)
+ 103               	       	crlf
+ 104               	       	*/
+ 105               	       	
+ 106               	  /*     
+ 107               	       	writeln msg02(%pc)
+ 108               	*/
+ 109 006a 61FF 0000 		bsr.l mm_init        	/* init memory management */
+ 109      0000 
+ 110               		
+ 111               	/*	
+ 112               	;x
+ 113               	; Get command line  
+ 114               	; --> von JADOS mit getparm holen (bis zu 4 Parameter können übergeben werden)
+ 115               	*/
+ 116 0070 7E19      		moveq #25,%d7
+ 117 0072 4E46      		trap #6
+ 118               		/* %a0 zeigt auf Null-Terminierten Parameter String  */	
+ 119 0074 43FB 0170 		lea _CMDLINE(%pc),%a1				
+ 119      0000 0000 
+ 120 007c 12D8      	LD1:	move.b (%a0)+,(%a1)+	/* copy command line */
+ 121 007e 6600 FFFC 	        bne LD1
+ 122 0082 12BC 0000 	        move.b #0,(%a1)		/* terminating NULL */
+ 123               	        
+68K GAS   			page 7
+
+
+ 124 0086 43FB 0170 	        lea _CMDLINE(%pc),%a1
+ 124      0000 0000 
+ 125 008e 41FB 0170 	        lea _cmdline(%pc),%a0	/* set command line in argset.c */
+ 125      0000 0000 
+ 126 0096 2089      		move.l %a1,(%a0)
+ 127               		  
+ 128               	/*	
+ 129               	;
+ 130               	; Execute startup routines
+ 131               	;
+ 132               	*/
+ 133               	/*
+ 134               	startup/envset.c:#pragma startup envset 19
+ 135               	startup/argset.c:#pragma startup argset 19
+ 136               	string/mbtowc.c:#pragma startup mbinit 120
+ 137               	string/wctomb.c:#pragma startup wcinit 120
+ 138               	io/fclose.c:#pragma startup fileinit 120
+ 139               	procont/signal.c:#pragma startup siginit 128
+ 140               	*/
+ 141               	
+ 142               	/*
+ 143               		bsr.l envset	; Umgebungsvariable setzen 	(Speicher allokieren 4 Bytes in _env_arr)	
+ 144               		bsr.l argset	; argc, argv holen 		(Speicher allokieren 4 Bytes in _argv_arr)
+ 145               		bsr.l mbinit	; -> string/mbtowc.c
+ 146               		bsr.l wcinit	; -> string/wctomb.c
+ 147               		bsr.l fileinit	; -> io/fclose.c (ruft _ll_init in nkc/llopen.S)
+ 148               		bsr.l siginit	; -> procont/signal.c
+ 149               	*/
+ 150               	#ifdef CONFIG_FS_NKC
+ 151 0098 4280      		clr.l %d0
+ 152 009a 61FF 0000 		bsr.l _nkc_get_drive
+ 152      0000 
+ 153 00a0 41FB 0170 		lea _DRIVE(%pc),%a0
+ 153      0000 0000 
+ 154 00a8 1080      		move.b %d0,(%a0)
+ 155               	#endif
+ 156               		
+ 157 00aa 61FF 0000 		bsr.l envset			
+ 157      0000 
+ 158 00b0 61FF 0000 		bsr.l argset	
+ 158      0000 
+ 159 00b6 61FF 0000 		bsr.l mbinit
+ 159      0000 
+ 160 00bc 61FF 0000 		bsr.l wcinit	
+ 160      0000 
+ 161 00c2 61FF 0000 		bsr.l fileinit
+ 161      0000 
+ 162 00c8 61FF 0000 		bsr.l timerinit
+ 162      0000 
+ 163 00ce 61FF 0000 		bsr.l siginit
+ 163      0000 
+ 164               	/*	
+ 165               	;
+ 166               	; Call main
+ 167               	;
+ 168               	*/	
+ 169               	
+68K GAS   			page 8
+
+
+ 170               	/*
+ 171               		writeln msg05(%pc)
+ 172               	*/	
+ 173 00d4 2F3B 0170 		move.l (_env_arr,%pc),-(%sp)
+ 173      0000 0000 
+ 174 00dc 2F3B 0170 		move.l (_argv_arr,%pc),-(%sp)
+ 174      0000 0000 
+ 175 00e4 2F3B 0170 		move.l (_argc,%pc),-(%sp)		
+ 175      0000 0000 
+ 176 00ec 61FF 0000 		bsr.l	main		/* Hauptprogramm aufrufen */
+ 176      0000 
+ 177 00f2 DFFC 0000 		add.l #12,%sp		/* Stack aufräumen */
+ 177      000C 
+ 178 00f8 6000 0040 		bra __end	
+ 179               	
+ 180               	/* int * __getErrno(void); */
+ 181               	
+ 182               	__getErrno:
+ 183 00fc 203B 0170 		move.l errno(%pc),%d0
+ 183      0000 0000 
+ 184 0104 4E75      		rts
+ 185               	/*
+ 186               	;
+ 187               	; exit/abort comes here 
+ 188               	;	(buggy, abort should not execute rundown routines in standard C)
+ 189               	*/
+ 190               	__rexit:
+ 191               	
+ 192 0106 48E7 FFFE 		writeln msg23(%pc) 
+ 192      41FB 0170 
+ 192      0000 0000 
+ 192      1018 6700 
+ 192      000A 7E21 
+ 193 0124 48E7 FFFE 		crlf      	
+ 193      7E63 4E41 
+ 193      4CDF 7FFF 
+ 194               	       	//waitcr	
+ 195               	       	
+ 196               	       	
+ 197               	       	// restore stack
+ 198 0130 41FB 0170 	   	lea _OLDSTACK(%pc),%a0
+ 198      0000 0000 
+ 199 0138 2E50      		move.l (%a0),%sp
+ 200               		//bra __end // do not execute rundown routines
+ 201               	
+ 202               	/*
+ 203               	;
+ 204               	; Execute rundown routines
+ 205               	;
+ 206               	*/
+ 207               	/*
+ 208               	procont/atexit.c:#pragma rundown procexit 128
+ 209               	io/fclose.c:#pragma rundown closeall 10
+ 210               	alloc/malloc.c:#pragma rundown memdelete 0
+ 211               	*/
+ 212               		/*
+ 213               		bsr.l procexit (call registered functions -> see atexit.c)
+68K GAS   			page 9
+
+
+ 214               		bsr.l closeall (close all fileandles)
+ 215               		bsr.l memdelete
+ 216               		*/
+ 217               		
+ 218               	//	bra __end
+ 219               		
+ 220               	
+ 221               	/*	
+ 222               	;
+ 223               	; handle code/data fixups for PIC mode
+ 224               	;
+ 225               	*/
+ 226               	__end:
+ 227 013a 61FF 0000 		bsr.l closeall
+ 227      0000 
+ 228               		//bsr.l memdelete
+ 229 0140 61FF 0000 		bsr.l mm_free
+ 229      0000 
+ 230 0146 61FF 0000 		bsr.l timerclose
+ 230      0000 
+ 231               		
+ 232 014c 48E7 FFFE 		writeln msg17(%pc)
+ 232      41FB 0170 
+ 232      0000 0000 
+ 232      1018 6700 
+ 232      000A 7E21 
+ 233 016a 4E75      		rts
+ 234               		
+ 235               	/*	
+ 236               	;
+ 237               	; Handle startup/rundown routines
+ 238               	;
+ 239               	*/
+ 240               	
+ 241               	/*
+ 242               	; This is called as the first thing from the C main routine
+ 243               	*/
+ 244               	
+ 245               	__main:
+ 246               		
+ 247 016c 4E75      	 	rts
+ 248               	 	
+ 249               	relocate:
+ 250               	
+ 251 016e 41FA FE90 		lea _start(%pc),%a0
+ 252 0172 43FB 0170 		lea _sbss(%pc),%a1	
+ 252      0000 0000 
+ 253 017a 45FB 0170 		lea _RAM_TOP(%pc),%a2
+ 253      0000 0000 
+ 254               		
+ 255 0182 B3D2      	rel00:  cmpa.l (%a2),%a1
+ 256 0184 6F00 02D0 		ble rel02      
+ 257 0188 0C99 DEAD 		cmp.l #0xDEADBEAF,(%a1)+				
+ 257      BEAF 
+ 258 018e 6600 FFF2 		bne rel00			
+ 259 0192 0C99 5AA5 	    cmp.l #0x5AA58001,(%a1)+	// check MAGIC
+ 259      8001 
+68K GAS   			page 10
+
+
+ 260 0198 6600 FFE8 	    bne rel00       	
+ 261 019c 0C99 DEAD 	    cmp.l #0xDEADBEAF,(%a1)+	// check MAGIC
+ 261      BEAF 
+ 262 01a2 6600 FFDE 	    bne rel00
+ 263               	       
+ 264               	        			// %a1->LoadAddress ( die ist erst mal uninteressant, weil alle Werte relativ 0 im BSS S
+ 265 01a6 91D9      		suba.l (%a1)+,%a0	// sub linker load address (linkers _start ) from current _start (%a0 = %a0 - (%
+ 266 01a8 B1FC 0000 		cmpa.l #0,%a0
+ 266      0000 
+ 267 01ae 6600 0006 		bne rel01
+ 268               	/*	
+ 269               		writeln msg18(%pc)	// "No relocation nessecary"
+ 270               		crlf
+ 271               		waitcr			// wait for ENTER
+ 272               	*/
+ 273 01b2 4282      		clr.l %d2
+ 274 01b4 4E75      		rts			
+ 275               	
+ 276               		
+ 277               	
+ 278               	rel01:	
+ 279               	        
+ 280 01b6 2019      	  	move.l (%a1)+,%d0	// do relocations %d0 = number of relocations
+ 281               	  	
+ 282 01b8 6700 0278 	  	beq rel07               // panic !, there is no relocation information ! 
+ 283               	
+ 284 01bc 48E7 FFFE 		writeln msg13(%pc)	// Number of relocations
+ 284      41FB 0170 
+ 284      0000 0000 
+ 284      1018 6700 
+ 284      000A 7E21 
+ 285 01da 48E7 FFFE 		prthex8 %d0				
+ 285      2000 41FB 
+ 285      0170 0000 
+ 285      0000 7E2C 
+ 285      4E41 4CDF 
+ 286 01f0 48E7 FFFE 	       	writeln buffer(%pc)       	
+ 286      41FB 0170 
+ 286      0000 0000 
+ 286      1018 6700 
+ 286      000A 7E21 
+ 287 020e 48E7 FFFE 	       	crlf
+ 287      7E63 4E41 
+ 287      4CDF 7FFF 
+ 288               		
+ 289 021a 5380      		sub.l #1,%d0		// adjust for dbra
+ 290 021c 41FA FDE2 	        lea _start(%pc),%a0     // current start address -> a0
+ 291               	        
+ 292               	rel04:				// %a1->Entry; %a1+0=Offset, %a1+4=Type, %a1+8=Value, %a1+12=next Entry
+ 293               	
+ 294               	
+ 295 0220 0CA9 0000 		cmp.l #1,4(%a1)		// type = R_68K_32 ?
+ 295      0001 0004 
+ 296 0228 6600 01D4 		bne rel05
+ 297               		
+ 298               		
+ 299 022c 2229 0008 		move.l 8(%a1),%d1	// load address value into %d1	
+68K GAS   			page 11
+
+
+ 300 0230 D288      		add.l %a0,%d1		// add program start differenece	%d1 = %d1 + %a0
+ 301 0232 2451      		movea.l 0(%a1),%a2	// load offset value into %a2
+ 302 0234 D5C8      		adda.l %a0,%a2		// and add program start address diff   %a2 = %a2 + %a0
+ 303               		
+ 304 0236 2481      		move.l %d1,(%a2)	// do the relocation
+ 305               		
+ 306 0238 B292      		cmp.l (%a2),%d1         // DEBUG: don't relocate, only check ...
+ 307 023a 6700 01E6 	        beq rel06               // and continue to next reloc if ok
+ 308               	                                // otherwise print info about relocation
+ 309               	
+ 310 023e 48E7 FFFE 	        writeln msg26(%pc)	// Type ...
+ 310      41FB 0170 
+ 310      0000 0000 
+ 310      1018 6700 
+ 310      000A 7E21 
+ 311 025c 48E7 FFFE 		prthex8 4(%a1)		
+ 311      2029 0004 
+ 311      41FB 0170 
+ 311      0000 0000 
+ 311      7E2C 4E41 
+ 312 0274 48E7 FFFE 		writeln buffer(%pc)
+ 312      41FB 0170 
+ 312      0000 0000 
+ 312      1018 6700 
+ 312      000A 7E21 
+ 313 0292 48E7 FFFE 		writeln msg27(%pc)	// at ...
+ 313      41FB 0170 
+ 313      0000 0000 
+ 313      1018 6700 
+ 313      000A 7E21 
+ 314 02b0 48E7 FFFE 		prthex8 0(%a1)		
+ 314      2011 41FB 
+ 314      0170 0000 
+ 314      0000 7E2C 
+ 314      4E41 4CDF 
+ 315 02c6 48E7 FFFE 	       	writeln buffer(%pc)
+ 315      41FB 0170 
+ 315      0000 0000 
+ 315      1018 6700 
+ 315      000A 7E21 
+ 316 02e4 48E7 FFFE 		writeln msg28(%pc)	// value  ...
+ 316      41FB 0170 
+ 316      0000 0000 
+ 316      1018 6700 
+ 316      000A 7E21 
+ 317 0302 48E7 FFFE 		prthex8 8(%a1)		
+ 317      2029 0008 
+ 317      41FB 0170 
+ 317      0000 0000 
+ 317      7E2C 4E41 
+ 318 031a 48E7 FFFE 	       	writeln buffer(%pc)
+ 318      41FB 0170 
+ 318      0000 0000 
+ 318      1018 6700 
+ 318      000A 7E21 
+ 319 0338 48E7 FFFE 	       	writeln msg29(%pc)	// offset  ...
+ 319      41FB 0170 
+68K GAS   			page 12
+
+
+ 319      0000 0000 
+ 319      1018 6700 
+ 319      000A 7E21 
+ 320 0356 48E7 FFFE 	       	prthex8 %a0             
+ 320      2008 41FB 
+ 320      0170 0000 
+ 320      0000 7E2C 
+ 320      4E41 4CDF 
+ 321 036c 48E7 FFFE 	       	writeln buffer(%pc)    	
+ 321      41FB 0170 
+ 321      0000 0000 
+ 321      1018 6700 
+ 321      000A 7E21 
+ 322 038a 48E7 FFFE 	        writeln msg30(%pc)	// current value at offset  ...
+ 322      41FB 0170 
+ 322      0000 0000 
+ 322      1018 6700 
+ 322      000A 7E21 
+ 323 03a8 48E7 FFFE 	       	prthex8 (%a2)             
+ 323      2012 41FB 
+ 323      0170 0000 
+ 323      0000 7E2C 
+ 323      4E41 4CDF 
+ 324 03be 48E7 FFFE 	       	writeln buffer(%pc)
+ 324      41FB 0170 
+ 324      0000 0000 
+ 324      1018 6700 
+ 324      000A 7E21 
+ 325 03dc 48E7 FFFE 	       	crlf      	
+ 325      7E63 4E41 
+ 325      4CDF 7FFF 
+ 326 03e8 48E7 FFFE 		waitcr
+ 326      7E0C 4E41 
+ 326      0C00 000D 
+ 326      66F6 4CDF 
+ 326      7FFF 
+ 327               	        
+ 328 03fa 6000 0026 		bra rel06
+ 329               			
+ 330 03fe 48E7 FFFE 	rel05:	writeln msg14(%pc)	// unsupported relocation
+ 330      41FB 0170 
+ 330      0000 0000 
+ 330      1018 6700 
+ 330      000A 7E21 
+ 331               	       	
+ 332 041c 7401      	       	move.l #1,%d2		// set error flag
+ 333               		//bra rel06		// for now we go through all the relocs (DEBUG)
+ 334 041e 6000 0074 	       	bra rel03		// and exit       	       	
+ 335               	       	
+ 336 0422 D3FC 0000 	rel06: 	add.l #12,%a1		// go to next relocation
+ 336      000C 
+ 337 0428 51C8 FDF6 	  	dbra %d0,rel04  	  		
+ 338 042c 7400      	  	move.l #0,%d2		// clear error flag
+ 339 042e 6000 0064 	  	bra rel03     		// and exit (success)
+ 340               	  	
+ 341 0432 48E7 FFFE 	rel07:  writeln msg31(%pc)      // relocation info needed but not found !
+ 341      41FB 0170 
+68K GAS   			page 13
+
+
+ 341      0000 0000 
+ 341      1018 6700 
+ 341      000A 7E21 
+ 342 0450 7401      	 	move.l #1,%d2		// set error flag
+ 343 0452 6000 0040 	  	bra rel03		// and exit
+ 344               	  	  	
+ 345 0456 48E7 FFFE 	rel02:	writeln msg12(%pc)      // print >Magic not found<
+ 345      41FB 0170 
+ 345      0000 0000 
+ 345      1018 6700 
+ 345      000A 7E21 
+ 346 0474 48E7 FFFE 		crlf      	
+ 346      7E63 4E41 
+ 346      4CDF 7FFF 
+ 347 0480 48E7 FFFE 	       	waitcr
+ 347      7E0C 4E41 
+ 347      0C00 000D 
+ 347      66F6 4CDF 
+ 347      7FFF 
+ 348 0492 7401      	       	move.l #1,%d2		// set error flag
+ 349               	       	
+ 350               	rel03:       	
+ 351 0494 48E7 FFFE 		 writeln msg15(%pc)       
+ 351      41FB 0170 
+ 351      0000 0000 
+ 351      1018 6700 
+ 351      000A 7E21 
+ 352 04b2 48E7 FFFE 	       waitcr
+ 352      7E0C 4E41 
+ 352      0C00 000D 
+ 352      66F6 4CDF 
+ 352      7FFF 
+ 353               	       	
+ 354 04c4 4E75      		rts 	
+ 355               		
+ 356               		
+ 357               	
+ 358               			
+ 359               	 	
+ 360               		.data
+ 361               		.global _HEAP,_RAM_TOP,_CMDLINE,_DRIVE,errno
+ 362               		
+ 363               		
+ 364 0000 0000 0000 	errno:		ds.l 1
+ 365 0004 0000 0000 	_HEAP:		ds.l 1
+ 366 0008 0000 0000 	_RAM_TOP:	ds.l 1
+ 367 000c 0000 0000 	_OLDSTACK:	ds.l 1
+ 368               	
+ 369 0010 00        	_DRIVE:		ds.b 1
+ 370 0011 0000 0000 	_CMDLINE:	ds.b 255
+ 370      0000 0000 
+ 370      0000 0000 
+ 370      0000 0000 
+ 370      0000 0000 
+ 371               	
+ 372               	
+ 373 0110 2020 2020 	TAB:	.asciz "    "
+68K GAS   			page 14
+
+
+ 373      00
+ 374               	
+ 375 0115 2800      	OPEN_BR: .asciz "("
+ 376 0117 2900      	CLOSE_BR: .asciz ")"
+ 377 0119 3078 00   	HEX_PREFIX: .asciz "0x"
+ 378               	
+ 379 011c 204E 4B43 	msg00:	.ascii " NKC-CLIB (C) 2014 Torsten Hemmecke" 	
+ 379      2D43 4C49 
+ 379      4220 2843 
+ 379      2920 3230 
+ 379      3134 2054 
+ 380 013f 0D0A 00   		.byte 0x0d,0x0a,0x00
+ 381               		
+ 382 0142 2042 5353 	msg01:	.ascii " BSS segment initailized" 	
+ 382      2073 6567 
+ 382      6D65 6E74 
+ 382      2069 6E69 
+ 382      7461 696C 
+ 383 015a 0D0A 00   		.byte 0x0d,0x0a,0x00	
+ 384               		
+ 385 015d 2048 4541 	msg02:	.ascii " HEAP calculated ...." 	
+ 385      5020 6361 
+ 385      6C63 756C 
+ 385      6174 6564 
+ 385      202E 2E2E 
+ 386 0172 0D0A 00   		.byte 0x0d,0x0a,0x00
+ 387               		
+ 388 0175 202E 2E2E 	msg03:	.ascii " ...and initialized" 	
+ 388      616E 6420 
+ 388      696E 6974 
+ 388      6961 6C69 
+ 388      7A65 64
+ 389 0188 0D0A 00   		.byte 0x0d,0x0a,0x00	
+ 390               		
+ 391 018b 2061 7267 	msg04:	.ascii " args and env copied to program area" 	
+ 391      7320 616E 
+ 391      6420 656E 
+ 391      7620 636F 
+ 391      7069 6564 
+ 392 01af 0D0A 00   		.byte 0x0d,0x0a,0x00			
+ 393               	
+ 394 01b2 2073 7461 	msg05:	.ascii " startup routines executed, now calling main" 	
+ 394      7274 7570 
+ 394      2072 6F75 
+ 394      7469 6E65 
+ 394      7320 6578 
+ 395 01de 0D0A 0D0A 		.byte 0x0d,0x0a,0x0d,0x0a,0x00	
+ 395      00
+ 396               		
+ 397 01e3 2066 616B 	msg06:	.ascii " fake routine called from main, returning immediately" 	
+ 397      6520 726F 
+ 397      7574 696E 
+ 397      6520 6361 
+ 397      6C6C 6564 
+ 398 0218 0D0A 00   		.byte 0x0d,0x0a,0x00	
+ 399               		
+ 400 021b 2065 7865 	msg07:	.ascii " executing rundown routines...bye bye..." 	
+68K GAS   			page 15
+
+
+ 400      6375 7469 
+ 400      6E67 2072 
+ 400      756E 646F 
+ 400      776E 2072 
+ 401 0243 0D0A 00   		.byte 0x0d,0x0a,0x00		
+ 402               		
+ 403 0246 206C 6F61 	msg08:	.ascii " load address : 0x" 	
+ 403      6420 6164 
+ 403      6472 6573 
+ 403      7320 3A20 
+ 403      3078 
+ 404 0258 00        		.byte 0x00	
+ 405               		
+ 406 0259 2062 7373 	msg09:	.ascii " bss starts at: 0x" 	
+ 406      2073 7461 
+ 406      7274 7320 
+ 406      6174 3A20 
+ 406      3078 
+ 407 026b 00        		.byte 0x00	
+ 408               		
+ 409 026c 2052 656C 	msg10:	.ascii " Relocation Table:" 	
+ 409      6F63 6174 
+ 409      696F 6E20 
+ 409      5461 626C 
+ 409      653A 
+ 410 027e 0D0A 0D0A 		.byte 0x0d,0x0a,0x0d,0x0a
+ 411 0282 206F 6666 		.ascii " offset    type       value"
+ 411      7365 7420 
+ 411      2020 2074 
+ 411      7970 6520 
+ 411      2020 2020 
+ 412 029d 0D0A 00   		.byte 0x0d,0x0a,0x00
+ 413               		
+ 414 02a0 204D 6167 	msg11: 	.ascii " Magic found"
+ 414      6963 2066 
+ 414      6F75 6E64 
+ 415 02ac 0D0A 00   		.byte 0x0d,0x0a,0x00
+ 416               	
+ 417 02af 204D 6167 	msg12: 	.ascii " Magic not found"
+ 417      6963 206E 
+ 417      6F74 2066 
+ 417      6F75 6E64 
+ 418 02bf 0D0A 00   		.byte 0x0d,0x0a,0x00
+ 419               			
+ 420 02c2 206E 756D 	msg13: 	.ascii " number of relocations: 0x"
+ 420      6265 7220 
+ 420      6F66 2072 
+ 420      656C 6F63 
+ 420      6174 696F 
+ 421 02dc 00        		.byte 0x00
+ 422               		
+ 423 02dd 2075 6E73 	msg14: 	.ascii " unsupported relocation ! "
+ 423      7570 706F 
+ 423      7274 6564 
+ 423      2072 656C 
+ 423      6F63 6174 
+ 424 02f7 0D0A 00   		.byte 0x0d,0x0a,0x00	
+68K GAS   			page 16
+
+
+ 425               		
+ 426 02fa 2052 656C 	msg15: 	.ascii " Relocations done ! "
+ 426      6F63 6174 
+ 426      696F 6E73 
+ 426      2064 6F6E 
+ 426      6520 2120 
+ 427 030e 0D0A 00   		.byte 0x0d,0x0a,0x00	
+ 428               		
+ 429 0311 206C 6F61 	msg16:	.ascii " loading...."
+ 429      6469 6E67 
+ 429      2E2E 2E2E 
+ 430 031d 0D0A 00   		.byte 0x0d,0x0a,0x00	
+ 431               		
+ 432 0320 0D0A 0D0A 	msg17:	.byte 0x0d,0x0a,0x0d,0x0a
+ 433 0324 2065 7869 		.ascii " exit..."
+ 433      742E 2E2E 
+ 434 032c 0D0A 00   		.byte 0x0d,0x0a,0x00	
+ 435               	
+ 436 032f 206E 6F20 	msg18:	.ascii " no relocation necessary"
+ 436      7265 6C6F 
+ 436      6361 7469 
+ 436      6F6E 206E 
+ 436      6563 6573 
+ 437 0347 0D0A 00   		.byte 0x0d,0x0a,0x00
+ 438               	
+ 439 034a 2063 6F6D 	msg19:	.ascii " compiled for address: 0x"
+ 439      7069 6C65 
+ 439      6420 666F 
+ 439      7220 6164 
+ 439      6472 6573 
+ 440 0363 00        		.byte 0x00
+ 441               	
+ 442 0364 2041 4444 	msg20:	.ascii " ADDR 0x"
+ 442      5220 3078 
+ 443 036c 00        		.byte 0x00
+ 444 036d 203D 2030 	msg21:	.ascii " = 0x"
+ 444      78
+ 445 0372 00        		.byte 0x00
+ 446 0373 202D 2D2D 	msg22:	.ascii " ---> 0x"
+ 446      3E20 3078 
+ 447 037b 00        		.byte 0x00	
+ 448 037c 205F 5F72 	msg23:	.ascii " __rexit ...." 	
+ 448      6578 6974 
+ 448      202E 2E2E 
+ 448      2E
+ 449 0389 0D0A 00   		.byte 0x0d,0x0a,0x00	
+ 450 038c 2062 7373 	msg24:	.ascii " bss ends (HEAP starts) at: 0x" 	
+ 450      2065 6E64 
+ 450      7320 2848 
+ 450      4541 5020 
+ 450      7374 6172 
+ 451 03aa 00        		.byte 0x00
+ 452 03ab 2052 414D 	msg25:	.ascii " RAM_TOP at: 0x" 	
+ 452      5F54 4F50 
+ 452      2061 743A 
+ 452      2030 78
+ 453 03ba 00        		.byte 0x00									
+68K GAS   			page 17
+
+
+ 454               	
+ 455 03bb 2054 793A 	msg26:	.ascii " Ty: 0x" 	
+ 455      2030 78
+ 456 03c2 00        		.byte 0x00	
+ 457 03c3 2061 743A 	msg27:	.ascii " at: 0x" 	
+ 457      2030 78
+ 458 03ca 00        		.byte 0x00	
+ 459 03cb 2076 616C 	msg28:	.ascii " val: 0x" 	
+ 459      3A20 3078 
+ 460 03d3 00        		.byte 0x00
+ 461 03d4 206F 6666 	msg29:	.ascii " off: 0x" 	
+ 461      3A20 3078 
+ 462 03dc 00        		.byte 0x00
+ 463 03dd 2030 78   	msg30:	.ascii " 0x" 	
+ 464 03e0 00        		.byte 0x00		
+ 465 03e1 2072 656C 	msg31:	.ascii " relocation info needed but not found !" 	
+ 465      6F63 6174 
+ 465      696F 6E20 
+ 465      696E 666F 
+ 465      206E 6565 
+ 466 0408 0D0A 00   		.byte 0x0d,0x0a,0x00	
+ 467               	
+ 468               	
+ 469 040b 0000 0000 	buffer:	ds.b 255		
+ 469      0000 0000 
+ 469      0000 0000 
+ 469      0000 0000 
+ 469      0000 0000 
+68K GAS   			page 18
+
+
+DEFINED SYMBOLS
+           start20.S:11     .text:00000000 _start
+           start20.S:190    .text:00000106 __rexit
+           start20.S:245    .text:0000016c __main
+           start20.S:182    .text:000000fc __getErrno
+           start20.S:367    .data:0000000c _OLDSTACK
+           start20.S:364    .data:00000000 errno
+           start20.S:249    .text:0000016e relocate
+           start20.S:226    .text:0000013a __end
+           start20.S:67     .text:00000036 LD2
+           start20.S:365    .data:00000004 _HEAP
+           start20.S:366    .data:00000008 _RAM_TOP
+           start20.S:370    .data:00000011 _CMDLINE
+           start20.S:120    .text:0000007c LD1
+           start20.S:369    .data:00000010 _DRIVE
+           start20.S:448    .data:0000037c msg23
+           start20.S:432    .data:00000320 msg17
+           start20.S:255    .text:00000182 rel00
+           start20.S:345    .text:00000456 rel02
+           start20.S:278    .text:000001b6 rel01
+           start20.S:341    .text:00000432 rel07
+           start20.S:420    .data:000002c2 msg13
+           start20.S:469    .data:0000040b buffer
+           start20.S:292    .text:00000220 rel04
+           start20.S:330    .text:000003fe rel05
+           start20.S:336    .text:00000422 rel06
+           start20.S:455    .data:000003bb msg26
+           start20.S:457    .data:000003c3 msg27
+           start20.S:459    .data:000003cb msg28
+           start20.S:461    .data:000003d4 msg29
+           start20.S:463    .data:000003dd msg30
+           start20.S:423    .data:000002dd msg14
+           start20.S:350    .text:00000494 rel03
+           start20.S:465    .data:000003e1 msg31
+           start20.S:417    .data:000002af msg12
+           start20.S:426    .data:000002fa msg15
+           start20.S:373    .data:00000110 TAB
+           start20.S:375    .data:00000115 OPEN_BR
+           start20.S:376    .data:00000117 CLOSE_BR
+           start20.S:377    .data:00000119 HEX_PREFIX
+           start20.S:379    .data:0000011c msg00
+           start20.S:382    .data:00000142 msg01
+           start20.S:385    .data:0000015d msg02
+           start20.S:388    .data:00000175 msg03
+           start20.S:391    .data:0000018b msg04
+           start20.S:394    .data:000001b2 msg05
+           start20.S:397    .data:000001e3 msg06
+           start20.S:400    .data:0000021b msg07
+           start20.S:403    .data:00000246 msg08
+           start20.S:406    .data:00000259 msg09
+           start20.S:409    .data:0000026c msg10
+           start20.S:414    .data:000002a0 msg11
+           start20.S:429    .data:00000311 msg16
+           start20.S:436    .data:0000032f msg18
+           start20.S:439    .data:0000034a msg19
+           start20.S:442    .data:00000364 msg20
+           start20.S:444    .data:0000036d msg21
+68K GAS   			page 19
+
+
+           start20.S:446    .data:00000373 msg22
+           start20.S:450    .data:0000038c msg24
+           start20.S:452    .data:000003ab msg25
+
+UNDEFINED SYMBOLS
+_sbss
+_ebss
+mm_init
+_cmdline
+_nkc_get_drive
+envset
+argset
+mbinit
+wcinit
+fileinit
+timerinit
+siginit
+_env_arr
+_argv_arr
+_argc
+main
+closeall
+mm_free
+timerclose

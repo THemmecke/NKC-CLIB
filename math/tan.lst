@@ -1,0 +1,31 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               	
+   3               		.global tan
+   4               	
+   5               	/*	double tan(double t)
+   6               	*
+   7               	*	Rückgabe: tangens in %fp0, falls FPU
+   8               	*
+   9               	*
+  10               	*
+  11               	*/
+  12               	
+  13               	
+  14               	tan:
+  15               	
+  16 0000 F22F 540F 	      	ftan.d	4(%sp),%FP0
+  16      0004 
+  17               	
+  18 0006 4E75      		rts	
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+               tan.S:14     .text:00000000 tan
+
+NO UNDEFINED SYMBOLS

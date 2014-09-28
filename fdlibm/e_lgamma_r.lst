@@ -1,0 +1,2938 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"e_lgamma_r.c"
+   3               	.section.rodata
+   4               	.align2
+   7               	two52:
+   8 0000 4330 0000 	.long1127219200
+   9 0004 0000 0000 	.long0
+  10               	.align2
+  13               	half:
+  14 0008 3FE0 0000 	.long1071644672
+  15 000c 0000 0000 	.long0
+  16               	.align2
+  19               	one:
+  20 0010 3FF0 0000 	.long1072693248
+  21 0014 0000 0000 	.long0
+  22               	.align2
+  25               	pi:
+  26 0018 4009 21FB 	.long1074340347
+  27 001c 5444 2D18 	.long1413754136
+  28               	.align2
+  31               	a0:
+  32 0020 3FB3 C467 	.long1068745831
+  33 0024 E37D B0C8 	.long-478302008
+  34               	.align2
+  37               	a1:
+  38 0028 3FD4 A34C 	.long1070900044
+  39 002c C4A6 0FAD 	.long-995749971
+  40               	.align2
+  43               	a2:
+  44 0030 3FB1 3E00 	.long1068580352
+  45 0034 1A55 62A7 	.long441803431
+  46               	.align2
+  49               	a3:
+  50 0038 3F95 1322 	.long1066734370
+  51 003c AC92 547B 	.long-1399696261
+  52               	.align2
+  55               	a4:
+  56 0040 3F7E 404F 	.long1065238607
+  57 0044 B68F EFE8 	.long-1232080920
+  58               	.align2
+  61               	a5:
+  62 0048 3F67 ADD8 	.long1063759320
+  63 004c CCB7 926B 	.long-860384661
+  64               	.align2
+  67               	a6:
+  68 0050 3F53 8A94 	.long1062439572
+  69 0054 116F 3F5D 	.long292503389
+  70               	.align2
+  73               	a7:
+  74 0058 3F40 B6C6 	.long1061205702
+  75 005c 89B9 9C00 	.long-1984324608
+  76               	.align2
+  79               	a8:
+  80 0060 3F2C F2EC 	.long1059910380
+  81 0064 ED10 E54D 	.long-317659827
+  82               	.align2
+  85               	a9:
+68K GAS   			page 2
+
+
+  86 0068 3F1C 5088 	.long1058820232
+  87 006c 987D FB07 	.long-1736574201
+  88               	.align2
+  91               	a10:
+  92 0070 3EFA 7074 	.long1056600180
+  93 0074 428C FA52 	.long1116535378
+  94               	.align2
+  97               	a11:
+  98 0078 3F07 858E 	.long1057457550
+  99 007c 90A4 5837 	.long-1868277705
+ 100               	.align2
+ 103               	tc:
+ 104 0080 3FF7 62D8 	.long1073177304
+ 105 0084 6356 BE3F 	.long1666629183
+ 106               	.align2
+ 109               	tf:
+ 110 0088 BFBF 19B9 	.long-1077995079
+ 111 008c BCC3 8A42 	.long-1128035774
+ 112               	.align2
+ 115               	tt:
+ 116 0090 BC50 C7CA 	.long-1135556662
+ 117 0094 A48A 971F 	.long-1534421217
+ 118               	.align2
+ 121               	t0:
+ 122 0098 3FDE F72B 	.long1071576875
+ 123 009c C8EE 38A2 	.long-923912030
+ 124               	.align2
+ 127               	t1:
+ 128 00a0 BFC2 E427 	.long-1077746649
+ 129 00a4 8DC6 C509 	.long-1916353271
+ 130               	.align2
+ 133               	t2:
+ 134 00a8 3FB0 8B42 	.long1068534594
+ 135 00ac 94D5 419B 	.long-1797963365
+ 136               	.align2
+ 139               	t3:
+ 140 00b0 BFA0 C9A8 	.long-1079981656
+ 141 00b4 DF35 B713 	.long-550127853
+ 142               	.align2
+ 145               	t4:
+ 146 00b8 3F92 66E7 	.long1066559207
+ 147 00bc 970A F9EC 	.long-1760888340
+ 148               	.align2
+ 151               	t5:
+ 152 00c0 BF85 1F9F 	.long-1081794657
+ 153 00c4 BA91 EC6A 	.long-1164841878
+ 154               	.align2
+ 157               	t6:
+ 158 00c8 3F78 FCE0 	.long1064893664
+ 159 00cc E370 E344 	.long-479141052
+ 160               	.align2
+ 163               	t7:
+ 164 00d0 BF6E 2EFF 	.long-1083298049
+ 165 00d4 B3E9 14D7 	.long-1276570409
+ 166               	.align2
+ 169               	t8:
+ 170 00d8 3F62 82D3 	.long1063420627
+68K GAS   			page 3
+
+
+ 171 00dc 2E15 C915 	.long773179669
+ 172               	.align2
+ 175               	t9:
+ 176 00e0 BF56 FE8E 	.long-1084817778
+ 177 00e4 BF2D 1AF1 	.long-1087563023
+ 178               	.align2
+ 181               	t10:
+ 182 00e8 3F4C DF0C 	.long1062002444
+ 183 00ec EF61 A8E9 	.long-278812439
+ 184               	.align2
+ 187               	t11:
+ 188 00f0 BF41 A610 	.long-1086216688
+ 189 00f4 9C73 E0EC 	.long-1670127380
+ 190               	.align2
+ 193               	t12:
+ 194 00f8 3F34 AF6D 	.long1060417389
+ 195 00fc 6C0E BBF7 	.long1812904951
+ 196               	.align2
+ 199               	t13:
+ 200 0100 BF34 7F24 	.long-1087078620
+ 201 0104 ECC3 8C38 	.long-322728904
+ 202               	.align2
+ 205               	t14:
+ 206 0108 3F35 FD3E 	.long1060502846
+ 207 010c E8C2 D3F4 	.long-389884940
+ 208               	.align2
+ 211               	u0:
+ 212 0110 BFB3 C467 	.long-1078737817
+ 213 0114 E37D B0C8 	.long-478302008
+ 214               	.align2
+ 217               	u1:
+ 218 0118 3FE4 401E 	.long1071923230
+ 219 011c 8B00 5DFF 	.long-1962910209
+ 220               	.align2
+ 223               	u2:
+ 224 0120 3FF7 475C 	.long1073170268
+ 225 0124 D119 BD6F 	.long-786842257
+ 226               	.align2
+ 229               	u3:
+ 230 0128 3FEF 4976 	.long1072646518
+ 231 012c 44EA 8450 	.long1156219984
+ 232               	.align2
+ 235               	u4:
+ 236 0130 3FCD 4EAE 	.long1070419630
+ 237 0134 F601 0924 	.long-167704284
+ 238               	.align2
+ 241               	u5:
+ 242 0138 3F8B 678B 	.long1066100619
+ 243 013c BF2B AB09 	.long-1087657207
+ 244               	.align2
+ 247               	v1:
+ 248 0140 4003 A5D7 	.long1073980887
+ 249 0144 C2BD 619C 	.long-1027776100
+ 250               	.align2
+ 253               	v2:
+ 254 0148 4001 0725 	.long1073809189
+ 255 014c A42B 18F5 	.long-1540679435
+68K GAS   			page 4
+
+
+ 256               	.align2
+ 259               	v3:
+ 260 0150 3FE8 9DFB 	.long1072209403
+ 261 0154 E450 50AF 	.long-464498513
+ 262               	.align2
+ 265               	v4:
+ 266 0158 3FBA AE55 	.long1069198933
+ 267 015c D653 7C88 	.long-699171704
+ 268               	.align2
+ 271               	v5:
+ 272 0160 3F6A 5ABB 	.long1063934651
+ 273 0164 57D0 CF61 	.long1473302369
+ 274               	.align2
+ 277               	s0:
+ 278 0168 BFB3 C467 	.long-1078737817
+ 279 016c E37D B0C8 	.long-478302008
+ 280               	.align2
+ 283               	s1:
+ 284 0170 3FCB 848B 	.long1070302347
+ 285 0174 36E2 0878 	.long920782968
+ 286               	.align2
+ 289               	s2:
+ 290 0178 3FD4 D98F 	.long1070913935
+ 291 017c 4F13 9F59 	.long1326686041
+ 292               	.align2
+ 295               	s3:
+ 296 0180 3FC2 BB9C 	.long1069726620
+ 297 0184 BEE5 F2F7 	.long-1092226313
+ 298               	.align2
+ 301               	s4:
+ 302 0188 3F9B 481C 	.long1067141148
+ 303 018c 7E93 9961 	.long2123602273
+ 304               	.align2
+ 307               	s5:
+ 308 0190 3F5E 26B6 	.long1063134902
+ 309 0194 7368 F239 	.long1936257593
+ 310               	.align2
+ 313               	s6:
+ 314 0198 3F00 BFEC 	.long1057013740
+ 315 019c DD17 E945 	.long-585635515
+ 316               	.align2
+ 319               	r1:
+ 320 01a0 3FF6 45A7 	.long1073104295
+ 321 01a4 62C4 AB74 	.long1657056116
+ 322               	.align2
+ 325               	r2:
+ 326 01a8 3FE7 1A18 	.long1072110104
+ 327 01ac 93D3 DCDC 	.long-1814831908
+ 328               	.align2
+ 331               	r3:
+ 332 01b0 3FC6 01ED 	.long1069941229
+ 333 01b4 CCFB DF27 	.long-855908569
+ 334               	.align2
+ 337               	r4:
+ 338 01b8 3F93 17EA 	.long1066604522
+ 339 01bc 742E D475 	.long1949226101
+ 340               	.align2
+68K GAS   			page 5
+
+
+ 343               	r5:
+ 344 01c0 3F49 7DDA 	.long1061780954
+ 345 01c4 CA41 A95B 	.long-901666469
+ 346               	.align2
+ 349               	r6:
+ 350 01c8 3EDE BAF7 	.long1054784247
+ 351 01cc A5B3 8140 	.long-1514962624
+ 352               	.align2
+ 355               	w0:
+ 356 01d0 3FDA CFE3 	.long1071304675
+ 357 01d4 90C9 7D69 	.long-1865843351
+ 358               	.align2
+ 361               	w1:
+ 362 01d8 3FB5 5555 	.long1068848469
+ 363 01dc 5555 553B 	.long1431655739
+ 364               	.align2
+ 367               	w2:
+ 368 01e0 BF66 C16C 	.long-1083784852
+ 369 01e4 16B0 2E5C 	.long380644956
+ 370               	.align2
+ 373               	w3:
+ 374 01e8 3F4A 019F 	.long1061814687
+ 375 01ec 98CF 38B6 	.long-1731249994
+ 376               	.align2
+ 379               	w4:
+ 380 01f0 BF43 80CB 	.long-1086095157
+ 381 01f4 8C0F E741 	.long-1945114815
+ 382               	.align2
+ 385               	w5:
+ 386 01f8 3F4B 67BA 	.long1061906362
+ 387 01fc 4CDA D5D1 	.long1289410001
+ 388               	.align2
+ 391               	w6:
+ 392 0200 BF5A B89D 	.long-1084573539
+ 393 0204 0B9E 43E4 	.long194921444
+ 394               	.localzero
+ 395               	.commzero,8,2
+ 396               	.text
+ 397               	.align2
+ 399               	sin_pi:
+ 400 0000 4E56 FFE8 	link.w %fp,#-24
+ 401 0004 2F03      	move.l %d3,-(%sp)
+ 402 0006 2F02      	move.l %d2,-(%sp)
+ 403 0008 200E      	move.l %fp,%d0
+ 404 000a 5080      	addq.l #8,%d0
+ 405 000c 2040      	move.l %d0,%a0
+ 406 000e 2010      	move.l (%a0),%d0
+ 407 0010 2200      	move.l %d0,%d1
+ 408 0012 0881 001F 	bclr #31,%d1
+ 409 0016 2D41 FFF0 	move.l %d1,-16(%fp)
+ 410 001a 0CAE 3FCF 	cmp.l #1070596095,-16(%fp)
+ 410      FFFF FFF0 
+ 411 0022 6E5C      	jgt .L2
+ 412 0024 2079 0000 	move.l zero,%a0
+ 412      0000 
+ 413 002a 2279 0000 	move.l zero+4,%a1
+ 413      0000 
+68K GAS   			page 6
+
+
+ 414 0030 2439 0000 	move.l pi,%d2
+ 414      0000 
+ 415 0036 2639 0000 	move.l pi+4,%d3
+ 415      0000 
+ 416 003c 202E 0008 	move.l 8(%fp),%d0
+ 417 0040 222E 000C 	move.l 12(%fp),%d1
+ 418 0044 2F03      	move.l %d3,-(%sp)
+ 419 0046 2F02      	move.l %d2,-(%sp)
+ 420 0048 F21F 5400 	fmove.d (%sp)+,%fp0
+ 421 004c 2F01      	move.l %d1,-(%sp)
+ 422 004e 2F00      	move.l %d0,-(%sp)
+ 423 0050 F21F 5480 	fmove.d (%sp)+,%fp1
+ 424 0054 F200 0423 	fmul.x %fp1,%fp0
+ 425 0058 F227 7400 	fmove.d %fp0,-(%sp)
+ 426 005c 201F      	move.l (%sp)+,%d0
+ 427 005e 221F      	move.l (%sp)+,%d1
+ 428 0060 42A7      	clr.l -(%sp)
+ 429 0062 2F09      	move.l %a1,-(%sp)
+ 430 0064 2F08      	move.l %a0,-(%sp)
+ 431 0066 2F01      	move.l %d1,-(%sp)
+ 432 0068 2F00      	move.l %d0,-(%sp)
+ 433 006a 4EB9 0000 	jsr __kernel_sin
+ 433      0000 
+ 434 0070 4FEF 0014 	lea (20,%sp),%sp
+ 435 0074 F227 7400 	fmove.d %fp0,-(%sp)
+ 436 0078 201F      	move.l (%sp)+,%d0
+ 437 007a 221F      	move.l (%sp)+,%d1
+ 438 007c 6000 03B6 	jra .L3
+ 439               	.L2:
+ 440 0080 202E 0008 	move.l 8(%fp),%d0
+ 441 0084 222E 000C 	move.l 12(%fp),%d1
+ 442 0088 2F01      	move.l %d1,-(%sp)
+ 443 008a 2F00      	move.l %d0,-(%sp)
+ 444 008c F21F 5400 	fmove.d (%sp)+,%fp0
+ 445 0090 F200 001A 	fneg.x %fp0,%fp0
+ 446 0094 F22E 7400 	fmove.d %fp0,-8(%fp)
+ 446      FFF8 
+ 447 009a 2F2E FFFC 	move.l -4(%fp),-(%sp)
+ 448 009e 2F2E FFF8 	move.l -8(%fp),-(%sp)
+ 449 00a2 4EB9 0000 	jsr floor
+ 449      0000 
+ 450 00a8 508F      	addq.l #8,%sp
+ 451 00aa F227 7400 	fmove.d %fp0,-(%sp)
+ 452 00ae 201F      	move.l (%sp)+,%d0
+ 453 00b0 221F      	move.l (%sp)+,%d1
+ 454 00b2 2D40 FFE8 	move.l %d0,-24(%fp)
+ 455 00b6 2D41 FFEC 	move.l %d1,-20(%fp)
+ 456 00ba 202E FFE8 	move.l -24(%fp),%d0
+ 457 00be 222E FFEC 	move.l -20(%fp),%d1
+ 458 00c2 2F01      	move.l %d1,-(%sp)
+ 459 00c4 2F00      	move.l %d0,-(%sp)
+ 460 00c6 F21F 5480 	fmove.d (%sp)+,%fp1
+ 461 00ca F22E 54B8 	fcmp.d -8(%fp),%fp1
+ 461      FFF8 
+ 462 00d0 F281 00A4 	fjeq .L4
+ 463 00d4 F22E 5400 	fmove.d -8(%fp),%fp0
+ 463      FFF8 
+68K GAS   			page 7
+
+
+ 464 00da F23C 5423 	fmul.d #0x3fe0000000000000,%fp0
+ 464      3FE0 0000 
+ 464      0000 0000 
+ 465 00e6 F22E 7400 	fmove.d %fp0,-8(%fp)
+ 465      FFF8 
+ 466 00ec 2F2E FFFC 	move.l -4(%fp),-(%sp)
+ 467 00f0 2F2E FFF8 	move.l -8(%fp),-(%sp)
+ 468 00f4 4EB9 0000 	jsr floor
+ 468      0000 
+ 469 00fa 508F      	addq.l #8,%sp
+ 470 00fc F227 7400 	fmove.d %fp0,-(%sp)
+ 471 0100 201F      	move.l (%sp)+,%d0
+ 472 0102 221F      	move.l (%sp)+,%d1
+ 473 0104 F22E 5480 	fmove.d -8(%fp),%fp1
+ 473      FFF8 
+ 474 010a 2F01      	move.l %d1,-(%sp)
+ 475 010c 2F00      	move.l %d0,-(%sp)
+ 476 010e F21F 5400 	fmove.d (%sp)+,%fp0
+ 477 0112 F200 00A8 	fsub.x %fp0,%fp1
+ 478 0116 F227 7480 	fmove.d %fp1,-(%sp)
+ 479 011a 201F      	move.l (%sp)+,%d0
+ 480 011c 221F      	move.l (%sp)+,%d1
+ 481 011e 2F01      	move.l %d1,-(%sp)
+ 482 0120 2F00      	move.l %d0,-(%sp)
+ 483 0122 F21F 5480 	fmove.d (%sp)+,%fp1
+ 484 0126 2F01      	move.l %d1,-(%sp)
+ 485 0128 2F00      	move.l %d0,-(%sp)
+ 486 012a F21F 5400 	fmove.d (%sp)+,%fp0
+ 487 012e F200 00A2 	fadd.x %fp0,%fp1
+ 488 0132 F22E 7480 	fmove.d %fp1,-8(%fp)
+ 488      FFF8 
+ 489 0138 F22E 5480 	fmove.d -8(%fp),%fp1
+ 489      FFF8 
+ 490 013e F23C 54A3 	fmul.d #0x4010000000000000,%fp1
+ 490      4010 0000 
+ 490      0000 0000 
+ 491 014a F227 7480 	fmove.d %fp1,-(%sp)
+ 492 014e 201F      	move.l (%sp)+,%d0
+ 493 0150 221F      	move.l (%sp)+,%d1
+ 494 0152 2F01      	move.l %d1,-(%sp)
+ 495 0154 2F00      	move.l %d0,-(%sp)
+ 496 0156 F21F 5400 	fmove.d (%sp)+,%fp0
+ 497 015a F200 0003 	fintrz.x %fp0,%fp0
+ 498 015e F227 7400 	fmove.d %fp0,-(%sp)
+ 499 0162 201F      	move.l (%sp)+,%d0
+ 500 0164 221F      	move.l (%sp)+,%d1
+ 501 0166 2F01      	move.l %d1,-(%sp)
+ 502 0168 2F00      	move.l %d0,-(%sp)
+ 503 016a F21F 5480 	fmove.d (%sp)+,%fp1
+ 504 016e F22E 6080 	fmove.l %fp1,-12(%fp)
+ 504      FFF4 
+ 505 0174 607C      	jra .L5
+ 506               	.L4:
+ 507 0176 0CAE 433F 	cmp.l #1128267775,-16(%fp)
+ 507      FFFF FFF0 
+ 508 017e 6F16      	jle .L6
+ 509 0180 2D79 0000 	move.l zero,-8(%fp)
+68K GAS   			page 8
+
+
+ 509      0000 FFF8 
+ 510 0188 2D79 0000 	move.l zero+4,-4(%fp)
+ 510      0000 FFFC 
+ 511 0190 42AE FFF4 	clr.l -12(%fp)
+ 512 0194 605C      	jra .L5
+ 513               	.L6:
+ 514 0196 0CAE 432F 	cmp.l #1127219199,-16(%fp)
+ 514      FFFF FFF0 
+ 515 019e 6E2A      	jgt .L7
+ 516 01a0 2039 0000 	move.l two52,%d0
+ 516      0000 
+ 517 01a6 2239 0000 	move.l two52+4,%d1
+ 517      0000 
+ 518 01ac 2F01      	move.l %d1,-(%sp)
+ 519 01ae 2F00      	move.l %d0,-(%sp)
+ 520 01b0 F21F 5400 	fmove.d (%sp)+,%fp0
+ 521 01b4 F22E 5422 	fadd.d -8(%fp),%fp0
+ 521      FFF8 
+ 522 01ba F227 7400 	fmove.d %fp0,-(%sp)
+ 523 01be 201F      	move.l (%sp)+,%d0
+ 524 01c0 221F      	move.l (%sp)+,%d1
+ 525 01c2 2D40 FFE8 	move.l %d0,-24(%fp)
+ 526 01c6 2D41 FFEC 	move.l %d1,-20(%fp)
+ 527               	.L7:
+ 528 01ca 70E8      	moveq #-24,%d0
+ 529 01cc D08E      	add.l %fp,%d0
+ 530 01ce 5880      	addq.l #4,%d0
+ 531 01d0 2040      	move.l %d0,%a0
+ 532 01d2 2010      	move.l (%a0),%d0
+ 533 01d4 7201      	moveq #1,%d1
+ 534 01d6 C280      	and.l %d0,%d1
+ 535 01d8 2D41 FFF4 	move.l %d1,-12(%fp)
+ 536 01dc F22E 4000 	fmove.l -12(%fp),%fp0
+ 536      FFF4 
+ 537 01e2 F22E 7400 	fmove.d %fp0,-8(%fp)
+ 537      FFF8 
+ 538 01e8 202E FFF4 	move.l -12(%fp),%d0
+ 539 01ec E588      	lsl.l #2,%d0
+ 540 01ee 2D40 FFF4 	move.l %d0,-12(%fp)
+ 541               	.L5:
+ 542 01f2 7006      	moveq #6,%d0
+ 543 01f4 B0AE FFF4 	cmp.l -12(%fp),%d0
+ 544 01f8 6500 01C4 	jcs .L8
+ 545 01fc 202E FFF4 	move.l -12(%fp),%d0
+ 546 0200 D080      	add.l %d0,%d0
+ 547 0202 303B 0806 	move.w .L13(%pc,%d0.l),%d0
+ 548 0206 4EFB 0002 	jmp %pc@(2,%d0:w)
+ 549               	.balignw 2,0x284c
+ 550               	.L13:
+ 551 020a 000E      	.word .L9-.L13
+ 552 020c 005A      	.word .L10-.L13
+ 553 020e 005A      	.word .L10-.L13
+ 554 0210 00C4      	.word .L11-.L13
+ 555 0212 00C4      	.word .L11-.L13
+ 556 0214 0138      	.word .L12-.L13
+ 557 0216 0138      	.word .L12-.L13
+ 558               	.L9:
+68K GAS   			page 9
+
+
+ 559 0218 2079 0000 	move.l zero,%a0
+ 559      0000 
+ 560 021e 2279 0000 	move.l zero+4,%a1
+ 560      0000 
+ 561 0224 2039 0000 	move.l pi,%d0
+ 561      0000 
+ 562 022a 2239 0000 	move.l pi+4,%d1
+ 562      0000 
+ 563 0230 2F01      	move.l %d1,-(%sp)
+ 564 0232 2F00      	move.l %d0,-(%sp)
+ 565 0234 F21F 5400 	fmove.d (%sp)+,%fp0
+ 566 0238 F22E 5423 	fmul.d -8(%fp),%fp0
+ 566      FFF8 
+ 567 023e F227 7400 	fmove.d %fp0,-(%sp)
+ 568 0242 201F      	move.l (%sp)+,%d0
+ 569 0244 221F      	move.l (%sp)+,%d1
+ 570 0246 42A7      	clr.l -(%sp)
+ 571 0248 2F09      	move.l %a1,-(%sp)
+ 572 024a 2F08      	move.l %a0,-(%sp)
+ 573 024c 2F01      	move.l %d1,-(%sp)
+ 574 024e 2F00      	move.l %d0,-(%sp)
+ 575 0250 4EB9 0000 	jsr __kernel_sin
+ 575      0000 
+ 576 0256 4FEF 0014 	lea (20,%sp),%sp
+ 577 025a F22E 7400 	fmove.d %fp0,-8(%fp)
+ 577      FFF8 
+ 578 0260 6000 01C6 	jra .L14
+ 579               	.L10:
+ 580 0264 2079 0000 	move.l zero,%a0
+ 580      0000 
+ 581 026a 2279 0000 	move.l zero+4,%a1
+ 581      0000 
+ 582 0270 F23C 5480 	fmove.d #0x3fe0000000000000,%fp1
+ 582      3FE0 0000 
+ 582      0000 0000 
+ 583 027c F22E 54A8 	fsub.d -8(%fp),%fp1
+ 583      FFF8 
+ 584 0282 F227 7480 	fmove.d %fp1,-(%sp)
+ 585 0286 201F      	move.l (%sp)+,%d0
+ 586 0288 221F      	move.l (%sp)+,%d1
+ 587 028a 2439 0000 	move.l pi,%d2
+ 587      0000 
+ 588 0290 2639 0000 	move.l pi+4,%d3
+ 588      0000 
+ 589 0296 2F01      	move.l %d1,-(%sp)
+ 590 0298 2F00      	move.l %d0,-(%sp)
+ 591 029a F21F 5400 	fmove.d (%sp)+,%fp0
+ 592 029e 2F03      	move.l %d3,-(%sp)
+ 593 02a0 2F02      	move.l %d2,-(%sp)
+ 594 02a2 F21F 5480 	fmove.d (%sp)+,%fp1
+ 595 02a6 F200 0423 	fmul.x %fp1,%fp0
+ 596 02aa F227 7400 	fmove.d %fp0,-(%sp)
+ 597 02ae 201F      	move.l (%sp)+,%d0
+ 598 02b0 221F      	move.l (%sp)+,%d1
+ 599 02b2 2F09      	move.l %a1,-(%sp)
+ 600 02b4 2F08      	move.l %a0,-(%sp)
+ 601 02b6 2F01      	move.l %d1,-(%sp)
+68K GAS   			page 10
+
+
+ 602 02b8 2F00      	move.l %d0,-(%sp)
+ 603 02ba 4EB9 0000 	jsr __kernel_cos
+ 603      0000 
+ 604 02c0 4FEF 0010 	lea (16,%sp),%sp
+ 605 02c4 F22E 7400 	fmove.d %fp0,-8(%fp)
+ 605      FFF8 
+ 606 02ca 6000 015C 	jra .L14
+ 607               	.L11:
+ 608 02ce 2079 0000 	move.l zero,%a0
+ 608      0000 
+ 609 02d4 2279 0000 	move.l zero+4,%a1
+ 609      0000 
+ 610 02da 2039 0000 	move.l one,%d0
+ 610      0000 
+ 611 02e0 2239 0000 	move.l one+4,%d1
+ 611      0000 
+ 612 02e6 2F01      	move.l %d1,-(%sp)
+ 613 02e8 2F00      	move.l %d0,-(%sp)
+ 614 02ea F21F 5400 	fmove.d (%sp)+,%fp0
+ 615 02ee F22E 5428 	fsub.d -8(%fp),%fp0
+ 615      FFF8 
+ 616 02f4 F227 7400 	fmove.d %fp0,-(%sp)
+ 617 02f8 201F      	move.l (%sp)+,%d0
+ 618 02fa 221F      	move.l (%sp)+,%d1
+ 619 02fc 2439 0000 	move.l pi,%d2
+ 619      0000 
+ 620 0302 2639 0000 	move.l pi+4,%d3
+ 620      0000 
+ 621 0308 2F01      	move.l %d1,-(%sp)
+ 622 030a 2F00      	move.l %d0,-(%sp)
+ 623 030c F21F 5480 	fmove.d (%sp)+,%fp1
+ 624 0310 2F03      	move.l %d3,-(%sp)
+ 625 0312 2F02      	move.l %d2,-(%sp)
+ 626 0314 F21F 5400 	fmove.d (%sp)+,%fp0
+ 627 0318 F200 00A3 	fmul.x %fp0,%fp1
+ 628 031c F227 7480 	fmove.d %fp1,-(%sp)
+ 629 0320 201F      	move.l (%sp)+,%d0
+ 630 0322 221F      	move.l (%sp)+,%d1
+ 631 0324 42A7      	clr.l -(%sp)
+ 632 0326 2F09      	move.l %a1,-(%sp)
+ 633 0328 2F08      	move.l %a0,-(%sp)
+ 634 032a 2F01      	move.l %d1,-(%sp)
+ 635 032c 2F00      	move.l %d0,-(%sp)
+ 636 032e 4EB9 0000 	jsr __kernel_sin
+ 636      0000 
+ 637 0334 4FEF 0014 	lea (20,%sp),%sp
+ 638 0338 F22E 7400 	fmove.d %fp0,-8(%fp)
+ 638      FFF8 
+ 639 033e 6000 00E8 	jra .L14
+ 640               	.L12:
+ 641 0342 2079 0000 	move.l zero,%a0
+ 641      0000 
+ 642 0348 2279 0000 	move.l zero+4,%a1
+ 642      0000 
+ 643 034e F22E 5480 	fmove.d -8(%fp),%fp1
+ 643      FFF8 
+ 644 0354 F23C 54A8 	fsub.d #0x3ff8000000000000,%fp1
+68K GAS   			page 11
+
+
+ 644      3FF8 0000 
+ 644      0000 0000 
+ 645 0360 F227 7480 	fmove.d %fp1,-(%sp)
+ 646 0364 201F      	move.l (%sp)+,%d0
+ 647 0366 221F      	move.l (%sp)+,%d1
+ 648 0368 2439 0000 	move.l pi,%d2
+ 648      0000 
+ 649 036e 2639 0000 	move.l pi+4,%d3
+ 649      0000 
+ 650 0374 2F01      	move.l %d1,-(%sp)
+ 651 0376 2F00      	move.l %d0,-(%sp)
+ 652 0378 F21F 5400 	fmove.d (%sp)+,%fp0
+ 653 037c 2F03      	move.l %d3,-(%sp)
+ 654 037e 2F02      	move.l %d2,-(%sp)
+ 655 0380 F21F 5480 	fmove.d (%sp)+,%fp1
+ 656 0384 F200 0423 	fmul.x %fp1,%fp0
+ 657 0388 F227 7400 	fmove.d %fp0,-(%sp)
+ 658 038c 201F      	move.l (%sp)+,%d0
+ 659 038e 221F      	move.l (%sp)+,%d1
+ 660 0390 2F09      	move.l %a1,-(%sp)
+ 661 0392 2F08      	move.l %a0,-(%sp)
+ 662 0394 2F01      	move.l %d1,-(%sp)
+ 663 0396 2F00      	move.l %d0,-(%sp)
+ 664 0398 4EB9 0000 	jsr __kernel_cos
+ 664      0000 
+ 665 039e 4FEF 0010 	lea (16,%sp),%sp
+ 666 03a2 F227 7400 	fmove.d %fp0,-(%sp)
+ 667 03a6 201F      	move.l (%sp)+,%d0
+ 668 03a8 221F      	move.l (%sp)+,%d1
+ 669 03aa 2F01      	move.l %d1,-(%sp)
+ 670 03ac 2F00      	move.l %d0,-(%sp)
+ 671 03ae F21F 5400 	fmove.d (%sp)+,%fp0
+ 672 03b2 F200 001A 	fneg.x %fp0,%fp0
+ 673 03b6 F22E 7400 	fmove.d %fp0,-8(%fp)
+ 673      FFF8 
+ 674 03bc 606A      	jra .L14
+ 675               	.L8:
+ 676 03be 2079 0000 	move.l zero,%a0
+ 676      0000 
+ 677 03c4 2279 0000 	move.l zero+4,%a1
+ 677      0000 
+ 678 03ca F22E 5480 	fmove.d -8(%fp),%fp1
+ 678      FFF8 
+ 679 03d0 F23C 54A8 	fsub.d #0x4000000000000000,%fp1
+ 679      4000 0000 
+ 679      0000 0000 
+ 680 03dc F227 7480 	fmove.d %fp1,-(%sp)
+ 681 03e0 201F      	move.l (%sp)+,%d0
+ 682 03e2 221F      	move.l (%sp)+,%d1
+ 683 03e4 2439 0000 	move.l pi,%d2
+ 683      0000 
+ 684 03ea 2639 0000 	move.l pi+4,%d3
+ 684      0000 
+ 685 03f0 2F01      	move.l %d1,-(%sp)
+ 686 03f2 2F00      	move.l %d0,-(%sp)
+ 687 03f4 F21F 5400 	fmove.d (%sp)+,%fp0
+ 688 03f8 2F03      	move.l %d3,-(%sp)
+68K GAS   			page 12
+
+
+ 689 03fa 2F02      	move.l %d2,-(%sp)
+ 690 03fc F21F 5480 	fmove.d (%sp)+,%fp1
+ 691 0400 F200 0423 	fmul.x %fp1,%fp0
+ 692 0404 F227 7400 	fmove.d %fp0,-(%sp)
+ 693 0408 201F      	move.l (%sp)+,%d0
+ 694 040a 221F      	move.l (%sp)+,%d1
+ 695 040c 42A7      	clr.l -(%sp)
+ 696 040e 2F09      	move.l %a1,-(%sp)
+ 697 0410 2F08      	move.l %a0,-(%sp)
+ 698 0412 2F01      	move.l %d1,-(%sp)
+ 699 0414 2F00      	move.l %d0,-(%sp)
+ 700 0416 4EB9 0000 	jsr __kernel_sin
+ 700      0000 
+ 701 041c 4FEF 0014 	lea (20,%sp),%sp
+ 702 0420 F22E 7400 	fmove.d %fp0,-8(%fp)
+ 702      FFF8 
+ 703 0426 4E71      	nop
+ 704               	.L14:
+ 705 0428 202E FFF8 	move.l -8(%fp),%d0
+ 706 042c 222E FFFC 	move.l -4(%fp),%d1
+ 707 0430 0840 001F 	bchg #31,%d0
+ 708               	.L3:
+ 709 0434 2F01      	move.l %d1,-(%sp)
+ 710 0436 2F00      	move.l %d0,-(%sp)
+ 711 0438 F21F 5400 	fmove.d (%sp)+,%fp0
+ 712 043c 242E FFE0 	move.l -32(%fp),%d2
+ 713 0440 262E FFE4 	move.l -28(%fp),%d3
+ 714 0444 4E5E      	unlk %fp
+ 715 0446 4E75      	rts
+ 717               	.align2
+ 718               	.globl__ieee754_lgamma_r
+ 720               	__ieee754_lgamma_r:
+ 721 0448 4E56 FF98 	link.w %fp,#-104
+ 722 044c 2F03      	move.l %d3,-(%sp)
+ 723 044e 2F02      	move.l %d2,-(%sp)
+ 724 0450 200E      	move.l %fp,%d0
+ 725 0452 5080      	addq.l #8,%d0
+ 726 0454 2040      	move.l %d0,%a0
+ 727 0456 2D50 FFD8 	move.l (%a0),-40(%fp)
+ 728 045a 200E      	move.l %fp,%d0
+ 729 045c 5080      	addq.l #8,%d0
+ 730 045e 5880      	addq.l #4,%d0
+ 731 0460 2040      	move.l %d0,%a0
+ 732 0462 2D50 FFD4 	move.l (%a0),-44(%fp)
+ 733 0466 202E 0010 	move.l 16(%fp),%d0
+ 734 046a 7201      	moveq #1,%d1
+ 735 046c 2040      	move.l %d0,%a0
+ 736 046e 2081      	move.l %d1,(%a0)
+ 737 0470 202E FFD8 	move.l -40(%fp),%d0
+ 738 0474 0880 001F 	bclr #31,%d0
+ 739 0478 2D40 FFD0 	move.l %d0,-48(%fp)
+ 740 047c 0CAE 7FEF 	cmp.l #2146435071,-48(%fp)
+ 740      FFFF FFD0 
+ 741 0484 6F30      	jle .L16
+ 742 0486 206E 0008 	move.l 8(%fp),%a0
+ 743 048a 226E 000C 	move.l 12(%fp),%a1
+ 744 048e 202E 0008 	move.l 8(%fp),%d0
+68K GAS   			page 13
+
+
+ 745 0492 222E 000C 	move.l 12(%fp),%d1
+ 746 0496 2F09      	move.l %a1,-(%sp)
+ 747 0498 2F08      	move.l %a0,-(%sp)
+ 748 049a F21F 5400 	fmove.d (%sp)+,%fp0
+ 749 049e 2F01      	move.l %d1,-(%sp)
+ 750 04a0 2F00      	move.l %d0,-(%sp)
+ 751 04a2 F21F 5480 	fmove.d (%sp)+,%fp1
+ 752 04a6 F200 0423 	fmul.x %fp1,%fp0
+ 753 04aa F227 7400 	fmove.d %fp0,-(%sp)
+ 754 04ae 201F      	move.l (%sp)+,%d0
+ 755 04b0 221F      	move.l (%sp)+,%d1
+ 756 04b2 6000 1660 	jra .L17
+ 757               	.L16:
+ 758 04b6 202E FFD0 	move.l -48(%fp),%d0
+ 759 04ba 80AE FFD4 	or.l -44(%fp),%d0
+ 760 04be 4A80      	tst.l %d0
+ 761 04c0 6638      	jne .L18
+ 762 04c2 2039 0000 	move.l one,%d0
+ 762      0000 
+ 763 04c8 2239 0000 	move.l one+4,%d1
+ 763      0000 
+ 764 04ce 2079 0000 	move.l zero,%a0
+ 764      0000 
+ 765 04d4 2279 0000 	move.l zero+4,%a1
+ 765      0000 
+ 766 04da 2F01      	move.l %d1,-(%sp)
+ 767 04dc 2F00      	move.l %d0,-(%sp)
+ 768 04de F21F 5400 	fmove.d (%sp)+,%fp0
+ 769 04e2 2F09      	move.l %a1,-(%sp)
+ 770 04e4 2F08      	move.l %a0,-(%sp)
+ 771 04e6 F21F 5480 	fmove.d (%sp)+,%fp1
+ 772 04ea F200 0420 	fdiv.x %fp1,%fp0
+ 773 04ee F227 7400 	fmove.d %fp0,-(%sp)
+ 774 04f2 201F      	move.l (%sp)+,%d0
+ 775 04f4 221F      	move.l (%sp)+,%d1
+ 776 04f6 6000 161C 	jra .L17
+ 777               	.L18:
+ 778 04fa 0CAE 3B8F 	cmp.l #999292927,-48(%fp)
+ 778      FFFF FFD0 
+ 779 0502 6E5C      	jgt .L19
+ 780 0504 4AAE FFD8 	tst.l -40(%fp)
+ 781 0508 6C32      	jge .L20
+ 782 050a 202E 0010 	move.l 16(%fp),%d0
+ 783 050e 72FF      	moveq #-1,%d1
+ 784 0510 2040      	move.l %d0,%a0
+ 785 0512 2081      	move.l %d1,(%a0)
+ 786 0514 202E 0008 	move.l 8(%fp),%d0
+ 787 0518 222E 000C 	move.l 12(%fp),%d1
+ 788 051c 0840 001F 	bchg #31,%d0
+ 789 0520 2F01      	move.l %d1,-(%sp)
+ 790 0522 2F00      	move.l %d0,-(%sp)
+ 791 0524 4EB9 0000 	jsr __ieee754_log
+ 791      0000 
+ 792 052a 508F      	addq.l #8,%sp
+ 793 052c F227 7400 	fmove.d %fp0,-(%sp)
+ 794 0530 201F      	move.l (%sp)+,%d0
+ 795 0532 221F      	move.l (%sp)+,%d1
+68K GAS   			page 14
+
+
+ 796 0534 0840 001F 	bchg #31,%d0
+ 797 0538 6000 15DA 	jra .L17
+ 798               	.L20:
+ 799 053c 202E 0008 	move.l 8(%fp),%d0
+ 800 0540 222E 000C 	move.l 12(%fp),%d1
+ 801 0544 2F01      	move.l %d1,-(%sp)
+ 802 0546 2F00      	move.l %d0,-(%sp)
+ 803 0548 4EB9 0000 	jsr __ieee754_log
+ 803      0000 
+ 804 054e 508F      	addq.l #8,%sp
+ 805 0550 F227 7400 	fmove.d %fp0,-(%sp)
+ 806 0554 201F      	move.l (%sp)+,%d0
+ 807 0556 221F      	move.l (%sp)+,%d1
+ 808 0558 0840 001F 	bchg #31,%d0
+ 809 055c 6000 15B6 	jra .L17
+ 810               	.L19:
+ 811 0560 4AAE FFD8 	tst.l -40(%fp)
+ 812 0564 6C00 017C 	jge .L21
+ 813 0568 0CAE 432F 	cmp.l #1127219199,-48(%fp)
+ 813      FFFF FFD0 
+ 814 0570 6F38      	jle .L22
+ 815 0572 2039 0000 	move.l one,%d0
+ 815      0000 
+ 816 0578 2239 0000 	move.l one+4,%d1
+ 816      0000 
+ 817 057e 2079 0000 	move.l zero,%a0
+ 817      0000 
+ 818 0584 2279 0000 	move.l zero+4,%a1
+ 818      0000 
+ 819 058a 2F01      	move.l %d1,-(%sp)
+ 820 058c 2F00      	move.l %d0,-(%sp)
+ 821 058e F21F 5400 	fmove.d (%sp)+,%fp0
+ 822 0592 2F09      	move.l %a1,-(%sp)
+ 823 0594 2F08      	move.l %a0,-(%sp)
+ 824 0596 F21F 5480 	fmove.d (%sp)+,%fp1
+ 825 059a F200 0420 	fdiv.x %fp1,%fp0
+ 826 059e F227 7400 	fmove.d %fp0,-(%sp)
+ 827 05a2 201F      	move.l (%sp)+,%d0
+ 828 05a4 221F      	move.l (%sp)+,%d1
+ 829 05a6 6000 156C 	jra .L17
+ 830               	.L22:
+ 831 05aa 202E 0008 	move.l 8(%fp),%d0
+ 832 05ae 222E 000C 	move.l 12(%fp),%d1
+ 833 05b2 2F01      	move.l %d1,-(%sp)
+ 834 05b4 2F00      	move.l %d0,-(%sp)
+ 835 05b6 4EBA FA48 	jsr sin_pi
+ 836 05ba 508F      	addq.l #8,%sp
+ 837 05bc F22E 7400 	fmove.d %fp0,-56(%fp)
+ 837      FFC8 
+ 838 05c2 2039 0000 	move.l zero,%d0
+ 838      0000 
+ 839 05c8 2239 0000 	move.l zero+4,%d1
+ 839      0000 
+ 840 05ce 206E FFC8 	move.l -56(%fp),%a0
+ 841 05d2 226E FFCC 	move.l -52(%fp),%a1
+ 842 05d6 2F09      	move.l %a1,-(%sp)
+ 843 05d8 2F08      	move.l %a0,-(%sp)
+68K GAS   			page 15
+
+
+ 844 05da F21F 5400 	fmove.d (%sp)+,%fp0
+ 845 05de 2F01      	move.l %d1,-(%sp)
+ 846 05e0 2F00      	move.l %d0,-(%sp)
+ 847 05e2 F21F 5480 	fmove.d (%sp)+,%fp1
+ 848 05e6 F200 0438 	fcmp.x %fp1,%fp0
+ 849 05ea F28E 003A 	fjne .L23
+ 850 05ee 2039 0000 	move.l one,%d0
+ 850      0000 
+ 851 05f4 2239 0000 	move.l one+4,%d1
+ 851      0000 
+ 852 05fa 2079 0000 	move.l zero,%a0
+ 852      0000 
+ 853 0600 2279 0000 	move.l zero+4,%a1
+ 853      0000 
+ 854 0606 2F01      	move.l %d1,-(%sp)
+ 855 0608 2F00      	move.l %d0,-(%sp)
+ 856 060a F21F 5400 	fmove.d (%sp)+,%fp0
+ 857 060e 2F09      	move.l %a1,-(%sp)
+ 858 0610 2F08      	move.l %a0,-(%sp)
+ 859 0612 F21F 5480 	fmove.d (%sp)+,%fp1
+ 860 0616 F200 0420 	fdiv.x %fp1,%fp0
+ 861 061a F227 7400 	fmove.d %fp0,-(%sp)
+ 862 061e 201F      	move.l (%sp)+,%d0
+ 863 0620 221F      	move.l (%sp)+,%d1
+ 864 0622 6000 14F0 	jra .L17
+ 865               	.L23:
+ 866 0626 2439 0000 	move.l pi,%d2
+ 866      0000 
+ 867 062c 2639 0000 	move.l pi+4,%d3
+ 867      0000 
+ 868 0632 202E 0008 	move.l 8(%fp),%d0
+ 869 0636 222E 000C 	move.l 12(%fp),%d1
+ 870 063a 2F01      	move.l %d1,-(%sp)
+ 871 063c 2F00      	move.l %d0,-(%sp)
+ 872 063e F21F 5400 	fmove.d (%sp)+,%fp0
+ 873 0642 F22E 5423 	fmul.d -56(%fp),%fp0
+ 873      FFC8 
+ 874 0648 F227 7400 	fmove.d %fp0,-(%sp)
+ 875 064c 201F      	move.l (%sp)+,%d0
+ 876 064e 221F      	move.l (%sp)+,%d1
+ 877 0650 2F01      	move.l %d1,-(%sp)
+ 878 0652 2F00      	move.l %d0,-(%sp)
+ 879 0654 4EB9 0000 	jsr fabs
+ 879      0000 
+ 880 065a 508F      	addq.l #8,%sp
+ 881 065c F227 7400 	fmove.d %fp0,-(%sp)
+ 882 0660 201F      	move.l (%sp)+,%d0
+ 883 0662 221F      	move.l (%sp)+,%d1
+ 884 0664 2F03      	move.l %d3,-(%sp)
+ 885 0666 2F02      	move.l %d2,-(%sp)
+ 886 0668 F21F 5480 	fmove.d (%sp)+,%fp1
+ 887 066c 2F01      	move.l %d1,-(%sp)
+ 888 066e 2F00      	move.l %d0,-(%sp)
+ 889 0670 F21F 5400 	fmove.d (%sp)+,%fp0
+ 890 0674 F200 00A0 	fdiv.x %fp0,%fp1
+ 891 0678 F227 7480 	fmove.d %fp1,-(%sp)
+ 892 067c 201F      	move.l (%sp)+,%d0
+68K GAS   			page 16
+
+
+ 893 067e 221F      	move.l (%sp)+,%d1
+ 894 0680 2F01      	move.l %d1,-(%sp)
+ 895 0682 2F00      	move.l %d0,-(%sp)
+ 896 0684 4EB9 0000 	jsr __ieee754_log
+ 896      0000 
+ 897 068a 508F      	addq.l #8,%sp
+ 898 068c F22E 7400 	fmove.d %fp0,-24(%fp)
+ 898      FFE8 
+ 899 0692 2039 0000 	move.l zero,%d0
+ 899      0000 
+ 900 0698 2239 0000 	move.l zero+4,%d1
+ 900      0000 
+ 901 069e 206E FFC8 	move.l -56(%fp),%a0
+ 902 06a2 226E FFCC 	move.l -52(%fp),%a1
+ 903 06a6 2F09      	move.l %a1,-(%sp)
+ 904 06a8 2F08      	move.l %a0,-(%sp)
+ 905 06aa F21F 5480 	fmove.d (%sp)+,%fp1
+ 906 06ae 2F01      	move.l %d1,-(%sp)
+ 907 06b0 2F00      	move.l %d0,-(%sp)
+ 908 06b2 F21F 5400 	fmove.d (%sp)+,%fp0
+ 909 06b6 F200 00B8 	fcmp.x %fp0,%fp1
+ 910 06ba F240 0014 	fslt %d0
+ 911 06be 4400      	neg.b %d0
+ 912 06c0 4A00      	tst.b %d0
+ 913 06c2 670A      	jeq .L24
+ 914 06c4 202E 0010 	move.l 16(%fp),%d0
+ 915 06c8 72FF      	moveq #-1,%d1
+ 916 06ca 2040      	move.l %d0,%a0
+ 917 06cc 2081      	move.l %d1,(%a0)
+ 918               	.L24:
+ 919 06ce 202E 0008 	move.l 8(%fp),%d0
+ 920 06d2 222E 000C 	move.l 12(%fp),%d1
+ 921 06d6 0840 001F 	bchg #31,%d0
+ 922 06da 2D40 0008 	move.l %d0,8(%fp)
+ 923 06de 2D41 000C 	move.l %d1,12(%fp)
+ 924               	.L21:
+ 925 06e2 202E FFD0 	move.l -48(%fp),%d0
+ 926 06e6 0680 C010 	add.l #-1072693248,%d0
+ 926      0000 
+ 927 06ec 80AE FFD4 	or.l -44(%fp),%d0
+ 928 06f0 4A80      	tst.l %d0
+ 929 06f2 6712      	jeq .L25
+ 930 06f4 202E FFD0 	move.l -48(%fp),%d0
+ 931 06f8 0680 C000 	add.l #-1073741824,%d0
+ 931      0000 
+ 932 06fe 80AE FFD4 	or.l -44(%fp),%d0
+ 933 0702 4A80      	tst.l %d0
+ 934 0704 660C      	jne .L26
+ 935               	.L25:
+ 936 0706 42AE FFE0 	clr.l -32(%fp)
+ 937 070a 42AE FFE4 	clr.l -28(%fp)
+ 938 070e 6000 13E4 	jra .L27
+ 939               	.L26:
+ 940 0712 0CAE 3FFF 	cmp.l #1073741823,-48(%fp)
+ 940      FFFF FFD0 
+ 941 071a 6E00 0BE0 	jgt .L28
+ 942 071e 0CAE 3FEC 	cmp.l #1072483532,-48(%fp)
+68K GAS   			page 17
+
+
+ 942      CCCC FFD0 
+ 943 0726 6E00 00F0 	jgt .L29
+ 944 072a 202E 0008 	move.l 8(%fp),%d0
+ 945 072e 222E 000C 	move.l 12(%fp),%d1
+ 946 0732 2F01      	move.l %d1,-(%sp)
+ 947 0734 2F00      	move.l %d0,-(%sp)
+ 948 0736 4EB9 0000 	jsr __ieee754_log
+ 948      0000 
+ 949 073c 508F      	addq.l #8,%sp
+ 950 073e F227 7400 	fmove.d %fp0,-(%sp)
+ 951 0742 201F      	move.l (%sp)+,%d0
+ 952 0744 221F      	move.l (%sp)+,%d1
+ 953 0746 2F01      	move.l %d1,-(%sp)
+ 954 0748 2F00      	move.l %d0,-(%sp)
+ 955 074a F21F 5400 	fmove.d (%sp)+,%fp0
+ 956 074e F200 001A 	fneg.x %fp0,%fp0
+ 957 0752 F22E 7400 	fmove.d %fp0,-32(%fp)
+ 957      FFE0 
+ 958 0758 0CAE 3FE7 	cmp.l #1072130371,-48(%fp)
+ 958      6943 FFD0 
+ 959 0760 6F36      	jle .L30
+ 960 0762 2039 0000 	move.l one,%d0
+ 960      0000 
+ 961 0768 2239 0000 	move.l one+4,%d1
+ 961      0000 
+ 962 076e 206E 0008 	move.l 8(%fp),%a0
+ 963 0772 226E 000C 	move.l 12(%fp),%a1
+ 964 0776 2F01      	move.l %d1,-(%sp)
+ 965 0778 2F00      	move.l %d0,-(%sp)
+ 966 077a F21F 5480 	fmove.d (%sp)+,%fp1
+ 967 077e 2F09      	move.l %a1,-(%sp)
+ 968 0780 2F08      	move.l %a0,-(%sp)
+ 969 0782 F21F 5400 	fmove.d (%sp)+,%fp0
+ 970 0786 F200 00A8 	fsub.x %fp0,%fp1
+ 971 078a F22E 7480 	fmove.d %fp1,-8(%fp)
+ 971      FFF8 
+ 972 0790 42AE FFDC 	clr.l -36(%fp)
+ 973 0794 6000 013C 	jra .L31
+ 974               	.L30:
+ 975 0798 0CAE 3FCD 	cmp.l #1070442080,-48(%fp)
+ 975      A660 FFD0 
+ 976 07a0 6F60      	jle .L32
+ 977 07a2 206E 0008 	move.l 8(%fp),%a0
+ 978 07a6 226E 000C 	move.l 12(%fp),%a1
+ 979 07aa 2039 0000 	move.l tc,%d0
+ 979      0000 
+ 980 07b0 2239 0000 	move.l tc+4,%d1
+ 980      0000 
+ 981 07b6 2439 0000 	move.l one,%d2
+ 981      0000 
+ 982 07bc 2639 0000 	move.l one+4,%d3
+ 982      0000 
+ 983 07c2 2F01      	move.l %d1,-(%sp)
+ 984 07c4 2F00      	move.l %d0,-(%sp)
+ 985 07c6 F21F 5480 	fmove.d (%sp)+,%fp1
+ 986 07ca 2F03      	move.l %d3,-(%sp)
+ 987 07cc 2F02      	move.l %d2,-(%sp)
+68K GAS   			page 18
+
+
+ 988 07ce F21F 5400 	fmove.d (%sp)+,%fp0
+ 989 07d2 F200 00A8 	fsub.x %fp0,%fp1
+ 990 07d6 F227 7480 	fmove.d %fp1,-(%sp)
+ 991 07da 201F      	move.l (%sp)+,%d0
+ 992 07dc 221F      	move.l (%sp)+,%d1
+ 993 07de 2F09      	move.l %a1,-(%sp)
+ 994 07e0 2F08      	move.l %a0,-(%sp)
+ 995 07e2 F21F 5480 	fmove.d (%sp)+,%fp1
+ 996 07e6 2F01      	move.l %d1,-(%sp)
+ 997 07e8 2F00      	move.l %d0,-(%sp)
+ 998 07ea F21F 5400 	fmove.d (%sp)+,%fp0
+ 999 07ee F200 00A8 	fsub.x %fp0,%fp1
+ 1000 07f2 F22E 7480 	fmove.d %fp1,-8(%fp)
+ 1000      FFF8 
+ 1001 07f8 7001      	moveq #1,%d0
+ 1002 07fa 2D40 FFDC 	move.l %d0,-36(%fp)
+ 1003 07fe 6000 00D2 	jra .L31
+ 1004               	.L32:
+ 1005 0802 2D6E 0008 	move.l 8(%fp),-8(%fp)
+ 1005      FFF8 
+ 1006 0808 2D6E 000C 	move.l 12(%fp),-4(%fp)
+ 1006      FFFC 
+ 1007 080e 7202      	moveq #2,%d1
+ 1008 0810 2D41 FFDC 	move.l %d1,-36(%fp)
+ 1009 0814 6000 00BC 	jra .L31
+ 1010               	.L29:
+ 1011 0818 2D79 0000 	move.l zero,-32(%fp)
+ 1011      0000 FFE0 
+ 1012 0820 2D79 0000 	move.l zero+4,-28(%fp)
+ 1012      0000 FFE4 
+ 1013 0828 0CAE 3FFB 	cmp.l #1073460418,-48(%fp)
+ 1013      B4C2 FFD0 
+ 1014 0830 6F2C      	jle .L33
+ 1015 0832 202E 0008 	move.l 8(%fp),%d0
+ 1016 0836 222E 000C 	move.l 12(%fp),%d1
+ 1017 083a F23C 5400 	fmove.d #0x4000000000000000,%fp0
+ 1017      4000 0000 
+ 1017      0000 0000 
+ 1018 0846 2F01      	move.l %d1,-(%sp)
+ 1019 0848 2F00      	move.l %d0,-(%sp)
+ 1020 084a F21F 5480 	fmove.d (%sp)+,%fp1
+ 1021 084e F200 0428 	fsub.x %fp1,%fp0
+ 1022 0852 F22E 7400 	fmove.d %fp0,-8(%fp)
+ 1022      FFF8 
+ 1023 0858 42AE FFDC 	clr.l -36(%fp)
+ 1024 085c 6074      	jra .L31
+ 1025               	.L33:
+ 1026 085e 0CAE 3FF3 	cmp.l #1072936131,-48(%fp)
+ 1026      B4C3 FFD0 
+ 1027 0866 6F36      	jle .L34
+ 1028 0868 202E 0008 	move.l 8(%fp),%d0
+ 1029 086c 222E 000C 	move.l 12(%fp),%d1
+ 1030 0870 2079 0000 	move.l tc,%a0
+ 1030      0000 
+ 1031 0876 2279 0000 	move.l tc+4,%a1
+ 1031      0000 
+ 1032 087c 2F01      	move.l %d1,-(%sp)
+68K GAS   			page 19
+
+
+ 1033 087e 2F00      	move.l %d0,-(%sp)
+ 1034 0880 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1035 0884 2F09      	move.l %a1,-(%sp)
+ 1036 0886 2F08      	move.l %a0,-(%sp)
+ 1037 0888 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1038 088c F200 0428 	fsub.x %fp1,%fp0
+ 1039 0890 F22E 7400 	fmove.d %fp0,-8(%fp)
+ 1039      FFF8 
+ 1040 0896 7001      	moveq #1,%d0
+ 1041 0898 2D40 FFDC 	move.l %d0,-36(%fp)
+ 1042 089c 6034      	jra .L31
+ 1043               	.L34:
+ 1044 089e 202E 0008 	move.l 8(%fp),%d0
+ 1045 08a2 222E 000C 	move.l 12(%fp),%d1
+ 1046 08a6 2079 0000 	move.l one,%a0
+ 1046      0000 
+ 1047 08ac 2279 0000 	move.l one+4,%a1
+ 1047      0000 
+ 1048 08b2 2F01      	move.l %d1,-(%sp)
+ 1049 08b4 2F00      	move.l %d0,-(%sp)
+ 1050 08b6 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1051 08ba 2F09      	move.l %a1,-(%sp)
+ 1052 08bc 2F08      	move.l %a0,-(%sp)
+ 1053 08be F21F 5480 	fmove.d (%sp)+,%fp1
+ 1054 08c2 F200 0428 	fsub.x %fp1,%fp0
+ 1055 08c6 F22E 7400 	fmove.d %fp0,-8(%fp)
+ 1055      FFF8 
+ 1056 08cc 7002      	moveq #2,%d0
+ 1057 08ce 2D40 FFDC 	move.l %d0,-36(%fp)
+ 1058               	.L31:
+ 1059 08d2 202E FFDC 	move.l -36(%fp),%d0
+ 1060 08d6 7201      	moveq #1,%d1
+ 1061 08d8 B280      	cmp.l %d0,%d1
+ 1062 08da 6700 032C 	jeq .L37
+ 1063 08de 7202      	moveq #2,%d1
+ 1064 08e0 B280      	cmp.l %d0,%d1
+ 1065 08e2 6700 0720 	jeq .L38
+ 1066 08e6 4A80      	tst.l %d0
+ 1067 08e8 6600 1204 	jne .L49
+ 1068               	.L36:
+ 1069 08ec F22E 5400 	fmove.d -8(%fp),%fp0
+ 1069      FFF8 
+ 1070 08f2 F22E 5423 	fmul.d -8(%fp),%fp0
+ 1070      FFF8 
+ 1071 08f8 F22E 7400 	fmove.d %fp0,-16(%fp)
+ 1071      FFF0 
+ 1072 08fe 2039 0000 	move.l a10,%d0
+ 1072      0000 
+ 1073 0904 2239 0000 	move.l a10+4,%d1
+ 1073      0000 
+ 1074 090a 2F01      	move.l %d1,-(%sp)
+ 1075 090c 2F00      	move.l %d0,-(%sp)
+ 1076 090e F21F 5480 	fmove.d (%sp)+,%fp1
+ 1077 0912 F22E 54A3 	fmul.d -16(%fp),%fp1
+ 1077      FFF0 
+ 1078 0918 F227 7480 	fmove.d %fp1,-(%sp)
+ 1079 091c 201F      	move.l (%sp)+,%d0
+68K GAS   			page 20
+
+
+ 1080 091e 221F      	move.l (%sp)+,%d1
+ 1081 0920 2079 0000 	move.l a8,%a0
+ 1081      0000 
+ 1082 0926 2279 0000 	move.l a8+4,%a1
+ 1082      0000 
+ 1083 092c 2F01      	move.l %d1,-(%sp)
+ 1084 092e 2F00      	move.l %d0,-(%sp)
+ 1085 0930 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1086 0934 2F09      	move.l %a1,-(%sp)
+ 1087 0936 2F08      	move.l %a0,-(%sp)
+ 1088 0938 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1089 093c F200 0422 	fadd.x %fp1,%fp0
+ 1090 0940 F227 7400 	fmove.d %fp0,-(%sp)
+ 1091 0944 201F      	move.l (%sp)+,%d0
+ 1092 0946 221F      	move.l (%sp)+,%d1
+ 1093 0948 2F01      	move.l %d1,-(%sp)
+ 1094 094a 2F00      	move.l %d0,-(%sp)
+ 1095 094c F21F 5400 	fmove.d (%sp)+,%fp0
+ 1096 0950 F22E 5423 	fmul.d -16(%fp),%fp0
+ 1096      FFF0 
+ 1097 0956 F227 7400 	fmove.d %fp0,-(%sp)
+ 1098 095a 201F      	move.l (%sp)+,%d0
+ 1099 095c 221F      	move.l (%sp)+,%d1
+ 1100 095e 2079 0000 	move.l a6,%a0
+ 1100      0000 
+ 1101 0964 2279 0000 	move.l a6+4,%a1
+ 1101      0000 
+ 1102 096a 2F01      	move.l %d1,-(%sp)
+ 1103 096c 2F00      	move.l %d0,-(%sp)
+ 1104 096e F21F 5480 	fmove.d (%sp)+,%fp1
+ 1105 0972 2F09      	move.l %a1,-(%sp)
+ 1106 0974 2F08      	move.l %a0,-(%sp)
+ 1107 0976 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1108 097a F200 00A2 	fadd.x %fp0,%fp1
+ 1109 097e F227 7480 	fmove.d %fp1,-(%sp)
+ 1110 0982 201F      	move.l (%sp)+,%d0
+ 1111 0984 221F      	move.l (%sp)+,%d1
+ 1112 0986 2F01      	move.l %d1,-(%sp)
+ 1113 0988 2F00      	move.l %d0,-(%sp)
+ 1114 098a F21F 5480 	fmove.d (%sp)+,%fp1
+ 1115 098e F22E 54A3 	fmul.d -16(%fp),%fp1
+ 1115      FFF0 
+ 1116 0994 F227 7480 	fmove.d %fp1,-(%sp)
+ 1117 0998 201F      	move.l (%sp)+,%d0
+ 1118 099a 221F      	move.l (%sp)+,%d1
+ 1119 099c 2079 0000 	move.l a4,%a0
+ 1119      0000 
+ 1120 09a2 2279 0000 	move.l a4+4,%a1
+ 1120      0000 
+ 1121 09a8 2F01      	move.l %d1,-(%sp)
+ 1122 09aa 2F00      	move.l %d0,-(%sp)
+ 1123 09ac F21F 5400 	fmove.d (%sp)+,%fp0
+ 1124 09b0 2F09      	move.l %a1,-(%sp)
+ 1125 09b2 2F08      	move.l %a0,-(%sp)
+ 1126 09b4 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1127 09b8 F200 0422 	fadd.x %fp1,%fp0
+ 1128 09bc F227 7400 	fmove.d %fp0,-(%sp)
+68K GAS   			page 21
+
+
+ 1129 09c0 201F      	move.l (%sp)+,%d0
+ 1130 09c2 221F      	move.l (%sp)+,%d1
+ 1131 09c4 2F01      	move.l %d1,-(%sp)
+ 1132 09c6 2F00      	move.l %d0,-(%sp)
+ 1133 09c8 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1134 09cc F22E 5423 	fmul.d -16(%fp),%fp0
+ 1134      FFF0 
+ 1135 09d2 F227 7400 	fmove.d %fp0,-(%sp)
+ 1136 09d6 201F      	move.l (%sp)+,%d0
+ 1137 09d8 221F      	move.l (%sp)+,%d1
+ 1138 09da 2079 0000 	move.l a2,%a0
+ 1138      0000 
+ 1139 09e0 2279 0000 	move.l a2+4,%a1
+ 1139      0000 
+ 1140 09e6 2F01      	move.l %d1,-(%sp)
+ 1141 09e8 2F00      	move.l %d0,-(%sp)
+ 1142 09ea F21F 5480 	fmove.d (%sp)+,%fp1
+ 1143 09ee 2F09      	move.l %a1,-(%sp)
+ 1144 09f0 2F08      	move.l %a0,-(%sp)
+ 1145 09f2 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1146 09f6 F200 00A2 	fadd.x %fp0,%fp1
+ 1147 09fa F227 7480 	fmove.d %fp1,-(%sp)
+ 1148 09fe 201F      	move.l (%sp)+,%d0
+ 1149 0a00 221F      	move.l (%sp)+,%d1
+ 1150 0a02 2F01      	move.l %d1,-(%sp)
+ 1151 0a04 2F00      	move.l %d0,-(%sp)
+ 1152 0a06 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1153 0a0a F22E 54A3 	fmul.d -16(%fp),%fp1
+ 1153      FFF0 
+ 1154 0a10 F227 7480 	fmove.d %fp1,-(%sp)
+ 1155 0a14 201F      	move.l (%sp)+,%d0
+ 1156 0a16 221F      	move.l (%sp)+,%d1
+ 1157 0a18 2079 0000 	move.l a0,%a0
+ 1157      0000 
+ 1158 0a1e 2279 0000 	move.l a0+4,%a1
+ 1158      0000 
+ 1159 0a24 2F01      	move.l %d1,-(%sp)
+ 1160 0a26 2F00      	move.l %d0,-(%sp)
+ 1161 0a28 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1162 0a2c 2F09      	move.l %a1,-(%sp)
+ 1163 0a2e 2F08      	move.l %a0,-(%sp)
+ 1164 0a30 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1165 0a34 F200 0422 	fadd.x %fp1,%fp0
+ 1166 0a38 F22E 7400 	fmove.d %fp0,-64(%fp)
+ 1166      FFC0 
+ 1167 0a3e 2039 0000 	move.l a11,%d0
+ 1167      0000 
+ 1168 0a44 2239 0000 	move.l a11+4,%d1
+ 1168      0000 
+ 1169 0a4a 2F01      	move.l %d1,-(%sp)
+ 1170 0a4c 2F00      	move.l %d0,-(%sp)
+ 1171 0a4e F21F 5400 	fmove.d (%sp)+,%fp0
+ 1172 0a52 F22E 5423 	fmul.d -16(%fp),%fp0
+ 1172      FFF0 
+ 1173 0a58 F227 7400 	fmove.d %fp0,-(%sp)
+ 1174 0a5c 201F      	move.l (%sp)+,%d0
+ 1175 0a5e 221F      	move.l (%sp)+,%d1
+68K GAS   			page 22
+
+
+ 1176 0a60 2079 0000 	move.l a9,%a0
+ 1176      0000 
+ 1177 0a66 2279 0000 	move.l a9+4,%a1
+ 1177      0000 
+ 1178 0a6c 2F01      	move.l %d1,-(%sp)
+ 1179 0a6e 2F00      	move.l %d0,-(%sp)
+ 1180 0a70 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1181 0a74 2F09      	move.l %a1,-(%sp)
+ 1182 0a76 2F08      	move.l %a0,-(%sp)
+ 1183 0a78 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1184 0a7c F200 00A2 	fadd.x %fp0,%fp1
+ 1185 0a80 F227 7480 	fmove.d %fp1,-(%sp)
+ 1186 0a84 201F      	move.l (%sp)+,%d0
+ 1187 0a86 221F      	move.l (%sp)+,%d1
+ 1188 0a88 2F01      	move.l %d1,-(%sp)
+ 1189 0a8a 2F00      	move.l %d0,-(%sp)
+ 1190 0a8c F21F 5480 	fmove.d (%sp)+,%fp1
+ 1191 0a90 F22E 54A3 	fmul.d -16(%fp),%fp1
+ 1191      FFF0 
+ 1192 0a96 F227 7480 	fmove.d %fp1,-(%sp)
+ 1193 0a9a 201F      	move.l (%sp)+,%d0
+ 1194 0a9c 221F      	move.l (%sp)+,%d1
+ 1195 0a9e 2079 0000 	move.l a7,%a0
+ 1195      0000 
+ 1196 0aa4 2279 0000 	move.l a7+4,%a1
+ 1196      0000 
+ 1197 0aaa 2F01      	move.l %d1,-(%sp)
+ 1198 0aac 2F00      	move.l %d0,-(%sp)
+ 1199 0aae F21F 5400 	fmove.d (%sp)+,%fp0
+ 1200 0ab2 2F09      	move.l %a1,-(%sp)
+ 1201 0ab4 2F08      	move.l %a0,-(%sp)
+ 1202 0ab6 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1203 0aba F200 0422 	fadd.x %fp1,%fp0
+ 1204 0abe F227 7400 	fmove.d %fp0,-(%sp)
+ 1205 0ac2 201F      	move.l (%sp)+,%d0
+ 1206 0ac4 221F      	move.l (%sp)+,%d1
+ 1207 0ac6 2F01      	move.l %d1,-(%sp)
+ 1208 0ac8 2F00      	move.l %d0,-(%sp)
+ 1209 0aca F21F 5400 	fmove.d (%sp)+,%fp0
+ 1210 0ace F22E 5423 	fmul.d -16(%fp),%fp0
+ 1210      FFF0 
+ 1211 0ad4 F227 7400 	fmove.d %fp0,-(%sp)
+ 1212 0ad8 201F      	move.l (%sp)+,%d0
+ 1213 0ada 221F      	move.l (%sp)+,%d1
+ 1214 0adc 2079 0000 	move.l a5,%a0
+ 1214      0000 
+ 1215 0ae2 2279 0000 	move.l a5+4,%a1
+ 1215      0000 
+ 1216 0ae8 2F01      	move.l %d1,-(%sp)
+ 1217 0aea 2F00      	move.l %d0,-(%sp)
+ 1218 0aec F21F 5480 	fmove.d (%sp)+,%fp1
+ 1219 0af0 2F09      	move.l %a1,-(%sp)
+ 1220 0af2 2F08      	move.l %a0,-(%sp)
+ 1221 0af4 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1222 0af8 F200 00A2 	fadd.x %fp0,%fp1
+ 1223 0afc F227 7480 	fmove.d %fp1,-(%sp)
+ 1224 0b00 201F      	move.l (%sp)+,%d0
+68K GAS   			page 23
+
+
+ 1225 0b02 221F      	move.l (%sp)+,%d1
+ 1226 0b04 2F01      	move.l %d1,-(%sp)
+ 1227 0b06 2F00      	move.l %d0,-(%sp)
+ 1228 0b08 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1229 0b0c F22E 54A3 	fmul.d -16(%fp),%fp1
+ 1229      FFF0 
+ 1230 0b12 F227 7480 	fmove.d %fp1,-(%sp)
+ 1231 0b16 201F      	move.l (%sp)+,%d0
+ 1232 0b18 221F      	move.l (%sp)+,%d1
+ 1233 0b1a 2079 0000 	move.l a3,%a0
+ 1233      0000 
+ 1234 0b20 2279 0000 	move.l a3+4,%a1
+ 1234      0000 
+ 1235 0b26 2F01      	move.l %d1,-(%sp)
+ 1236 0b28 2F00      	move.l %d0,-(%sp)
+ 1237 0b2a F21F 5400 	fmove.d (%sp)+,%fp0
+ 1238 0b2e 2F09      	move.l %a1,-(%sp)
+ 1239 0b30 2F08      	move.l %a0,-(%sp)
+ 1240 0b32 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1241 0b36 F200 0422 	fadd.x %fp1,%fp0
+ 1242 0b3a F227 7400 	fmove.d %fp0,-(%sp)
+ 1243 0b3e 201F      	move.l (%sp)+,%d0
+ 1244 0b40 221F      	move.l (%sp)+,%d1
+ 1245 0b42 2F01      	move.l %d1,-(%sp)
+ 1246 0b44 2F00      	move.l %d0,-(%sp)
+ 1247 0b46 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1248 0b4a F22E 5423 	fmul.d -16(%fp),%fp0
+ 1248      FFF0 
+ 1249 0b50 F227 7400 	fmove.d %fp0,-(%sp)
+ 1250 0b54 201F      	move.l (%sp)+,%d0
+ 1251 0b56 221F      	move.l (%sp)+,%d1
+ 1252 0b58 2079 0000 	move.l a1,%a0
+ 1252      0000 
+ 1253 0b5e 2279 0000 	move.l a1+4,%a1
+ 1253      0000 
+ 1254 0b64 2F01      	move.l %d1,-(%sp)
+ 1255 0b66 2F00      	move.l %d0,-(%sp)
+ 1256 0b68 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1257 0b6c 2F09      	move.l %a1,-(%sp)
+ 1258 0b6e 2F08      	move.l %a0,-(%sp)
+ 1259 0b70 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1260 0b74 F200 00A2 	fadd.x %fp0,%fp1
+ 1261 0b78 F227 7480 	fmove.d %fp1,-(%sp)
+ 1262 0b7c 201F      	move.l (%sp)+,%d0
+ 1263 0b7e 221F      	move.l (%sp)+,%d1
+ 1264 0b80 2F01      	move.l %d1,-(%sp)
+ 1265 0b82 2F00      	move.l %d0,-(%sp)
+ 1266 0b84 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1267 0b88 F22E 54A3 	fmul.d -16(%fp),%fp1
+ 1267      FFF0 
+ 1268 0b8e F22E 7480 	fmove.d %fp1,-72(%fp)
+ 1268      FFB8 
+ 1269 0b94 F22E 5400 	fmove.d -8(%fp),%fp0
+ 1269      FFF8 
+ 1270 0b9a F22E 5423 	fmul.d -64(%fp),%fp0
+ 1270      FFC0 
+ 1271 0ba0 F227 7400 	fmove.d %fp0,-(%sp)
+68K GAS   			page 24
+
+
+ 1272 0ba4 201F      	move.l (%sp)+,%d0
+ 1273 0ba6 221F      	move.l (%sp)+,%d1
+ 1274 0ba8 2F01      	move.l %d1,-(%sp)
+ 1275 0baa 2F00      	move.l %d0,-(%sp)
+ 1276 0bac F21F 5480 	fmove.d (%sp)+,%fp1
+ 1277 0bb0 F22E 54A2 	fadd.d -72(%fp),%fp1
+ 1277      FFB8 
+ 1278 0bb6 F22E 7480 	fmove.d %fp1,-80(%fp)
+ 1278      FFB0 
+ 1279 0bbc F22E 5400 	fmove.d -8(%fp),%fp0
+ 1279      FFF8 
+ 1280 0bc2 F23C 5423 	fmul.d #0x3fe0000000000000,%fp0
+ 1280      3FE0 0000 
+ 1280      0000 0000 
+ 1281 0bce F227 7400 	fmove.d %fp0,-(%sp)
+ 1282 0bd2 201F      	move.l (%sp)+,%d0
+ 1283 0bd4 221F      	move.l (%sp)+,%d1
+ 1284 0bd6 F22E 5480 	fmove.d -80(%fp),%fp1
+ 1284      FFB0 
+ 1285 0bdc 2F01      	move.l %d1,-(%sp)
+ 1286 0bde 2F00      	move.l %d0,-(%sp)
+ 1287 0be0 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1288 0be4 F200 00A8 	fsub.x %fp0,%fp1
+ 1289 0be8 F227 7480 	fmove.d %fp1,-(%sp)
+ 1290 0bec 201F      	move.l (%sp)+,%d0
+ 1291 0bee 221F      	move.l (%sp)+,%d1
+ 1292 0bf0 2F01      	move.l %d1,-(%sp)
+ 1293 0bf2 2F00      	move.l %d0,-(%sp)
+ 1294 0bf4 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1295 0bf8 F22E 54A2 	fadd.d -32(%fp),%fp1
+ 1295      FFE0 
+ 1296 0bfe F22E 7480 	fmove.d %fp1,-32(%fp)
+ 1296      FFE0 
+ 1297 0c04 6000 0EEE 	jra .L27
+ 1298               	.L37:
+ 1299 0c08 F22E 5400 	fmove.d -8(%fp),%fp0
+ 1299      FFF8 
+ 1300 0c0e F22E 5423 	fmul.d -8(%fp),%fp0
+ 1300      FFF8 
+ 1301 0c14 F22E 7400 	fmove.d %fp0,-16(%fp)
+ 1301      FFF0 
+ 1302 0c1a F22E 5480 	fmove.d -16(%fp),%fp1
+ 1302      FFF0 
+ 1303 0c20 F22E 54A3 	fmul.d -8(%fp),%fp1
+ 1303      FFF8 
+ 1304 0c26 F22E 7480 	fmove.d %fp1,-88(%fp)
+ 1304      FFA8 
+ 1305 0c2c 2039 0000 	move.l t12,%d0
+ 1305      0000 
+ 1306 0c32 2239 0000 	move.l t12+4,%d1
+ 1306      0000 
+ 1307 0c38 2F01      	move.l %d1,-(%sp)
+ 1308 0c3a 2F00      	move.l %d0,-(%sp)
+ 1309 0c3c F21F 5400 	fmove.d (%sp)+,%fp0
+ 1310 0c40 F22E 5423 	fmul.d -88(%fp),%fp0
+ 1310      FFA8 
+ 1311 0c46 F227 7400 	fmove.d %fp0,-(%sp)
+68K GAS   			page 25
+
+
+ 1312 0c4a 201F      	move.l (%sp)+,%d0
+ 1313 0c4c 221F      	move.l (%sp)+,%d1
+ 1314 0c4e 2079 0000 	move.l t9,%a0
+ 1314      0000 
+ 1315 0c54 2279 0000 	move.l t9+4,%a1
+ 1315      0000 
+ 1316 0c5a 2F01      	move.l %d1,-(%sp)
+ 1317 0c5c 2F00      	move.l %d0,-(%sp)
+ 1318 0c5e F21F 5480 	fmove.d (%sp)+,%fp1
+ 1319 0c62 2F09      	move.l %a1,-(%sp)
+ 1320 0c64 2F08      	move.l %a0,-(%sp)
+ 1321 0c66 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1322 0c6a F200 00A2 	fadd.x %fp0,%fp1
+ 1323 0c6e F227 7480 	fmove.d %fp1,-(%sp)
+ 1324 0c72 201F      	move.l (%sp)+,%d0
+ 1325 0c74 221F      	move.l (%sp)+,%d1
+ 1326 0c76 2F01      	move.l %d1,-(%sp)
+ 1327 0c78 2F00      	move.l %d0,-(%sp)
+ 1328 0c7a F21F 5480 	fmove.d (%sp)+,%fp1
+ 1329 0c7e F22E 54A3 	fmul.d -88(%fp),%fp1
+ 1329      FFA8 
+ 1330 0c84 F227 7480 	fmove.d %fp1,-(%sp)
+ 1331 0c88 201F      	move.l (%sp)+,%d0
+ 1332 0c8a 221F      	move.l (%sp)+,%d1
+ 1333 0c8c 2079 0000 	move.l t6,%a0
+ 1333      0000 
+ 1334 0c92 2279 0000 	move.l t6+4,%a1
+ 1334      0000 
+ 1335 0c98 2F01      	move.l %d1,-(%sp)
+ 1336 0c9a 2F00      	move.l %d0,-(%sp)
+ 1337 0c9c F21F 5400 	fmove.d (%sp)+,%fp0
+ 1338 0ca0 2F09      	move.l %a1,-(%sp)
+ 1339 0ca2 2F08      	move.l %a0,-(%sp)
+ 1340 0ca4 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1341 0ca8 F200 0422 	fadd.x %fp1,%fp0
+ 1342 0cac F227 7400 	fmove.d %fp0,-(%sp)
+ 1343 0cb0 201F      	move.l (%sp)+,%d0
+ 1344 0cb2 221F      	move.l (%sp)+,%d1
+ 1345 0cb4 2F01      	move.l %d1,-(%sp)
+ 1346 0cb6 2F00      	move.l %d0,-(%sp)
+ 1347 0cb8 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1348 0cbc F22E 5423 	fmul.d -88(%fp),%fp0
+ 1348      FFA8 
+ 1349 0cc2 F227 7400 	fmove.d %fp0,-(%sp)
+ 1350 0cc6 201F      	move.l (%sp)+,%d0
+ 1351 0cc8 221F      	move.l (%sp)+,%d1
+ 1352 0cca 2079 0000 	move.l t3,%a0
+ 1352      0000 
+ 1353 0cd0 2279 0000 	move.l t3+4,%a1
+ 1353      0000 
+ 1354 0cd6 2F01      	move.l %d1,-(%sp)
+ 1355 0cd8 2F00      	move.l %d0,-(%sp)
+ 1356 0cda F21F 5480 	fmove.d (%sp)+,%fp1
+ 1357 0cde 2F09      	move.l %a1,-(%sp)
+ 1358 0ce0 2F08      	move.l %a0,-(%sp)
+ 1359 0ce2 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1360 0ce6 F200 00A2 	fadd.x %fp0,%fp1
+68K GAS   			page 26
+
+
+ 1361 0cea F227 7480 	fmove.d %fp1,-(%sp)
+ 1362 0cee 201F      	move.l (%sp)+,%d0
+ 1363 0cf0 221F      	move.l (%sp)+,%d1
+ 1364 0cf2 2F01      	move.l %d1,-(%sp)
+ 1365 0cf4 2F00      	move.l %d0,-(%sp)
+ 1366 0cf6 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1367 0cfa F22E 54A3 	fmul.d -88(%fp),%fp1
+ 1367      FFA8 
+ 1368 0d00 F227 7480 	fmove.d %fp1,-(%sp)
+ 1369 0d04 201F      	move.l (%sp)+,%d0
+ 1370 0d06 221F      	move.l (%sp)+,%d1
+ 1371 0d08 2079 0000 	move.l t0,%a0
+ 1371      0000 
+ 1372 0d0e 2279 0000 	move.l t0+4,%a1
+ 1372      0000 
+ 1373 0d14 2F01      	move.l %d1,-(%sp)
+ 1374 0d16 2F00      	move.l %d0,-(%sp)
+ 1375 0d18 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1376 0d1c 2F09      	move.l %a1,-(%sp)
+ 1377 0d1e 2F08      	move.l %a0,-(%sp)
+ 1378 0d20 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1379 0d24 F200 0422 	fadd.x %fp1,%fp0
+ 1380 0d28 F22E 7400 	fmove.d %fp0,-64(%fp)
+ 1380      FFC0 
+ 1381 0d2e 2039 0000 	move.l t13,%d0
+ 1381      0000 
+ 1382 0d34 2239 0000 	move.l t13+4,%d1
+ 1382      0000 
+ 1383 0d3a 2F01      	move.l %d1,-(%sp)
+ 1384 0d3c 2F00      	move.l %d0,-(%sp)
+ 1385 0d3e F21F 5400 	fmove.d (%sp)+,%fp0
+ 1386 0d42 F22E 5423 	fmul.d -88(%fp),%fp0
+ 1386      FFA8 
+ 1387 0d48 F227 7400 	fmove.d %fp0,-(%sp)
+ 1388 0d4c 201F      	move.l (%sp)+,%d0
+ 1389 0d4e 221F      	move.l (%sp)+,%d1
+ 1390 0d50 2079 0000 	move.l t10,%a0
+ 1390      0000 
+ 1391 0d56 2279 0000 	move.l t10+4,%a1
+ 1391      0000 
+ 1392 0d5c 2F01      	move.l %d1,-(%sp)
+ 1393 0d5e 2F00      	move.l %d0,-(%sp)
+ 1394 0d60 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1395 0d64 2F09      	move.l %a1,-(%sp)
+ 1396 0d66 2F08      	move.l %a0,-(%sp)
+ 1397 0d68 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1398 0d6c F200 00A2 	fadd.x %fp0,%fp1
+ 1399 0d70 F227 7480 	fmove.d %fp1,-(%sp)
+ 1400 0d74 201F      	move.l (%sp)+,%d0
+ 1401 0d76 221F      	move.l (%sp)+,%d1
+ 1402 0d78 2F01      	move.l %d1,-(%sp)
+ 1403 0d7a 2F00      	move.l %d0,-(%sp)
+ 1404 0d7c F21F 5480 	fmove.d (%sp)+,%fp1
+ 1405 0d80 F22E 54A3 	fmul.d -88(%fp),%fp1
+ 1405      FFA8 
+ 1406 0d86 F227 7480 	fmove.d %fp1,-(%sp)
+ 1407 0d8a 201F      	move.l (%sp)+,%d0
+68K GAS   			page 27
+
+
+ 1408 0d8c 221F      	move.l (%sp)+,%d1
+ 1409 0d8e 2079 0000 	move.l t7,%a0
+ 1409      0000 
+ 1410 0d94 2279 0000 	move.l t7+4,%a1
+ 1410      0000 
+ 1411 0d9a 2F01      	move.l %d1,-(%sp)
+ 1412 0d9c 2F00      	move.l %d0,-(%sp)
+ 1413 0d9e F21F 5400 	fmove.d (%sp)+,%fp0
+ 1414 0da2 2F09      	move.l %a1,-(%sp)
+ 1415 0da4 2F08      	move.l %a0,-(%sp)
+ 1416 0da6 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1417 0daa F200 0422 	fadd.x %fp1,%fp0
+ 1418 0dae F227 7400 	fmove.d %fp0,-(%sp)
+ 1419 0db2 201F      	move.l (%sp)+,%d0
+ 1420 0db4 221F      	move.l (%sp)+,%d1
+ 1421 0db6 2F01      	move.l %d1,-(%sp)
+ 1422 0db8 2F00      	move.l %d0,-(%sp)
+ 1423 0dba F21F 5400 	fmove.d (%sp)+,%fp0
+ 1424 0dbe F22E 5423 	fmul.d -88(%fp),%fp0
+ 1424      FFA8 
+ 1425 0dc4 F227 7400 	fmove.d %fp0,-(%sp)
+ 1426 0dc8 201F      	move.l (%sp)+,%d0
+ 1427 0dca 221F      	move.l (%sp)+,%d1
+ 1428 0dcc 2079 0000 	move.l t4,%a0
+ 1428      0000 
+ 1429 0dd2 2279 0000 	move.l t4+4,%a1
+ 1429      0000 
+ 1430 0dd8 2F01      	move.l %d1,-(%sp)
+ 1431 0dda 2F00      	move.l %d0,-(%sp)
+ 1432 0ddc F21F 5480 	fmove.d (%sp)+,%fp1
+ 1433 0de0 2F09      	move.l %a1,-(%sp)
+ 1434 0de2 2F08      	move.l %a0,-(%sp)
+ 1435 0de4 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1436 0de8 F200 00A2 	fadd.x %fp0,%fp1
+ 1437 0dec F227 7480 	fmove.d %fp1,-(%sp)
+ 1438 0df0 201F      	move.l (%sp)+,%d0
+ 1439 0df2 221F      	move.l (%sp)+,%d1
+ 1440 0df4 2F01      	move.l %d1,-(%sp)
+ 1441 0df6 2F00      	move.l %d0,-(%sp)
+ 1442 0df8 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1443 0dfc F22E 54A3 	fmul.d -88(%fp),%fp1
+ 1443      FFA8 
+ 1444 0e02 F227 7480 	fmove.d %fp1,-(%sp)
+ 1445 0e06 201F      	move.l (%sp)+,%d0
+ 1446 0e08 221F      	move.l (%sp)+,%d1
+ 1447 0e0a 2079 0000 	move.l t1,%a0
+ 1447      0000 
+ 1448 0e10 2279 0000 	move.l t1+4,%a1
+ 1448      0000 
+ 1449 0e16 2F01      	move.l %d1,-(%sp)
+ 1450 0e18 2F00      	move.l %d0,-(%sp)
+ 1451 0e1a F21F 5400 	fmove.d (%sp)+,%fp0
+ 1452 0e1e 2F09      	move.l %a1,-(%sp)
+ 1453 0e20 2F08      	move.l %a0,-(%sp)
+ 1454 0e22 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1455 0e26 F200 0422 	fadd.x %fp1,%fp0
+ 1456 0e2a F22E 7400 	fmove.d %fp0,-72(%fp)
+68K GAS   			page 28
+
+
+ 1456      FFB8 
+ 1457 0e30 2039 0000 	move.l t14,%d0
+ 1457      0000 
+ 1458 0e36 2239 0000 	move.l t14+4,%d1
+ 1458      0000 
+ 1459 0e3c 2F01      	move.l %d1,-(%sp)
+ 1460 0e3e 2F00      	move.l %d0,-(%sp)
+ 1461 0e40 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1462 0e44 F22E 5423 	fmul.d -88(%fp),%fp0
+ 1462      FFA8 
+ 1463 0e4a F227 7400 	fmove.d %fp0,-(%sp)
+ 1464 0e4e 201F      	move.l (%sp)+,%d0
+ 1465 0e50 221F      	move.l (%sp)+,%d1
+ 1466 0e52 2079 0000 	move.l t11,%a0
+ 1466      0000 
+ 1467 0e58 2279 0000 	move.l t11+4,%a1
+ 1467      0000 
+ 1468 0e5e 2F01      	move.l %d1,-(%sp)
+ 1469 0e60 2F00      	move.l %d0,-(%sp)
+ 1470 0e62 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1471 0e66 2F09      	move.l %a1,-(%sp)
+ 1472 0e68 2F08      	move.l %a0,-(%sp)
+ 1473 0e6a F21F 5400 	fmove.d (%sp)+,%fp0
+ 1474 0e6e F200 00A2 	fadd.x %fp0,%fp1
+ 1475 0e72 F227 7480 	fmove.d %fp1,-(%sp)
+ 1476 0e76 201F      	move.l (%sp)+,%d0
+ 1477 0e78 221F      	move.l (%sp)+,%d1
+ 1478 0e7a 2F01      	move.l %d1,-(%sp)
+ 1479 0e7c 2F00      	move.l %d0,-(%sp)
+ 1480 0e7e F21F 5480 	fmove.d (%sp)+,%fp1
+ 1481 0e82 F22E 54A3 	fmul.d -88(%fp),%fp1
+ 1481      FFA8 
+ 1482 0e88 F227 7480 	fmove.d %fp1,-(%sp)
+ 1483 0e8c 201F      	move.l (%sp)+,%d0
+ 1484 0e8e 221F      	move.l (%sp)+,%d1
+ 1485 0e90 2079 0000 	move.l t8,%a0
+ 1485      0000 
+ 1486 0e96 2279 0000 	move.l t8+4,%a1
+ 1486      0000 
+ 1487 0e9c 2F01      	move.l %d1,-(%sp)
+ 1488 0e9e 2F00      	move.l %d0,-(%sp)
+ 1489 0ea0 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1490 0ea4 2F09      	move.l %a1,-(%sp)
+ 1491 0ea6 2F08      	move.l %a0,-(%sp)
+ 1492 0ea8 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1493 0eac F200 0422 	fadd.x %fp1,%fp0
+ 1494 0eb0 F227 7400 	fmove.d %fp0,-(%sp)
+ 1495 0eb4 201F      	move.l (%sp)+,%d0
+ 1496 0eb6 221F      	move.l (%sp)+,%d1
+ 1497 0eb8 2F01      	move.l %d1,-(%sp)
+ 1498 0eba 2F00      	move.l %d0,-(%sp)
+ 1499 0ebc F21F 5400 	fmove.d (%sp)+,%fp0
+ 1500 0ec0 F22E 5423 	fmul.d -88(%fp),%fp0
+ 1500      FFA8 
+ 1501 0ec6 F227 7400 	fmove.d %fp0,-(%sp)
+ 1502 0eca 201F      	move.l (%sp)+,%d0
+ 1503 0ecc 221F      	move.l (%sp)+,%d1
+68K GAS   			page 29
+
+
+ 1504 0ece 2079 0000 	move.l t5,%a0
+ 1504      0000 
+ 1505 0ed4 2279 0000 	move.l t5+4,%a1
+ 1505      0000 
+ 1506 0eda 2F01      	move.l %d1,-(%sp)
+ 1507 0edc 2F00      	move.l %d0,-(%sp)
+ 1508 0ede F21F 5480 	fmove.d (%sp)+,%fp1
+ 1509 0ee2 2F09      	move.l %a1,-(%sp)
+ 1510 0ee4 2F08      	move.l %a0,-(%sp)
+ 1511 0ee6 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1512 0eea F200 00A2 	fadd.x %fp0,%fp1
+ 1513 0eee F227 7480 	fmove.d %fp1,-(%sp)
+ 1514 0ef2 201F      	move.l (%sp)+,%d0
+ 1515 0ef4 221F      	move.l (%sp)+,%d1
+ 1516 0ef6 2F01      	move.l %d1,-(%sp)
+ 1517 0ef8 2F00      	move.l %d0,-(%sp)
+ 1518 0efa F21F 5480 	fmove.d (%sp)+,%fp1
+ 1519 0efe F22E 54A3 	fmul.d -88(%fp),%fp1
+ 1519      FFA8 
+ 1520 0f04 F227 7480 	fmove.d %fp1,-(%sp)
+ 1521 0f08 201F      	move.l (%sp)+,%d0
+ 1522 0f0a 221F      	move.l (%sp)+,%d1
+ 1523 0f0c 2079 0000 	move.l t2,%a0
+ 1523      0000 
+ 1524 0f12 2279 0000 	move.l t2+4,%a1
+ 1524      0000 
+ 1525 0f18 2F01      	move.l %d1,-(%sp)
+ 1526 0f1a 2F00      	move.l %d0,-(%sp)
+ 1527 0f1c F21F 5400 	fmove.d (%sp)+,%fp0
+ 1528 0f20 2F09      	move.l %a1,-(%sp)
+ 1529 0f22 2F08      	move.l %a0,-(%sp)
+ 1530 0f24 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1531 0f28 F200 0422 	fadd.x %fp1,%fp0
+ 1532 0f2c F22E 7400 	fmove.d %fp0,-96(%fp)
+ 1532      FFA0 
+ 1533 0f32 F22E 5400 	fmove.d -16(%fp),%fp0
+ 1533      FFF0 
+ 1534 0f38 F22E 5423 	fmul.d -64(%fp),%fp0
+ 1534      FFC0 
+ 1535 0f3e F227 7400 	fmove.d %fp0,-(%sp)
+ 1536 0f42 201F      	move.l (%sp)+,%d0
+ 1537 0f44 221F      	move.l (%sp)+,%d1
+ 1538 0f46 2439 0000 	move.l tt,%d2
+ 1538      0000 
+ 1539 0f4c 2639 0000 	move.l tt+4,%d3
+ 1539      0000 
+ 1540 0f52 F22E 5480 	fmove.d -8(%fp),%fp1
+ 1540      FFF8 
+ 1541 0f58 F22E 54A3 	fmul.d -96(%fp),%fp1
+ 1541      FFA0 
+ 1542 0f5e F227 7480 	fmove.d %fp1,-(%sp)
+ 1543 0f62 205F      	move.l (%sp)+,%a0
+ 1544 0f64 225F      	move.l (%sp)+,%a1
+ 1545 0f66 2F09      	move.l %a1,-(%sp)
+ 1546 0f68 2F08      	move.l %a0,-(%sp)
+ 1547 0f6a F21F 5400 	fmove.d (%sp)+,%fp0
+ 1548 0f6e F22E 5422 	fadd.d -72(%fp),%fp0
+68K GAS   			page 30
+
+
+ 1548      FFB8 
+ 1549 0f74 F227 7400 	fmove.d %fp0,-(%sp)
+ 1550 0f78 205F      	move.l (%sp)+,%a0
+ 1551 0f7a 225F      	move.l (%sp)+,%a1
+ 1552 0f7c 2F09      	move.l %a1,-(%sp)
+ 1553 0f7e 2F08      	move.l %a0,-(%sp)
+ 1554 0f80 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1555 0f84 F22E 54A3 	fmul.d -88(%fp),%fp1
+ 1555      FFA8 
+ 1556 0f8a F227 7480 	fmove.d %fp1,-(%sp)
+ 1557 0f8e 205F      	move.l (%sp)+,%a0
+ 1558 0f90 225F      	move.l (%sp)+,%a1
+ 1559 0f92 2F03      	move.l %d3,-(%sp)
+ 1560 0f94 2F02      	move.l %d2,-(%sp)
+ 1561 0f96 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1562 0f9a 2F09      	move.l %a1,-(%sp)
+ 1563 0f9c 2F08      	move.l %a0,-(%sp)
+ 1564 0f9e F21F 5480 	fmove.d (%sp)+,%fp1
+ 1565 0fa2 F200 0428 	fsub.x %fp1,%fp0
+ 1566 0fa6 F227 7400 	fmove.d %fp0,-(%sp)
+ 1567 0faa 205F      	move.l (%sp)+,%a0
+ 1568 0fac 225F      	move.l (%sp)+,%a1
+ 1569 0fae 2F01      	move.l %d1,-(%sp)
+ 1570 0fb0 2F00      	move.l %d0,-(%sp)
+ 1571 0fb2 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1572 0fb6 2F09      	move.l %a1,-(%sp)
+ 1573 0fb8 2F08      	move.l %a0,-(%sp)
+ 1574 0fba F21F 5480 	fmove.d (%sp)+,%fp1
+ 1575 0fbe F200 0428 	fsub.x %fp1,%fp0
+ 1576 0fc2 F22E 7400 	fmove.d %fp0,-80(%fp)
+ 1576      FFB0 
+ 1577 0fc8 2039 0000 	move.l tf,%d0
+ 1577      0000 
+ 1578 0fce 2239 0000 	move.l tf+4,%d1
+ 1578      0000 
+ 1579 0fd4 2F01      	move.l %d1,-(%sp)
+ 1580 0fd6 2F00      	move.l %d0,-(%sp)
+ 1581 0fd8 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1582 0fdc F22E 5422 	fadd.d -80(%fp),%fp0
+ 1582      FFB0 
+ 1583 0fe2 F227 7400 	fmove.d %fp0,-(%sp)
+ 1584 0fe6 201F      	move.l (%sp)+,%d0
+ 1585 0fe8 221F      	move.l (%sp)+,%d1
+ 1586 0fea 2F01      	move.l %d1,-(%sp)
+ 1587 0fec 2F00      	move.l %d0,-(%sp)
+ 1588 0fee F21F 5480 	fmove.d (%sp)+,%fp1
+ 1589 0ff2 F22E 54A2 	fadd.d -32(%fp),%fp1
+ 1589      FFE0 
+ 1590 0ff8 F22E 7480 	fmove.d %fp1,-32(%fp)
+ 1590      FFE0 
+ 1591 0ffe 4E71      	nop
+ 1592 1000 6000 0AF2 	jra .L27
+ 1593               	.L38:
+ 1594 1004 2039 0000 	move.l u5,%d0
+ 1594      0000 
+ 1595 100a 2239 0000 	move.l u5+4,%d1
+ 1595      0000 
+68K GAS   			page 31
+
+
+ 1596 1010 2F01      	move.l %d1,-(%sp)
+ 1597 1012 2F00      	move.l %d0,-(%sp)
+ 1598 1014 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1599 1018 F22E 5423 	fmul.d -8(%fp),%fp0
+ 1599      FFF8 
+ 1600 101e F227 7400 	fmove.d %fp0,-(%sp)
+ 1601 1022 201F      	move.l (%sp)+,%d0
+ 1602 1024 221F      	move.l (%sp)+,%d1
+ 1603 1026 2079 0000 	move.l u4,%a0
+ 1603      0000 
+ 1604 102c 2279 0000 	move.l u4+4,%a1
+ 1604      0000 
+ 1605 1032 2F01      	move.l %d1,-(%sp)
+ 1606 1034 2F00      	move.l %d0,-(%sp)
+ 1607 1036 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1608 103a 2F09      	move.l %a1,-(%sp)
+ 1609 103c 2F08      	move.l %a0,-(%sp)
+ 1610 103e F21F 5400 	fmove.d (%sp)+,%fp0
+ 1611 1042 F200 00A2 	fadd.x %fp0,%fp1
+ 1612 1046 F227 7480 	fmove.d %fp1,-(%sp)
+ 1613 104a 201F      	move.l (%sp)+,%d0
+ 1614 104c 221F      	move.l (%sp)+,%d1
+ 1615 104e 2F01      	move.l %d1,-(%sp)
+ 1616 1050 2F00      	move.l %d0,-(%sp)
+ 1617 1052 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1618 1056 F22E 54A3 	fmul.d -8(%fp),%fp1
+ 1618      FFF8 
+ 1619 105c F227 7480 	fmove.d %fp1,-(%sp)
+ 1620 1060 201F      	move.l (%sp)+,%d0
+ 1621 1062 221F      	move.l (%sp)+,%d1
+ 1622 1064 2079 0000 	move.l u3,%a0
+ 1622      0000 
+ 1623 106a 2279 0000 	move.l u3+4,%a1
+ 1623      0000 
+ 1624 1070 2F01      	move.l %d1,-(%sp)
+ 1625 1072 2F00      	move.l %d0,-(%sp)
+ 1626 1074 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1627 1078 2F09      	move.l %a1,-(%sp)
+ 1628 107a 2F08      	move.l %a0,-(%sp)
+ 1629 107c F21F 5480 	fmove.d (%sp)+,%fp1
+ 1630 1080 F200 0422 	fadd.x %fp1,%fp0
+ 1631 1084 F227 7400 	fmove.d %fp0,-(%sp)
+ 1632 1088 201F      	move.l (%sp)+,%d0
+ 1633 108a 221F      	move.l (%sp)+,%d1
+ 1634 108c 2F01      	move.l %d1,-(%sp)
+ 1635 108e 2F00      	move.l %d0,-(%sp)
+ 1636 1090 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1637 1094 F22E 5423 	fmul.d -8(%fp),%fp0
+ 1637      FFF8 
+ 1638 109a F227 7400 	fmove.d %fp0,-(%sp)
+ 1639 109e 201F      	move.l (%sp)+,%d0
+ 1640 10a0 221F      	move.l (%sp)+,%d1
+ 1641 10a2 2079 0000 	move.l u2,%a0
+ 1641      0000 
+ 1642 10a8 2279 0000 	move.l u2+4,%a1
+ 1642      0000 
+ 1643 10ae 2F01      	move.l %d1,-(%sp)
+68K GAS   			page 32
+
+
+ 1644 10b0 2F00      	move.l %d0,-(%sp)
+ 1645 10b2 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1646 10b6 2F09      	move.l %a1,-(%sp)
+ 1647 10b8 2F08      	move.l %a0,-(%sp)
+ 1648 10ba F21F 5400 	fmove.d (%sp)+,%fp0
+ 1649 10be F200 00A2 	fadd.x %fp0,%fp1
+ 1650 10c2 F227 7480 	fmove.d %fp1,-(%sp)
+ 1651 10c6 201F      	move.l (%sp)+,%d0
+ 1652 10c8 221F      	move.l (%sp)+,%d1
+ 1653 10ca 2F01      	move.l %d1,-(%sp)
+ 1654 10cc 2F00      	move.l %d0,-(%sp)
+ 1655 10ce F21F 5480 	fmove.d (%sp)+,%fp1
+ 1656 10d2 F22E 54A3 	fmul.d -8(%fp),%fp1
+ 1656      FFF8 
+ 1657 10d8 F227 7480 	fmove.d %fp1,-(%sp)
+ 1658 10dc 201F      	move.l (%sp)+,%d0
+ 1659 10de 221F      	move.l (%sp)+,%d1
+ 1660 10e0 2079 0000 	move.l u1,%a0
+ 1660      0000 
+ 1661 10e6 2279 0000 	move.l u1+4,%a1
+ 1661      0000 
+ 1662 10ec 2F01      	move.l %d1,-(%sp)
+ 1663 10ee 2F00      	move.l %d0,-(%sp)
+ 1664 10f0 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1665 10f4 2F09      	move.l %a1,-(%sp)
+ 1666 10f6 2F08      	move.l %a0,-(%sp)
+ 1667 10f8 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1668 10fc F200 0422 	fadd.x %fp1,%fp0
+ 1669 1100 F227 7400 	fmove.d %fp0,-(%sp)
+ 1670 1104 201F      	move.l (%sp)+,%d0
+ 1671 1106 221F      	move.l (%sp)+,%d1
+ 1672 1108 2F01      	move.l %d1,-(%sp)
+ 1673 110a 2F00      	move.l %d0,-(%sp)
+ 1674 110c F21F 5400 	fmove.d (%sp)+,%fp0
+ 1675 1110 F22E 5423 	fmul.d -8(%fp),%fp0
+ 1675      FFF8 
+ 1676 1116 F227 7400 	fmove.d %fp0,-(%sp)
+ 1677 111a 201F      	move.l (%sp)+,%d0
+ 1678 111c 221F      	move.l (%sp)+,%d1
+ 1679 111e 2079 0000 	move.l u0,%a0
+ 1679      0000 
+ 1680 1124 2279 0000 	move.l u0+4,%a1
+ 1680      0000 
+ 1681 112a 2F01      	move.l %d1,-(%sp)
+ 1682 112c 2F00      	move.l %d0,-(%sp)
+ 1683 112e F21F 5480 	fmove.d (%sp)+,%fp1
+ 1684 1132 2F09      	move.l %a1,-(%sp)
+ 1685 1134 2F08      	move.l %a0,-(%sp)
+ 1686 1136 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1687 113a F200 00A2 	fadd.x %fp0,%fp1
+ 1688 113e F227 7480 	fmove.d %fp1,-(%sp)
+ 1689 1142 201F      	move.l (%sp)+,%d0
+ 1690 1144 221F      	move.l (%sp)+,%d1
+ 1691 1146 2F01      	move.l %d1,-(%sp)
+ 1692 1148 2F00      	move.l %d0,-(%sp)
+ 1693 114a F21F 5480 	fmove.d (%sp)+,%fp1
+ 1694 114e F22E 54A3 	fmul.d -8(%fp),%fp1
+68K GAS   			page 33
+
+
+ 1694      FFF8 
+ 1695 1154 F22E 7480 	fmove.d %fp1,-64(%fp)
+ 1695      FFC0 
+ 1696 115a 2039 0000 	move.l v5,%d0
+ 1696      0000 
+ 1697 1160 2239 0000 	move.l v5+4,%d1
+ 1697      0000 
+ 1698 1166 2F01      	move.l %d1,-(%sp)
+ 1699 1168 2F00      	move.l %d0,-(%sp)
+ 1700 116a F21F 5400 	fmove.d (%sp)+,%fp0
+ 1701 116e F22E 5423 	fmul.d -8(%fp),%fp0
+ 1701      FFF8 
+ 1702 1174 F227 7400 	fmove.d %fp0,-(%sp)
+ 1703 1178 201F      	move.l (%sp)+,%d0
+ 1704 117a 221F      	move.l (%sp)+,%d1
+ 1705 117c 2079 0000 	move.l v4,%a0
+ 1705      0000 
+ 1706 1182 2279 0000 	move.l v4+4,%a1
+ 1706      0000 
+ 1707 1188 2F01      	move.l %d1,-(%sp)
+ 1708 118a 2F00      	move.l %d0,-(%sp)
+ 1709 118c F21F 5480 	fmove.d (%sp)+,%fp1
+ 1710 1190 2F09      	move.l %a1,-(%sp)
+ 1711 1192 2F08      	move.l %a0,-(%sp)
+ 1712 1194 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1713 1198 F200 00A2 	fadd.x %fp0,%fp1
+ 1714 119c F227 7480 	fmove.d %fp1,-(%sp)
+ 1715 11a0 201F      	move.l (%sp)+,%d0
+ 1716 11a2 221F      	move.l (%sp)+,%d1
+ 1717 11a4 2F01      	move.l %d1,-(%sp)
+ 1718 11a6 2F00      	move.l %d0,-(%sp)
+ 1719 11a8 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1720 11ac F22E 54A3 	fmul.d -8(%fp),%fp1
+ 1720      FFF8 
+ 1721 11b2 F227 7480 	fmove.d %fp1,-(%sp)
+ 1722 11b6 201F      	move.l (%sp)+,%d0
+ 1723 11b8 221F      	move.l (%sp)+,%d1
+ 1724 11ba 2079 0000 	move.l v3,%a0
+ 1724      0000 
+ 1725 11c0 2279 0000 	move.l v3+4,%a1
+ 1725      0000 
+ 1726 11c6 2F01      	move.l %d1,-(%sp)
+ 1727 11c8 2F00      	move.l %d0,-(%sp)
+ 1728 11ca F21F 5400 	fmove.d (%sp)+,%fp0
+ 1729 11ce 2F09      	move.l %a1,-(%sp)
+ 1730 11d0 2F08      	move.l %a0,-(%sp)
+ 1731 11d2 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1732 11d6 F200 0422 	fadd.x %fp1,%fp0
+ 1733 11da F227 7400 	fmove.d %fp0,-(%sp)
+ 1734 11de 201F      	move.l (%sp)+,%d0
+ 1735 11e0 221F      	move.l (%sp)+,%d1
+ 1736 11e2 2F01      	move.l %d1,-(%sp)
+ 1737 11e4 2F00      	move.l %d0,-(%sp)
+ 1738 11e6 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1739 11ea F22E 5423 	fmul.d -8(%fp),%fp0
+ 1739      FFF8 
+ 1740 11f0 F227 7400 	fmove.d %fp0,-(%sp)
+68K GAS   			page 34
+
+
+ 1741 11f4 201F      	move.l (%sp)+,%d0
+ 1742 11f6 221F      	move.l (%sp)+,%d1
+ 1743 11f8 2079 0000 	move.l v2,%a0
+ 1743      0000 
+ 1744 11fe 2279 0000 	move.l v2+4,%a1
+ 1744      0000 
+ 1745 1204 2F01      	move.l %d1,-(%sp)
+ 1746 1206 2F00      	move.l %d0,-(%sp)
+ 1747 1208 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1748 120c 2F09      	move.l %a1,-(%sp)
+ 1749 120e 2F08      	move.l %a0,-(%sp)
+ 1750 1210 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1751 1214 F200 00A2 	fadd.x %fp0,%fp1
+ 1752 1218 F227 7480 	fmove.d %fp1,-(%sp)
+ 1753 121c 201F      	move.l (%sp)+,%d0
+ 1754 121e 221F      	move.l (%sp)+,%d1
+ 1755 1220 2F01      	move.l %d1,-(%sp)
+ 1756 1222 2F00      	move.l %d0,-(%sp)
+ 1757 1224 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1758 1228 F22E 54A3 	fmul.d -8(%fp),%fp1
+ 1758      FFF8 
+ 1759 122e F227 7480 	fmove.d %fp1,-(%sp)
+ 1760 1232 201F      	move.l (%sp)+,%d0
+ 1761 1234 221F      	move.l (%sp)+,%d1
+ 1762 1236 2079 0000 	move.l v1,%a0
+ 1762      0000 
+ 1763 123c 2279 0000 	move.l v1+4,%a1
+ 1763      0000 
+ 1764 1242 2F01      	move.l %d1,-(%sp)
+ 1765 1244 2F00      	move.l %d0,-(%sp)
+ 1766 1246 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1767 124a 2F09      	move.l %a1,-(%sp)
+ 1768 124c 2F08      	move.l %a0,-(%sp)
+ 1769 124e F21F 5480 	fmove.d (%sp)+,%fp1
+ 1770 1252 F200 0422 	fadd.x %fp1,%fp0
+ 1771 1256 F227 7400 	fmove.d %fp0,-(%sp)
+ 1772 125a 201F      	move.l (%sp)+,%d0
+ 1773 125c 221F      	move.l (%sp)+,%d1
+ 1774 125e 2F01      	move.l %d1,-(%sp)
+ 1775 1260 2F00      	move.l %d0,-(%sp)
+ 1776 1262 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1777 1266 F22E 5423 	fmul.d -8(%fp),%fp0
+ 1777      FFF8 
+ 1778 126c F227 7400 	fmove.d %fp0,-(%sp)
+ 1779 1270 201F      	move.l (%sp)+,%d0
+ 1780 1272 221F      	move.l (%sp)+,%d1
+ 1781 1274 2079 0000 	move.l one,%a0
+ 1781      0000 
+ 1782 127a 2279 0000 	move.l one+4,%a1
+ 1782      0000 
+ 1783 1280 2F01      	move.l %d1,-(%sp)
+ 1784 1282 2F00      	move.l %d0,-(%sp)
+ 1785 1284 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1786 1288 2F09      	move.l %a1,-(%sp)
+ 1787 128a 2F08      	move.l %a0,-(%sp)
+ 1788 128c F21F 5400 	fmove.d (%sp)+,%fp0
+ 1789 1290 F200 00A2 	fadd.x %fp0,%fp1
+68K GAS   			page 35
+
+
+ 1790 1294 F22E 7480 	fmove.d %fp1,-72(%fp)
+ 1790      FFB8 
+ 1791 129a F22E 5480 	fmove.d -8(%fp),%fp1
+ 1791      FFF8 
+ 1792 12a0 F23C 54A3 	fmul.d #0xbfe0000000000000,%fp1
+ 1792      BFE0 0000 
+ 1792      0000 0000 
+ 1793 12ac F227 7480 	fmove.d %fp1,-(%sp)
+ 1794 12b0 205F      	move.l (%sp)+,%a0
+ 1795 12b2 225F      	move.l (%sp)+,%a1
+ 1796 12b4 F22E 5400 	fmove.d -64(%fp),%fp0
+ 1796      FFC0 
+ 1797 12ba F22E 5420 	fdiv.d -72(%fp),%fp0
+ 1797      FFB8 
+ 1798 12c0 F227 7400 	fmove.d %fp0,-(%sp)
+ 1799 12c4 201F      	move.l (%sp)+,%d0
+ 1800 12c6 221F      	move.l (%sp)+,%d1
+ 1801 12c8 2F09      	move.l %a1,-(%sp)
+ 1802 12ca 2F08      	move.l %a0,-(%sp)
+ 1803 12cc F21F 5480 	fmove.d (%sp)+,%fp1
+ 1804 12d0 2F01      	move.l %d1,-(%sp)
+ 1805 12d2 2F00      	move.l %d0,-(%sp)
+ 1806 12d4 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1807 12d8 F200 00A2 	fadd.x %fp0,%fp1
+ 1808 12dc F227 7480 	fmove.d %fp1,-(%sp)
+ 1809 12e0 201F      	move.l (%sp)+,%d0
+ 1810 12e2 221F      	move.l (%sp)+,%d1
+ 1811 12e4 2F01      	move.l %d1,-(%sp)
+ 1812 12e6 2F00      	move.l %d0,-(%sp)
+ 1813 12e8 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1814 12ec F22E 54A2 	fadd.d -32(%fp),%fp1
+ 1814      FFE0 
+ 1815 12f2 F22E 7480 	fmove.d %fp1,-32(%fp)
+ 1815      FFE0 
+ 1816 12f8 6000 07FA 	jra .L27
+ 1817               	.L28:
+ 1818 12fc 0CAE 401F 	cmp.l #1075838975,-48(%fp)
+ 1818      FFFF FFD0 
+ 1819 1304 6E00 0514 	jgt .L39
+ 1820 1308 202E 0008 	move.l 8(%fp),%d0
+ 1821 130c 222E 000C 	move.l 12(%fp),%d1
+ 1822 1310 2F01      	move.l %d1,-(%sp)
+ 1823 1312 2F00      	move.l %d0,-(%sp)
+ 1824 1314 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1825 1318 F200 0003 	fintrz.x %fp0,%fp0
+ 1826 131c F227 7400 	fmove.d %fp0,-(%sp)
+ 1827 1320 201F      	move.l (%sp)+,%d0
+ 1828 1322 221F      	move.l (%sp)+,%d1
+ 1829 1324 2F01      	move.l %d1,-(%sp)
+ 1830 1326 2F00      	move.l %d0,-(%sp)
+ 1831 1328 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1832 132c F22E 6080 	fmove.l %fp1,-36(%fp)
+ 1832      FFDC 
+ 1833 1332 2D79 0000 	move.l zero,-56(%fp)
+ 1833      0000 FFC8 
+ 1834 133a 2D79 0000 	move.l zero+4,-52(%fp)
+ 1834      0000 FFCC 
+68K GAS   			page 36
+
+
+ 1835 1342 206E 0008 	move.l 8(%fp),%a0
+ 1836 1346 226E 000C 	move.l 12(%fp),%a1
+ 1837 134a F22E 4000 	fmove.l -36(%fp),%fp0
+ 1837      FFDC 
+ 1838 1350 F227 7400 	fmove.d %fp0,-(%sp)
+ 1839 1354 201F      	move.l (%sp)+,%d0
+ 1840 1356 221F      	move.l (%sp)+,%d1
+ 1841 1358 2F09      	move.l %a1,-(%sp)
+ 1842 135a 2F08      	move.l %a0,-(%sp)
+ 1843 135c F21F 5480 	fmove.d (%sp)+,%fp1
+ 1844 1360 2F01      	move.l %d1,-(%sp)
+ 1845 1362 2F00      	move.l %d0,-(%sp)
+ 1846 1364 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1847 1368 F200 00A8 	fsub.x %fp0,%fp1
+ 1848 136c F22E 7480 	fmove.d %fp1,-8(%fp)
+ 1848      FFF8 
+ 1849 1372 2039 0000 	move.l s6,%d0
+ 1849      0000 
+ 1850 1378 2239 0000 	move.l s6+4,%d1
+ 1850      0000 
+ 1851 137e 2F01      	move.l %d1,-(%sp)
+ 1852 1380 2F00      	move.l %d0,-(%sp)
+ 1853 1382 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1854 1386 F22E 54A3 	fmul.d -8(%fp),%fp1
+ 1854      FFF8 
+ 1855 138c F227 7480 	fmove.d %fp1,-(%sp)
+ 1856 1390 201F      	move.l (%sp)+,%d0
+ 1857 1392 221F      	move.l (%sp)+,%d1
+ 1858 1394 2079 0000 	move.l s5,%a0
+ 1858      0000 
+ 1859 139a 2279 0000 	move.l s5+4,%a1
+ 1859      0000 
+ 1860 13a0 2F01      	move.l %d1,-(%sp)
+ 1861 13a2 2F00      	move.l %d0,-(%sp)
+ 1862 13a4 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1863 13a8 2F09      	move.l %a1,-(%sp)
+ 1864 13aa 2F08      	move.l %a0,-(%sp)
+ 1865 13ac F21F 5480 	fmove.d (%sp)+,%fp1
+ 1866 13b0 F200 0422 	fadd.x %fp1,%fp0
+ 1867 13b4 F227 7400 	fmove.d %fp0,-(%sp)
+ 1868 13b8 201F      	move.l (%sp)+,%d0
+ 1869 13ba 221F      	move.l (%sp)+,%d1
+ 1870 13bc 2F01      	move.l %d1,-(%sp)
+ 1871 13be 2F00      	move.l %d0,-(%sp)
+ 1872 13c0 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1873 13c4 F22E 5423 	fmul.d -8(%fp),%fp0
+ 1873      FFF8 
+ 1874 13ca F227 7400 	fmove.d %fp0,-(%sp)
+ 1875 13ce 201F      	move.l (%sp)+,%d0
+ 1876 13d0 221F      	move.l (%sp)+,%d1
+ 1877 13d2 2079 0000 	move.l s4,%a0
+ 1877      0000 
+ 1878 13d8 2279 0000 	move.l s4+4,%a1
+ 1878      0000 
+ 1879 13de 2F01      	move.l %d1,-(%sp)
+ 1880 13e0 2F00      	move.l %d0,-(%sp)
+ 1881 13e2 F21F 5480 	fmove.d (%sp)+,%fp1
+68K GAS   			page 37
+
+
+ 1882 13e6 2F09      	move.l %a1,-(%sp)
+ 1883 13e8 2F08      	move.l %a0,-(%sp)
+ 1884 13ea F21F 5400 	fmove.d (%sp)+,%fp0
+ 1885 13ee F200 00A2 	fadd.x %fp0,%fp1
+ 1886 13f2 F227 7480 	fmove.d %fp1,-(%sp)
+ 1887 13f6 201F      	move.l (%sp)+,%d0
+ 1888 13f8 221F      	move.l (%sp)+,%d1
+ 1889 13fa 2F01      	move.l %d1,-(%sp)
+ 1890 13fc 2F00      	move.l %d0,-(%sp)
+ 1891 13fe F21F 5480 	fmove.d (%sp)+,%fp1
+ 1892 1402 F22E 54A3 	fmul.d -8(%fp),%fp1
+ 1892      FFF8 
+ 1893 1408 F227 7480 	fmove.d %fp1,-(%sp)
+ 1894 140c 201F      	move.l (%sp)+,%d0
+ 1895 140e 221F      	move.l (%sp)+,%d1
+ 1896 1410 2079 0000 	move.l s3,%a0
+ 1896      0000 
+ 1897 1416 2279 0000 	move.l s3+4,%a1
+ 1897      0000 
+ 1898 141c 2F01      	move.l %d1,-(%sp)
+ 1899 141e 2F00      	move.l %d0,-(%sp)
+ 1900 1420 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1901 1424 2F09      	move.l %a1,-(%sp)
+ 1902 1426 2F08      	move.l %a0,-(%sp)
+ 1903 1428 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1904 142c F200 0422 	fadd.x %fp1,%fp0
+ 1905 1430 F227 7400 	fmove.d %fp0,-(%sp)
+ 1906 1434 201F      	move.l (%sp)+,%d0
+ 1907 1436 221F      	move.l (%sp)+,%d1
+ 1908 1438 2F01      	move.l %d1,-(%sp)
+ 1909 143a 2F00      	move.l %d0,-(%sp)
+ 1910 143c F21F 5400 	fmove.d (%sp)+,%fp0
+ 1911 1440 F22E 5423 	fmul.d -8(%fp),%fp0
+ 1911      FFF8 
+ 1912 1446 F227 7400 	fmove.d %fp0,-(%sp)
+ 1913 144a 201F      	move.l (%sp)+,%d0
+ 1914 144c 221F      	move.l (%sp)+,%d1
+ 1915 144e 2079 0000 	move.l s2,%a0
+ 1915      0000 
+ 1916 1454 2279 0000 	move.l s2+4,%a1
+ 1916      0000 
+ 1917 145a 2F01      	move.l %d1,-(%sp)
+ 1918 145c 2F00      	move.l %d0,-(%sp)
+ 1919 145e F21F 5480 	fmove.d (%sp)+,%fp1
+ 1920 1462 2F09      	move.l %a1,-(%sp)
+ 1921 1464 2F08      	move.l %a0,-(%sp)
+ 1922 1466 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1923 146a F200 00A2 	fadd.x %fp0,%fp1
+ 1924 146e F227 7480 	fmove.d %fp1,-(%sp)
+ 1925 1472 201F      	move.l (%sp)+,%d0
+ 1926 1474 221F      	move.l (%sp)+,%d1
+ 1927 1476 2F01      	move.l %d1,-(%sp)
+ 1928 1478 2F00      	move.l %d0,-(%sp)
+ 1929 147a F21F 5480 	fmove.d (%sp)+,%fp1
+ 1930 147e F22E 54A3 	fmul.d -8(%fp),%fp1
+ 1930      FFF8 
+ 1931 1484 F227 7480 	fmove.d %fp1,-(%sp)
+68K GAS   			page 38
+
+
+ 1932 1488 201F      	move.l (%sp)+,%d0
+ 1933 148a 221F      	move.l (%sp)+,%d1
+ 1934 148c 2079 0000 	move.l s1,%a0
+ 1934      0000 
+ 1935 1492 2279 0000 	move.l s1+4,%a1
+ 1935      0000 
+ 1936 1498 2F01      	move.l %d1,-(%sp)
+ 1937 149a 2F00      	move.l %d0,-(%sp)
+ 1938 149c F21F 5400 	fmove.d (%sp)+,%fp0
+ 1939 14a0 2F09      	move.l %a1,-(%sp)
+ 1940 14a2 2F08      	move.l %a0,-(%sp)
+ 1941 14a4 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1942 14a8 F200 0422 	fadd.x %fp1,%fp0
+ 1943 14ac F227 7400 	fmove.d %fp0,-(%sp)
+ 1944 14b0 201F      	move.l (%sp)+,%d0
+ 1945 14b2 221F      	move.l (%sp)+,%d1
+ 1946 14b4 2F01      	move.l %d1,-(%sp)
+ 1947 14b6 2F00      	move.l %d0,-(%sp)
+ 1948 14b8 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1949 14bc F22E 5423 	fmul.d -8(%fp),%fp0
+ 1949      FFF8 
+ 1950 14c2 F227 7400 	fmove.d %fp0,-(%sp)
+ 1951 14c6 201F      	move.l (%sp)+,%d0
+ 1952 14c8 221F      	move.l (%sp)+,%d1
+ 1953 14ca 2079 0000 	move.l s0,%a0
+ 1953      0000 
+ 1954 14d0 2279 0000 	move.l s0+4,%a1
+ 1954      0000 
+ 1955 14d6 2F01      	move.l %d1,-(%sp)
+ 1956 14d8 2F00      	move.l %d0,-(%sp)
+ 1957 14da F21F 5480 	fmove.d (%sp)+,%fp1
+ 1958 14de 2F09      	move.l %a1,-(%sp)
+ 1959 14e0 2F08      	move.l %a0,-(%sp)
+ 1960 14e2 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1961 14e6 F200 00A2 	fadd.x %fp0,%fp1
+ 1962 14ea F227 7480 	fmove.d %fp1,-(%sp)
+ 1963 14ee 201F      	move.l (%sp)+,%d0
+ 1964 14f0 221F      	move.l (%sp)+,%d1
+ 1965 14f2 2F01      	move.l %d1,-(%sp)
+ 1966 14f4 2F00      	move.l %d0,-(%sp)
+ 1967 14f6 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1968 14fa F22E 54A3 	fmul.d -8(%fp),%fp1
+ 1968      FFF8 
+ 1969 1500 F22E 7480 	fmove.d %fp1,-80(%fp)
+ 1969      FFB0 
+ 1970 1506 2039 0000 	move.l r6,%d0
+ 1970      0000 
+ 1971 150c 2239 0000 	move.l r6+4,%d1
+ 1971      0000 
+ 1972 1512 2F01      	move.l %d1,-(%sp)
+ 1973 1514 2F00      	move.l %d0,-(%sp)
+ 1974 1516 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1975 151a F22E 5423 	fmul.d -8(%fp),%fp0
+ 1975      FFF8 
+ 1976 1520 F227 7400 	fmove.d %fp0,-(%sp)
+ 1977 1524 201F      	move.l (%sp)+,%d0
+ 1978 1526 221F      	move.l (%sp)+,%d1
+68K GAS   			page 39
+
+
+ 1979 1528 2079 0000 	move.l r5,%a0
+ 1979      0000 
+ 1980 152e 2279 0000 	move.l r5+4,%a1
+ 1980      0000 
+ 1981 1534 2F01      	move.l %d1,-(%sp)
+ 1982 1536 2F00      	move.l %d0,-(%sp)
+ 1983 1538 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1984 153c 2F09      	move.l %a1,-(%sp)
+ 1985 153e 2F08      	move.l %a0,-(%sp)
+ 1986 1540 F21F 5400 	fmove.d (%sp)+,%fp0
+ 1987 1544 F200 00A2 	fadd.x %fp0,%fp1
+ 1988 1548 F227 7480 	fmove.d %fp1,-(%sp)
+ 1989 154c 201F      	move.l (%sp)+,%d0
+ 1990 154e 221F      	move.l (%sp)+,%d1
+ 1991 1550 2F01      	move.l %d1,-(%sp)
+ 1992 1552 2F00      	move.l %d0,-(%sp)
+ 1993 1554 F21F 5480 	fmove.d (%sp)+,%fp1
+ 1994 1558 F22E 54A3 	fmul.d -8(%fp),%fp1
+ 1994      FFF8 
+ 1995 155e F227 7480 	fmove.d %fp1,-(%sp)
+ 1996 1562 201F      	move.l (%sp)+,%d0
+ 1997 1564 221F      	move.l (%sp)+,%d1
+ 1998 1566 2079 0000 	move.l r4,%a0
+ 1998      0000 
+ 1999 156c 2279 0000 	move.l r4+4,%a1
+ 1999      0000 
+ 2000 1572 2F01      	move.l %d1,-(%sp)
+ 2001 1574 2F00      	move.l %d0,-(%sp)
+ 2002 1576 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2003 157a 2F09      	move.l %a1,-(%sp)
+ 2004 157c 2F08      	move.l %a0,-(%sp)
+ 2005 157e F21F 5480 	fmove.d (%sp)+,%fp1
+ 2006 1582 F200 0422 	fadd.x %fp1,%fp0
+ 2007 1586 F227 7400 	fmove.d %fp0,-(%sp)
+ 2008 158a 201F      	move.l (%sp)+,%d0
+ 2009 158c 221F      	move.l (%sp)+,%d1
+ 2010 158e 2F01      	move.l %d1,-(%sp)
+ 2011 1590 2F00      	move.l %d0,-(%sp)
+ 2012 1592 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2013 1596 F22E 5423 	fmul.d -8(%fp),%fp0
+ 2013      FFF8 
+ 2014 159c F227 7400 	fmove.d %fp0,-(%sp)
+ 2015 15a0 201F      	move.l (%sp)+,%d0
+ 2016 15a2 221F      	move.l (%sp)+,%d1
+ 2017 15a4 2079 0000 	move.l r3,%a0
+ 2017      0000 
+ 2018 15aa 2279 0000 	move.l r3+4,%a1
+ 2018      0000 
+ 2019 15b0 2F01      	move.l %d1,-(%sp)
+ 2020 15b2 2F00      	move.l %d0,-(%sp)
+ 2021 15b4 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2022 15b8 2F09      	move.l %a1,-(%sp)
+ 2023 15ba 2F08      	move.l %a0,-(%sp)
+ 2024 15bc F21F 5400 	fmove.d (%sp)+,%fp0
+ 2025 15c0 F200 00A2 	fadd.x %fp0,%fp1
+ 2026 15c4 F227 7480 	fmove.d %fp1,-(%sp)
+ 2027 15c8 201F      	move.l (%sp)+,%d0
+68K GAS   			page 40
+
+
+ 2028 15ca 221F      	move.l (%sp)+,%d1
+ 2029 15cc 2F01      	move.l %d1,-(%sp)
+ 2030 15ce 2F00      	move.l %d0,-(%sp)
+ 2031 15d0 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2032 15d4 F22E 54A3 	fmul.d -8(%fp),%fp1
+ 2032      FFF8 
+ 2033 15da F227 7480 	fmove.d %fp1,-(%sp)
+ 2034 15de 201F      	move.l (%sp)+,%d0
+ 2035 15e0 221F      	move.l (%sp)+,%d1
+ 2036 15e2 2079 0000 	move.l r2,%a0
+ 2036      0000 
+ 2037 15e8 2279 0000 	move.l r2+4,%a1
+ 2037      0000 
+ 2038 15ee 2F01      	move.l %d1,-(%sp)
+ 2039 15f0 2F00      	move.l %d0,-(%sp)
+ 2040 15f2 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2041 15f6 2F09      	move.l %a1,-(%sp)
+ 2042 15f8 2F08      	move.l %a0,-(%sp)
+ 2043 15fa F21F 5480 	fmove.d (%sp)+,%fp1
+ 2044 15fe F200 0422 	fadd.x %fp1,%fp0
+ 2045 1602 F227 7400 	fmove.d %fp0,-(%sp)
+ 2046 1606 201F      	move.l (%sp)+,%d0
+ 2047 1608 221F      	move.l (%sp)+,%d1
+ 2048 160a 2F01      	move.l %d1,-(%sp)
+ 2049 160c 2F00      	move.l %d0,-(%sp)
+ 2050 160e F21F 5400 	fmove.d (%sp)+,%fp0
+ 2051 1612 F22E 5423 	fmul.d -8(%fp),%fp0
+ 2051      FFF8 
+ 2052 1618 F227 7400 	fmove.d %fp0,-(%sp)
+ 2053 161c 201F      	move.l (%sp)+,%d0
+ 2054 161e 221F      	move.l (%sp)+,%d1
+ 2055 1620 2079 0000 	move.l r1,%a0
+ 2055      0000 
+ 2056 1626 2279 0000 	move.l r1+4,%a1
+ 2056      0000 
+ 2057 162c 2F01      	move.l %d1,-(%sp)
+ 2058 162e 2F00      	move.l %d0,-(%sp)
+ 2059 1630 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2060 1634 2F09      	move.l %a1,-(%sp)
+ 2061 1636 2F08      	move.l %a0,-(%sp)
+ 2062 1638 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2063 163c F200 00A2 	fadd.x %fp0,%fp1
+ 2064 1640 F227 7480 	fmove.d %fp1,-(%sp)
+ 2065 1644 201F      	move.l (%sp)+,%d0
+ 2066 1646 221F      	move.l (%sp)+,%d1
+ 2067 1648 2F01      	move.l %d1,-(%sp)
+ 2068 164a 2F00      	move.l %d0,-(%sp)
+ 2069 164c F21F 5480 	fmove.d (%sp)+,%fp1
+ 2070 1650 F22E 54A3 	fmul.d -8(%fp),%fp1
+ 2070      FFF8 
+ 2071 1656 F227 7480 	fmove.d %fp1,-(%sp)
+ 2072 165a 201F      	move.l (%sp)+,%d0
+ 2073 165c 221F      	move.l (%sp)+,%d1
+ 2074 165e 2079 0000 	move.l one,%a0
+ 2074      0000 
+ 2075 1664 2279 0000 	move.l one+4,%a1
+ 2075      0000 
+68K GAS   			page 41
+
+
+ 2076 166a 2F01      	move.l %d1,-(%sp)
+ 2077 166c 2F00      	move.l %d0,-(%sp)
+ 2078 166e F21F 5400 	fmove.d (%sp)+,%fp0
+ 2079 1672 2F09      	move.l %a1,-(%sp)
+ 2080 1674 2F08      	move.l %a0,-(%sp)
+ 2081 1676 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2082 167a F200 0422 	fadd.x %fp1,%fp0
+ 2083 167e F22E 7400 	fmove.d %fp0,-104(%fp)
+ 2083      FF98 
+ 2084 1684 2039 0000 	move.l half,%d0
+ 2084      0000 
+ 2085 168a 2239 0000 	move.l half+4,%d1
+ 2085      0000 
+ 2086 1690 2F01      	move.l %d1,-(%sp)
+ 2087 1692 2F00      	move.l %d0,-(%sp)
+ 2088 1694 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2089 1698 F22E 5423 	fmul.d -8(%fp),%fp0
+ 2089      FFF8 
+ 2090 169e F227 7400 	fmove.d %fp0,-(%sp)
+ 2091 16a2 205F      	move.l (%sp)+,%a0
+ 2092 16a4 225F      	move.l (%sp)+,%a1
+ 2093 16a6 F22E 5480 	fmove.d -80(%fp),%fp1
+ 2093      FFB0 
+ 2094 16ac F22E 54A0 	fdiv.d -104(%fp),%fp1
+ 2094      FF98 
+ 2095 16b2 F227 7480 	fmove.d %fp1,-(%sp)
+ 2096 16b6 201F      	move.l (%sp)+,%d0
+ 2097 16b8 221F      	move.l (%sp)+,%d1
+ 2098 16ba 2F09      	move.l %a1,-(%sp)
+ 2099 16bc 2F08      	move.l %a0,-(%sp)
+ 2100 16be F21F 5400 	fmove.d (%sp)+,%fp0
+ 2101 16c2 2F01      	move.l %d1,-(%sp)
+ 2102 16c4 2F00      	move.l %d0,-(%sp)
+ 2103 16c6 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2104 16ca F200 0422 	fadd.x %fp1,%fp0
+ 2105 16ce F22E 7400 	fmove.d %fp0,-32(%fp)
+ 2105      FFE0 
+ 2106 16d4 2D79 0000 	move.l one,-16(%fp)
+ 2106      0000 FFF0 
+ 2107 16dc 2D79 0000 	move.l one+4,-12(%fp)
+ 2107      0000 FFF4 
+ 2108 16e4 202E FFDC 	move.l -36(%fp),%d0
+ 2109 16e8 5780      	subq.l #3,%d0
+ 2110 16ea 7204      	moveq #4,%d1
+ 2111 16ec B280      	cmp.l %d0,%d1
+ 2112 16ee 6500 0402 	jcs .L50
+ 2113 16f2 303B 0A06 	move.w .L46(%pc,%d0.l*2),%d0
+ 2114 16f6 4EFB 0002 	jmp %pc@(2,%d0:w)
+ 2115               	.balignw 2,0x284c
+ 2116               	.L46:
+ 2117 16fa 00C2      	.word .L41-.L46
+ 2118 16fc 0094      	.word .L42-.L46
+ 2119 16fe 0066      	.word .L43-.L46
+ 2120 1700 0038      	.word .L44-.L46
+ 2121 1702 000A      	.word .L45-.L46
+ 2122               	.L45:
+ 2123 1704 F22E 5400 	fmove.d -8(%fp),%fp0
+68K GAS   			page 42
+
+
+ 2123      FFF8 
+ 2124 170a F23C 5422 	fadd.d #0x4018000000000000,%fp0
+ 2124      4018 0000 
+ 2124      0000 0000 
+ 2125 1716 F227 7400 	fmove.d %fp0,-(%sp)
+ 2126 171a 201F      	move.l (%sp)+,%d0
+ 2127 171c 221F      	move.l (%sp)+,%d1
+ 2128 171e 2F01      	move.l %d1,-(%sp)
+ 2129 1720 2F00      	move.l %d0,-(%sp)
+ 2130 1722 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2131 1726 F22E 54A3 	fmul.d -16(%fp),%fp1
+ 2131      FFF0 
+ 2132 172c F22E 7480 	fmove.d %fp1,-16(%fp)
+ 2132      FFF0 
+ 2133               	.L44:
+ 2134 1732 F22E 5400 	fmove.d -8(%fp),%fp0
+ 2134      FFF8 
+ 2135 1738 F23C 5422 	fadd.d #0x4014000000000000,%fp0
+ 2135      4014 0000 
+ 2135      0000 0000 
+ 2136 1744 F227 7400 	fmove.d %fp0,-(%sp)
+ 2137 1748 201F      	move.l (%sp)+,%d0
+ 2138 174a 221F      	move.l (%sp)+,%d1
+ 2139 174c 2F01      	move.l %d1,-(%sp)
+ 2140 174e 2F00      	move.l %d0,-(%sp)
+ 2141 1750 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2142 1754 F22E 54A3 	fmul.d -16(%fp),%fp1
+ 2142      FFF0 
+ 2143 175a F22E 7480 	fmove.d %fp1,-16(%fp)
+ 2143      FFF0 
+ 2144               	.L43:
+ 2145 1760 F22E 5400 	fmove.d -8(%fp),%fp0
+ 2145      FFF8 
+ 2146 1766 F23C 5422 	fadd.d #0x4010000000000000,%fp0
+ 2146      4010 0000 
+ 2146      0000 0000 
+ 2147 1772 F227 7400 	fmove.d %fp0,-(%sp)
+ 2148 1776 201F      	move.l (%sp)+,%d0
+ 2149 1778 221F      	move.l (%sp)+,%d1
+ 2150 177a 2F01      	move.l %d1,-(%sp)
+ 2151 177c 2F00      	move.l %d0,-(%sp)
+ 2152 177e F21F 5480 	fmove.d (%sp)+,%fp1
+ 2153 1782 F22E 54A3 	fmul.d -16(%fp),%fp1
+ 2153      FFF0 
+ 2154 1788 F22E 7480 	fmove.d %fp1,-16(%fp)
+ 2154      FFF0 
+ 2155               	.L42:
+ 2156 178e F22E 5400 	fmove.d -8(%fp),%fp0
+ 2156      FFF8 
+ 2157 1794 F23C 5422 	fadd.d #0x4008000000000000,%fp0
+ 2157      4008 0000 
+ 2157      0000 0000 
+ 2158 17a0 F227 7400 	fmove.d %fp0,-(%sp)
+ 2159 17a4 201F      	move.l (%sp)+,%d0
+ 2160 17a6 221F      	move.l (%sp)+,%d1
+ 2161 17a8 2F01      	move.l %d1,-(%sp)
+ 2162 17aa 2F00      	move.l %d0,-(%sp)
+68K GAS   			page 43
+
+
+ 2163 17ac F21F 5480 	fmove.d (%sp)+,%fp1
+ 2164 17b0 F22E 54A3 	fmul.d -16(%fp),%fp1
+ 2164      FFF0 
+ 2165 17b6 F22E 7480 	fmove.d %fp1,-16(%fp)
+ 2165      FFF0 
+ 2166               	.L41:
+ 2167 17bc F22E 5400 	fmove.d -8(%fp),%fp0
+ 2167      FFF8 
+ 2168 17c2 F23C 5422 	fadd.d #0x4000000000000000,%fp0
+ 2168      4000 0000 
+ 2168      0000 0000 
+ 2169 17ce F227 7400 	fmove.d %fp0,-(%sp)
+ 2170 17d2 201F      	move.l (%sp)+,%d0
+ 2171 17d4 221F      	move.l (%sp)+,%d1
+ 2172 17d6 2F01      	move.l %d1,-(%sp)
+ 2173 17d8 2F00      	move.l %d0,-(%sp)
+ 2174 17da F21F 5480 	fmove.d (%sp)+,%fp1
+ 2175 17de F22E 54A3 	fmul.d -16(%fp),%fp1
+ 2175      FFF0 
+ 2176 17e4 F22E 7480 	fmove.d %fp1,-16(%fp)
+ 2176      FFF0 
+ 2177 17ea 2F2E FFF4 	move.l -12(%fp),-(%sp)
+ 2178 17ee 2F2E FFF0 	move.l -16(%fp),-(%sp)
+ 2179 17f2 4EB9 0000 	jsr __ieee754_log
+ 2179      0000 
+ 2180 17f8 508F      	addq.l #8,%sp
+ 2181 17fa F227 7400 	fmove.d %fp0,-(%sp)
+ 2182 17fe 201F      	move.l (%sp)+,%d0
+ 2183 1800 221F      	move.l (%sp)+,%d1
+ 2184 1802 2F01      	move.l %d1,-(%sp)
+ 2185 1804 2F00      	move.l %d0,-(%sp)
+ 2186 1806 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2187 180a F22E 5422 	fadd.d -32(%fp),%fp0
+ 2187      FFE0 
+ 2188 1810 F22E 7400 	fmove.d %fp0,-32(%fp)
+ 2188      FFE0 
+ 2189 1816 6000 02DC 	jra .L27
+ 2190               	.L39:
+ 2191 181a 0CAE 438F 	cmp.l #1133510655,-48(%fp)
+ 2191      FFFF FFD0 
+ 2192 1822 6E00 0262 	jgt .L47
+ 2193 1826 202E 0008 	move.l 8(%fp),%d0
+ 2194 182a 222E 000C 	move.l 12(%fp),%d1
+ 2195 182e 2F01      	move.l %d1,-(%sp)
+ 2196 1830 2F00      	move.l %d0,-(%sp)
+ 2197 1832 4EB9 0000 	jsr __ieee754_log
+ 2197      0000 
+ 2198 1838 508F      	addq.l #8,%sp
+ 2199 183a F22E 7400 	fmove.d %fp0,-56(%fp)
+ 2199      FFC8 
+ 2200 1840 2039 0000 	move.l one,%d0
+ 2200      0000 
+ 2201 1846 2239 0000 	move.l one+4,%d1
+ 2201      0000 
+ 2202 184c 206E 0008 	move.l 8(%fp),%a0
+ 2203 1850 226E 000C 	move.l 12(%fp),%a1
+ 2204 1854 2F01      	move.l %d1,-(%sp)
+68K GAS   			page 44
+
+
+ 2205 1856 2F00      	move.l %d0,-(%sp)
+ 2206 1858 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2207 185c 2F09      	move.l %a1,-(%sp)
+ 2208 185e 2F08      	move.l %a0,-(%sp)
+ 2209 1860 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2210 1864 F200 00A0 	fdiv.x %fp0,%fp1
+ 2211 1868 F22E 7480 	fmove.d %fp1,-16(%fp)
+ 2211      FFF0 
+ 2212 186e F22E 5480 	fmove.d -16(%fp),%fp1
+ 2212      FFF0 
+ 2213 1874 F22E 54A3 	fmul.d -16(%fp),%fp1
+ 2213      FFF0 
+ 2214 187a F22E 7480 	fmove.d %fp1,-8(%fp)
+ 2214      FFF8 
+ 2215 1880 2039 0000 	move.l w6,%d0
+ 2215      0000 
+ 2216 1886 2239 0000 	move.l w6+4,%d1
+ 2216      0000 
+ 2217 188c 2F01      	move.l %d1,-(%sp)
+ 2218 188e 2F00      	move.l %d0,-(%sp)
+ 2219 1890 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2220 1894 F22E 5423 	fmul.d -8(%fp),%fp0
+ 2220      FFF8 
+ 2221 189a F227 7400 	fmove.d %fp0,-(%sp)
+ 2222 189e 201F      	move.l (%sp)+,%d0
+ 2223 18a0 221F      	move.l (%sp)+,%d1
+ 2224 18a2 2079 0000 	move.l w5,%a0
+ 2224      0000 
+ 2225 18a8 2279 0000 	move.l w5+4,%a1
+ 2225      0000 
+ 2226 18ae 2F01      	move.l %d1,-(%sp)
+ 2227 18b0 2F00      	move.l %d0,-(%sp)
+ 2228 18b2 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2229 18b6 2F09      	move.l %a1,-(%sp)
+ 2230 18b8 2F08      	move.l %a0,-(%sp)
+ 2231 18ba F21F 5400 	fmove.d (%sp)+,%fp0
+ 2232 18be F200 00A2 	fadd.x %fp0,%fp1
+ 2233 18c2 F227 7480 	fmove.d %fp1,-(%sp)
+ 2234 18c6 201F      	move.l (%sp)+,%d0
+ 2235 18c8 221F      	move.l (%sp)+,%d1
+ 2236 18ca 2F01      	move.l %d1,-(%sp)
+ 2237 18cc 2F00      	move.l %d0,-(%sp)
+ 2238 18ce F21F 5480 	fmove.d (%sp)+,%fp1
+ 2239 18d2 F22E 54A3 	fmul.d -8(%fp),%fp1
+ 2239      FFF8 
+ 2240 18d8 F227 7480 	fmove.d %fp1,-(%sp)
+ 2241 18dc 201F      	move.l (%sp)+,%d0
+ 2242 18de 221F      	move.l (%sp)+,%d1
+ 2243 18e0 2079 0000 	move.l w4,%a0
+ 2243      0000 
+ 2244 18e6 2279 0000 	move.l w4+4,%a1
+ 2244      0000 
+ 2245 18ec 2F01      	move.l %d1,-(%sp)
+ 2246 18ee 2F00      	move.l %d0,-(%sp)
+ 2247 18f0 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2248 18f4 2F09      	move.l %a1,-(%sp)
+ 2249 18f6 2F08      	move.l %a0,-(%sp)
+68K GAS   			page 45
+
+
+ 2250 18f8 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2251 18fc F200 0422 	fadd.x %fp1,%fp0
+ 2252 1900 F227 7400 	fmove.d %fp0,-(%sp)
+ 2253 1904 201F      	move.l (%sp)+,%d0
+ 2254 1906 221F      	move.l (%sp)+,%d1
+ 2255 1908 2F01      	move.l %d1,-(%sp)
+ 2256 190a 2F00      	move.l %d0,-(%sp)
+ 2257 190c F21F 5400 	fmove.d (%sp)+,%fp0
+ 2258 1910 F22E 5423 	fmul.d -8(%fp),%fp0
+ 2258      FFF8 
+ 2259 1916 F227 7400 	fmove.d %fp0,-(%sp)
+ 2260 191a 201F      	move.l (%sp)+,%d0
+ 2261 191c 221F      	move.l (%sp)+,%d1
+ 2262 191e 2079 0000 	move.l w3,%a0
+ 2262      0000 
+ 2263 1924 2279 0000 	move.l w3+4,%a1
+ 2263      0000 
+ 2264 192a 2F01      	move.l %d1,-(%sp)
+ 2265 192c 2F00      	move.l %d0,-(%sp)
+ 2266 192e F21F 5480 	fmove.d (%sp)+,%fp1
+ 2267 1932 2F09      	move.l %a1,-(%sp)
+ 2268 1934 2F08      	move.l %a0,-(%sp)
+ 2269 1936 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2270 193a F200 00A2 	fadd.x %fp0,%fp1
+ 2271 193e F227 7480 	fmove.d %fp1,-(%sp)
+ 2272 1942 201F      	move.l (%sp)+,%d0
+ 2273 1944 221F      	move.l (%sp)+,%d1
+ 2274 1946 2F01      	move.l %d1,-(%sp)
+ 2275 1948 2F00      	move.l %d0,-(%sp)
+ 2276 194a F21F 5480 	fmove.d (%sp)+,%fp1
+ 2277 194e F22E 54A3 	fmul.d -8(%fp),%fp1
+ 2277      FFF8 
+ 2278 1954 F227 7480 	fmove.d %fp1,-(%sp)
+ 2279 1958 201F      	move.l (%sp)+,%d0
+ 2280 195a 221F      	move.l (%sp)+,%d1
+ 2281 195c 2079 0000 	move.l w2,%a0
+ 2281      0000 
+ 2282 1962 2279 0000 	move.l w2+4,%a1
+ 2282      0000 
+ 2283 1968 2F01      	move.l %d1,-(%sp)
+ 2284 196a 2F00      	move.l %d0,-(%sp)
+ 2285 196c F21F 5400 	fmove.d (%sp)+,%fp0
+ 2286 1970 2F09      	move.l %a1,-(%sp)
+ 2287 1972 2F08      	move.l %a0,-(%sp)
+ 2288 1974 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2289 1978 F200 0422 	fadd.x %fp1,%fp0
+ 2290 197c F227 7400 	fmove.d %fp0,-(%sp)
+ 2291 1980 201F      	move.l (%sp)+,%d0
+ 2292 1982 221F      	move.l (%sp)+,%d1
+ 2293 1984 2F01      	move.l %d1,-(%sp)
+ 2294 1986 2F00      	move.l %d0,-(%sp)
+ 2295 1988 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2296 198c F22E 5423 	fmul.d -8(%fp),%fp0
+ 2296      FFF8 
+ 2297 1992 F227 7400 	fmove.d %fp0,-(%sp)
+ 2298 1996 201F      	move.l (%sp)+,%d0
+ 2299 1998 221F      	move.l (%sp)+,%d1
+68K GAS   			page 46
+
+
+ 2300 199a 2079 0000 	move.l w1,%a0
+ 2300      0000 
+ 2301 19a0 2279 0000 	move.l w1+4,%a1
+ 2301      0000 
+ 2302 19a6 2F01      	move.l %d1,-(%sp)
+ 2303 19a8 2F00      	move.l %d0,-(%sp)
+ 2304 19aa F21F 5480 	fmove.d (%sp)+,%fp1
+ 2305 19ae 2F09      	move.l %a1,-(%sp)
+ 2306 19b0 2F08      	move.l %a0,-(%sp)
+ 2307 19b2 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2308 19b6 F200 00A2 	fadd.x %fp0,%fp1
+ 2309 19ba F227 7480 	fmove.d %fp1,-(%sp)
+ 2310 19be 201F      	move.l (%sp)+,%d0
+ 2311 19c0 221F      	move.l (%sp)+,%d1
+ 2312 19c2 2F01      	move.l %d1,-(%sp)
+ 2313 19c4 2F00      	move.l %d0,-(%sp)
+ 2314 19c6 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2315 19ca F22E 54A3 	fmul.d -16(%fp),%fp1
+ 2315      FFF0 
+ 2316 19d0 F227 7480 	fmove.d %fp1,-(%sp)
+ 2317 19d4 201F      	move.l (%sp)+,%d0
+ 2318 19d6 221F      	move.l (%sp)+,%d1
+ 2319 19d8 2079 0000 	move.l w0,%a0
+ 2319      0000 
+ 2320 19de 2279 0000 	move.l w0+4,%a1
+ 2320      0000 
+ 2321 19e4 2F01      	move.l %d1,-(%sp)
+ 2322 19e6 2F00      	move.l %d0,-(%sp)
+ 2323 19e8 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2324 19ec 2F09      	move.l %a1,-(%sp)
+ 2325 19ee 2F08      	move.l %a0,-(%sp)
+ 2326 19f0 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2327 19f4 F200 0422 	fadd.x %fp1,%fp0
+ 2328 19f8 F22E 7400 	fmove.d %fp0,-88(%fp)
+ 2328      FFA8 
+ 2329 19fe 202E 0008 	move.l 8(%fp),%d0
+ 2330 1a02 222E 000C 	move.l 12(%fp),%d1
+ 2331 1a06 2079 0000 	move.l half,%a0
+ 2331      0000 
+ 2332 1a0c 2279 0000 	move.l half+4,%a1
+ 2332      0000 
+ 2333 1a12 2F01      	move.l %d1,-(%sp)
+ 2334 1a14 2F00      	move.l %d0,-(%sp)
+ 2335 1a16 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2336 1a1a 2F09      	move.l %a1,-(%sp)
+ 2337 1a1c 2F08      	move.l %a0,-(%sp)
+ 2338 1a1e F21F 5480 	fmove.d (%sp)+,%fp1
+ 2339 1a22 F200 0428 	fsub.x %fp1,%fp0
+ 2340 1a26 F227 7400 	fmove.d %fp0,-(%sp)
+ 2341 1a2a 205F      	move.l (%sp)+,%a0
+ 2342 1a2c 225F      	move.l (%sp)+,%a1
+ 2343 1a2e 2039 0000 	move.l one,%d0
+ 2343      0000 
+ 2344 1a34 2239 0000 	move.l one+4,%d1
+ 2344      0000 
+ 2345 1a3a F22E 5400 	fmove.d -56(%fp),%fp0
+ 2345      FFC8 
+68K GAS   			page 47
+
+
+ 2346 1a40 2F01      	move.l %d1,-(%sp)
+ 2347 1a42 2F00      	move.l %d0,-(%sp)
+ 2348 1a44 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2349 1a48 F200 0428 	fsub.x %fp1,%fp0
+ 2350 1a4c F227 7400 	fmove.d %fp0,-(%sp)
+ 2351 1a50 201F      	move.l (%sp)+,%d0
+ 2352 1a52 221F      	move.l (%sp)+,%d1
+ 2353 1a54 2F09      	move.l %a1,-(%sp)
+ 2354 1a56 2F08      	move.l %a0,-(%sp)
+ 2355 1a58 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2356 1a5c 2F01      	move.l %d1,-(%sp)
+ 2357 1a5e 2F00      	move.l %d0,-(%sp)
+ 2358 1a60 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2359 1a64 F200 0423 	fmul.x %fp1,%fp0
+ 2360 1a68 F227 7400 	fmove.d %fp0,-(%sp)
+ 2361 1a6c 201F      	move.l (%sp)+,%d0
+ 2362 1a6e 221F      	move.l (%sp)+,%d1
+ 2363 1a70 2F01      	move.l %d1,-(%sp)
+ 2364 1a72 2F00      	move.l %d0,-(%sp)
+ 2365 1a74 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2366 1a78 F22E 5422 	fadd.d -88(%fp),%fp0
+ 2366      FFA8 
+ 2367 1a7e F22E 7400 	fmove.d %fp0,-32(%fp)
+ 2367      FFE0 
+ 2368 1a84 606E      	jra .L27
+ 2369               	.L47:
+ 2370 1a86 202E 0008 	move.l 8(%fp),%d0
+ 2371 1a8a 222E 000C 	move.l 12(%fp),%d1
+ 2372 1a8e 2F01      	move.l %d1,-(%sp)
+ 2373 1a90 2F00      	move.l %d0,-(%sp)
+ 2374 1a92 4EB9 0000 	jsr __ieee754_log
+ 2374      0000 
+ 2375 1a98 508F      	addq.l #8,%sp
+ 2376 1a9a F227 7400 	fmove.d %fp0,-(%sp)
+ 2377 1a9e 201F      	move.l (%sp)+,%d0
+ 2378 1aa0 221F      	move.l (%sp)+,%d1
+ 2379 1aa2 2079 0000 	move.l one,%a0
+ 2379      0000 
+ 2380 1aa8 2279 0000 	move.l one+4,%a1
+ 2380      0000 
+ 2381 1aae 2F01      	move.l %d1,-(%sp)
+ 2382 1ab0 2F00      	move.l %d0,-(%sp)
+ 2383 1ab2 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2384 1ab6 2F09      	move.l %a1,-(%sp)
+ 2385 1ab8 2F08      	move.l %a0,-(%sp)
+ 2386 1aba F21F 5400 	fmove.d (%sp)+,%fp0
+ 2387 1abe F200 00A8 	fsub.x %fp0,%fp1
+ 2388 1ac2 F227 7480 	fmove.d %fp1,-(%sp)
+ 2389 1ac6 201F      	move.l (%sp)+,%d0
+ 2390 1ac8 221F      	move.l (%sp)+,%d1
+ 2391 1aca 206E 0008 	move.l 8(%fp),%a0
+ 2392 1ace 226E 000C 	move.l 12(%fp),%a1
+ 2393 1ad2 2F01      	move.l %d1,-(%sp)
+ 2394 1ad4 2F00      	move.l %d0,-(%sp)
+ 2395 1ad6 F21F 5480 	fmove.d (%sp)+,%fp1
+ 2396 1ada 2F09      	move.l %a1,-(%sp)
+ 2397 1adc 2F08      	move.l %a0,-(%sp)
+68K GAS   			page 48
+
+
+ 2398 1ade F21F 5400 	fmove.d (%sp)+,%fp0
+ 2399 1ae2 F200 00A3 	fmul.x %fp0,%fp1
+ 2400 1ae6 F22E 7480 	fmove.d %fp1,-32(%fp)
+ 2400      FFE0 
+ 2401 1aec 6006      	jra .L27
+ 2402               	.L49:
+ 2403 1aee 4E71      	nop
+ 2404 1af0 6002      	jra .L27
+ 2405               	.L50:
+ 2406 1af2 4E71      	nop
+ 2407               	.L27:
+ 2408 1af4 4AAE FFD8 	tst.l -40(%fp)
+ 2409 1af8 6C12      	jge .L48
+ 2410 1afa F22E 5480 	fmove.d -24(%fp),%fp1
+ 2410      FFE8 
+ 2411 1b00 F22E 54A8 	fsub.d -32(%fp),%fp1
+ 2411      FFE0 
+ 2412 1b06 F22E 7480 	fmove.d %fp1,-32(%fp)
+ 2412      FFE0 
+ 2413               	.L48:
+ 2414 1b0c 202E FFE0 	move.l -32(%fp),%d0
+ 2415 1b10 222E FFE4 	move.l -28(%fp),%d1
+ 2416               	.L17:
+ 2417 1b14 2F01      	move.l %d1,-(%sp)
+ 2418 1b16 2F00      	move.l %d0,-(%sp)
+ 2419 1b18 F21F 5400 	fmove.d (%sp)+,%fp0
+ 2420 1b1c 242E FF90 	move.l -112(%fp),%d2
+ 2421 1b20 262E FF94 	move.l -108(%fp),%d3
+ 2422 1b24 4E5E      	unlk %fp
+ 2423 1b26 4E75      	rts
+ 2425               	.ident"GCC: (GNU) 4.5.1"
+ 2426               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 49
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 e_lgamma_r.c
+    {standard input}:7      .rodata:00000000 two52
+    {standard input}:13     .rodata:00000008 half
+    {standard input}:19     .rodata:00000010 one
+    {standard input}:25     .rodata:00000018 pi
+    {standard input}:31     .rodata:00000020 a0
+    {standard input}:37     .rodata:00000028 a1
+    {standard input}:43     .rodata:00000030 a2
+    {standard input}:49     .rodata:00000038 a3
+    {standard input}:55     .rodata:00000040 a4
+    {standard input}:61     .rodata:00000048 a5
+    {standard input}:67     .rodata:00000050 a6
+    {standard input}:73     .rodata:00000058 a7
+    {standard input}:79     .rodata:00000060 a8
+    {standard input}:85     .rodata:00000068 a9
+    {standard input}:91     .rodata:00000070 a10
+    {standard input}:97     .rodata:00000078 a11
+    {standard input}:103    .rodata:00000080 tc
+    {standard input}:109    .rodata:00000088 tf
+    {standard input}:115    .rodata:00000090 tt
+    {standard input}:121    .rodata:00000098 t0
+    {standard input}:127    .rodata:000000a0 t1
+    {standard input}:133    .rodata:000000a8 t2
+    {standard input}:139    .rodata:000000b0 t3
+    {standard input}:145    .rodata:000000b8 t4
+    {standard input}:151    .rodata:000000c0 t5
+    {standard input}:157    .rodata:000000c8 t6
+    {standard input}:163    .rodata:000000d0 t7
+    {standard input}:169    .rodata:000000d8 t8
+    {standard input}:175    .rodata:000000e0 t9
+    {standard input}:181    .rodata:000000e8 t10
+    {standard input}:187    .rodata:000000f0 t11
+    {standard input}:193    .rodata:000000f8 t12
+    {standard input}:199    .rodata:00000100 t13
+    {standard input}:205    .rodata:00000108 t14
+    {standard input}:211    .rodata:00000110 u0
+    {standard input}:217    .rodata:00000118 u1
+    {standard input}:223    .rodata:00000120 u2
+    {standard input}:229    .rodata:00000128 u3
+    {standard input}:235    .rodata:00000130 u4
+    {standard input}:241    .rodata:00000138 u5
+    {standard input}:247    .rodata:00000140 v1
+    {standard input}:253    .rodata:00000148 v2
+    {standard input}:259    .rodata:00000150 v3
+    {standard input}:265    .rodata:00000158 v4
+    {standard input}:271    .rodata:00000160 v5
+    {standard input}:277    .rodata:00000168 s0
+    {standard input}:283    .rodata:00000170 s1
+    {standard input}:289    .rodata:00000178 s2
+    {standard input}:295    .rodata:00000180 s3
+    {standard input}:301    .rodata:00000188 s4
+    {standard input}:307    .rodata:00000190 s5
+    {standard input}:313    .rodata:00000198 s6
+    {standard input}:319    .rodata:000001a0 r1
+    {standard input}:325    .rodata:000001a8 r2
+    {standard input}:331    .rodata:000001b0 r3
+68K GAS   			page 50
+
+
+    {standard input}:337    .rodata:000001b8 r4
+    {standard input}:343    .rodata:000001c0 r5
+    {standard input}:349    .rodata:000001c8 r6
+    {standard input}:355    .rodata:000001d0 w0
+    {standard input}:361    .rodata:000001d8 w1
+    {standard input}:367    .rodata:000001e0 w2
+    {standard input}:373    .rodata:000001e8 w3
+    {standard input}:379    .rodata:000001f0 w4
+    {standard input}:385    .rodata:000001f8 w5
+    {standard input}:391    .rodata:00000200 w6
+    {standard input}:395    .bss:00000000 zero
+    {standard input}:399    .text:00000000 sin_pi
+    {standard input}:720    .text:00000448 __ieee754_lgamma_r
+
+UNDEFINED SYMBOLS
+__kernel_sin
+floor
+__kernel_cos
+__ieee754_log
+fabs

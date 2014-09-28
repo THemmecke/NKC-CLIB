@@ -1,0 +1,44 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"time.c"
+   3               	.text
+   4               	.align2
+   5               	.globltime
+   7               	time:
+   8 0000 4E56 FFD8 	link.w %fp,#-40
+   9 0004 70D8      	moveq #-40,%d0
+  10 0006 D08E      	add.l %fp,%d0
+  11 0008 2F00      	move.l %d0,-(%sp)
+  12 000a 4EB9 0000 	jsr _ll_gettime
+  12      0000 
+  13 0010 588F      	addq.l #4,%sp
+  14 0012 70D8      	moveq #-40,%d0
+  15 0014 D08E      	add.l %fp,%d0
+  16 0016 2F00      	move.l %d0,-(%sp)
+  17 0018 4EB9 0000 	jsr mktime
+  17      0000 
+  18 001e 588F      	addq.l #4,%sp
+  19 0020 2D40 FFFC 	move.l %d0,-4(%fp)
+  20 0024 4AAE 0008 	tst.l 8(%fp)
+  21 0028 670A      	jeq .L2
+  22 002a 202E 0008 	move.l 8(%fp),%d0
+  23 002e 2040      	move.l %d0,%a0
+  24 0030 20AE FFFC 	move.l -4(%fp),(%a0)
+  25               	.L2:
+  26 0034 202E FFFC 	move.l -4(%fp),%d0
+  27 0038 4E5E      	unlk %fp
+  28 003a 4E75      	rts
+  30               	.ident"GCC: (GNU) 4.5.1"
+  31               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 time.c
+    {standard input}:7      .text:00000000 time
+
+UNDEFINED SYMBOLS
+_ll_gettime
+mktime

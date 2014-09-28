@@ -1,0 +1,124 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               		.global _ll_init_std,  __ll_seek,  __ll_getpos, __ll_close, __ll_creat, __ll_open
+   3               	/*************************************************************************
+   4               	 * _llinit  setup standard files (stdio, stderr)
+   5               	 *************************************************************************/
+   6               	_ll_init_std:
+   7               	#ifdef M68000
+   8               		lea output_file,%a0	
+   9               		lea _pstreams,%a1	
+  10               	#else
+  11 0000 41FB 0170 		lea output_file(%pc),%a0	
+  11      0000 0000 
+  12 0008 43FB 0170 		lea _pstreams(%pc),%a1	
+  12      0000 0000 
+  13               	#endif
+  14 0010 22C8      		move.l %a0,(%a1)+
+  15 0012 22C8      		move.l %a0,(%a1)+
+  16               	#ifdef M68000
+  17               		lea error_file,%a0
+  18               	#else
+  19 0014 41FB 0170 		lea error_file(%pc),%a0
+  19      0000 0000 
+  20               	#endif
+  21 001c 22C8      		move.l %a0,(%a1)+
+  22 001e 23FC 0000 		move.l #10,maxfiles
+  22      000A 0000 
+  22      0000 
+  23 0028 4E75      		rts
+  24               	/*************************************************************************
+  25               	 *
+  26               	 * int _llopen(char *name, int flags)
+  27               	 * open an existing file, return handle
+  28               	 *************************************************************************/
+  29               	__ll_open:
+  30 002a 206F 0004 		move.l 4(%sp),%a0 /* *name */
+  31 002e 202F 0008 		move.l 8(%sp),%d0 /* flags */
+  32 0032 4E75      		rts
+  33               	/*************************************************************************
+  34               	*
+  35               	* int _ll_creat(char *name, int flags)
+  36               	* create new file, if file exists it will be truncated to zero legth
+  37               	 *************************************************************************/
+  38               	__ll_creat:
+  39 0034 206F 0004 		move.l 4(%sp),%a0 /* *name */
+  40 0038 202F 0008 		move.l 8(%sp),%d0 /* flags */
+  41 003c 4E75      		rts
+  42               	/*************************************************************************
+  43               	*
+  44               	* void _ll_close(int fd)
+  45               	* close file
+  46               	 *************************************************************************/
+  47               	__ll_close:
+  48 003e 202F 0004 		move.l 4(%sp),%d0 /* fd */
+  49 0042 4E75      		rts
+  50               	
+68K GAS   			page 2
+
+
+  51               	/*************************************************************************
+  52               	*
+  53               	* int _ll_getpos(int fd)
+  54               	* in DOS: seek to current position, current position is returned
+  55               	 *************************************************************************/
+  56               	__ll_getpos:
+  57 0044 202F 0004 		move.l 4(%sp),%d0 /* fd */
+  58 0048 4E75      		rts
+  59               		
+  60               	/*************************************************************************
+  61               	 * int _ll_flags(int flags)
+  62               	        convert _F_READ(1) => 0
+  63               	        	_F_WRIT(2) => 1
+  64               	 *************************************************************************/ 
+  65               	__ll_flags:
+  66 004a 222F 0004 		move.l 4(%sp),%d1 /* flags */	
+  67 004e 4280      		clr.l %d0
+  68 0050 0801 0001 		btst #1,%d1  /* _F_READ ? */
+  69 0054 6700 000E 		beq _nowrit
+  70 0058 5240      		addq #1,%d0
+  71 005a 0801 0002 		btst #2,%d1  /* _F_WRIT ? */
+  72 005e 6700 0004 		beq _nowrit
+  73 0062 5240      		addq #1,%d0  /* _F_READ | _F_WRIT */
+  74               	_nowrit:
+  75 0064 4E75      		rts
+  76               	/*************************************************************************
+  77               	 *
+  78               	 * void _ll_seek(int fd, int pos, int origin)
+  79               	 * set file position, fd = file descriptor, pos = offset into file, origin = method
+  80               	 * origin = 0 => pos gives absolute offset from start of file
+  81               	 * origin = 1 => pos gives offset from current file pointer
+  82               	 * origin = 2 => pos gives signed offset from EOF
+  83               	 *************************************************************************/
+  84               	__ll_seek:
+  85 0066 2F02      		move.l %d2,-(%sp)	/* save %d2 */
+  86               		
+  87 0068 202F 0008 		move.l 8(%sp),%d0 	/* fd */
+  88 006c 222F 000C 		move.l 12(%sp),%d1 	/* pos */
+  89 0070 242F 0010 		move.l 16(%sp),%d2 	/* origin */
+  90               	
+  91 0074 241F      		move.l (%sp)+, %d2	/* restore %d2 */
+  92               		
+  93 0076 4E75      		rts
+68K GAS   			page 3
+
+
+DEFINED SYMBOLS
+            llopen.S:6      .text:00000000 _ll_init_std
+            llopen.S:84     .text:00000066 __ll_seek
+            llopen.S:56     .text:00000044 __ll_getpos
+            llopen.S:47     .text:0000003e __ll_close
+            llopen.S:38     .text:00000034 __ll_creat
+            llopen.S:29     .text:0000002a __ll_open
+            llopen.S:65     .text:0000004a __ll_flags
+            llopen.S:74     .text:00000064 _nowrit
+
+UNDEFINED SYMBOLS
+output_file
+_pstreams
+error_file
+maxfiles

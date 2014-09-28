@@ -1,0 +1,33 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               	
+   3               		.global	ldexp 
+   4               	
+   5               	/*
+   6               		double      ldexp   (double __x, int __exponent);
+   7               	
+   8               		Generate value from significand and exponent
+   9               		Returns the result of multiplying x (the significand) by 2 raised to the power of exp (the exponen
+  10               	
+  11               		ldexp(x,exp) = x * 2 exp
+  12               	*/
+  13               	
+  14               	ldexp:
+  15 0000 41EF 0004 		lea.l	(4,%A7),%A0	/* get pointer to parameters */
+  16               	
+  17 0004 F228 4011 		FTWOTOX.l	(8,%a0),%FP0
+  17      0008 
+  18 000a F210 5423 		FMUL.d		(%a0),%FP0
+  19               	
+  20 000e 4E75      		rts
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+             ldexp.S:14     .text:00000000 ldexp
+
+NO UNDEFINED SYMBOLS

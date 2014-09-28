@@ -1,0 +1,37 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               		.global	llsignal, breakflag, llsigdown, raisecb, sigcb
+   3               	
+   4               	/*****************************************************************************/
+   5               	llsignal:
+   6 0000 4E75      		rts
+   7               	/*****************************************************************************/
+   8               	llsigdown:	
+   9 0002 4E75      		rts
+  10               	/*****************************************************************************/
+  11               	raise16:
+  12               	raisecb:
+  13 0004 4E73      		rte
+  14               	/*****************************************************************************/
+  15               	sigcb:
+  16 0006 4E73      		rte	
+  17               	
+  18               	.data
+  19               	
+  20 0000 0000 0000 	breakflag: .space 4
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+             llsig.S:5      .text:00000000 llsignal
+             llsig.S:20     .data:00000000 breakflag
+             llsig.S:8      .text:00000002 llsigdown
+             llsig.S:12     .text:00000004 raisecb
+             llsig.S:15     .text:00000006 sigcb
+             llsig.S:11     .text:00000004 raise16
+
+NO UNDEFINED SYMBOLS

@@ -1,0 +1,42 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"setbuf.c"
+   3               	.text
+   4               	.align2
+   5               	.globlsetbuf
+   7               	setbuf:
+   8 0000 4E56 0000 	link.w %fp,#0
+   9 0004 4AAE 000C 	tst.l 12(%fp)
+  10 0008 671C      	jeq .L2
+  11 000a 4878 0200 	pea 512.w
+  12 000e 4878 0001 	pea 1.w
+  13 0012 2F2E 000C 	move.l 12(%fp),-(%sp)
+  14 0016 2F2E 0008 	move.l 8(%fp),-(%sp)
+  15 001a 4EB9 0000 	jsr setvbuf
+  15      0000 
+  16 0020 4FEF 0010 	lea (16,%sp),%sp
+  17 0024 601A      	jra .L1
+  18               	.L2:
+  19 0026 4878 0200 	pea 512.w
+  20 002a 4878 0004 	pea 4.w
+  21 002e 2F2E 000C 	move.l 12(%fp),-(%sp)
+  22 0032 2F2E 0008 	move.l 8(%fp),-(%sp)
+  23 0036 4EB9 0000 	jsr setvbuf
+  23      0000 
+  24 003c 4FEF 0010 	lea (16,%sp),%sp
+  25               	.L1:
+  26 0040 4E5E      	unlk %fp
+  27 0042 4E75      	rts
+  29               	.ident"GCC: (GNU) 4.5.1"
+  30               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 setbuf.c
+    {standard input}:7      .text:00000000 setbuf
+
+UNDEFINED SYMBOLS
+setvbuf

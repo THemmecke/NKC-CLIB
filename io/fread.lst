@@ -1,0 +1,87 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"fread.c"
+   3               	.text
+   4               	.align2
+   5               	.globlfread
+   7               	fread:
+   8 0000 4E56 FFF0 	link.w %fp,#-16
+   9 0004 202E 0010 	move.l 16(%fp),%d0
+  10 0008 4C2E 0800 	muls.l 12(%fp),%d0
+  10      000C 
+  11 000e 2D40 FFF4 	move.l %d0,-12(%fp)
+  12 0012 2D6E 0008 	move.l 8(%fp),-8(%fp)
+  12      FFF8 
+  13 0018 202E 0014 	move.l 20(%fp),%d0
+  14 001c 2040      	move.l %d0,%a0
+  15 001e 3028 001A 	move.w 26(%a0),%d0
+  16 0022 0C40 444C 	cmp.w #17484,%d0
+  17 0026 6704      	jeq .L2
+  18 0028 4280      	clr.l %d0
+  19 002a 607C      	jra .L3
+  20               	.L2:
+  21 002c 202E 0014 	move.l 20(%fp),%d0
+  22 0030 2040      	move.l %d0,%a0
+  23 0032 2028 0004 	move.l 4(%a0),%d0
+  24 0036 7201      	moveq #1,%d1
+  25 0038 C081      	and.l %d1,%d0
+  26 003a 4A80      	tst.l %d0
+  27 003c 661C      	jne .L4
+  28 003e 202E 0014 	move.l 20(%fp),%d0
+  29 0042 2040      	move.l %d0,%a0
+  30 0044 2028 0004 	move.l 4(%a0),%d0
+  31 0048 7210      	moveq #16,%d1
+  32 004a 8280      	or.l %d0,%d1
+  33 004c 202E 0014 	move.l 20(%fp),%d0
+  34 0050 2040      	move.l %d0,%a0
+  35 0052 2141 0004 	move.l %d1,4(%a0)
+  36 0056 4280      	clr.l %d0
+  37 0058 604E      	jra .L3
+  38               	.L4:
+  39 005a 42AE FFFC 	clr.l -4(%fp)
+  40 005e 603A      	jra .L5
+  41               	.L7:
+  42 0060 2F2E 0014 	move.l 20(%fp),-(%sp)
+  43 0064 4EB9 0000 	jsr _basegetc
+  43      0000 
+  44 006a 588F      	addq.l #4,%sp
+  45 006c 2D40 FFF0 	move.l %d0,-16(%fp)
+  46 0070 70FF      	moveq #-1,%d0
+  47 0072 B0AE FFF0 	cmp.l -16(%fp),%d0
+  48 0076 660C      	jne .L6
+  49 0078 202E FFFC 	move.l -4(%fp),%d0
+  50 007c 4C6E 0001 	divul.l 12(%fp),%d1:%d0
+  50      000C 
+  51 0082 6024      	jra .L3
+  52               	.L6:
+  53 0084 202E FFF0 	move.l -16(%fp),%d0
+  54 0088 1200      	move.b %d0,%d1
+68K GAS   			page 2
+
+
+  55 008a 202E FFF8 	move.l -8(%fp),%d0
+  56 008e 2040      	move.l %d0,%a0
+  57 0090 1081      	move.b %d1,(%a0)
+  58 0092 52AE FFF8 	addq.l #1,-8(%fp)
+  59 0096 52AE FFFC 	addq.l #1,-4(%fp)
+  60               	.L5:
+  61 009a 202E FFFC 	move.l -4(%fp),%d0
+  62 009e B0AE FFF4 	cmp.l -12(%fp),%d0
+  63 00a2 6DBC      	jlt .L7
+  64 00a4 202E 0010 	move.l 16(%fp),%d0
+  65               	.L3:
+  66 00a8 4E5E      	unlk %fp
+  67 00aa 4E75      	rts
+  69               	.ident"GCC: (GNU) 4.5.1"
+  70               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 3
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 fread.c
+    {standard input}:7      .text:00000000 fread
+
+UNDEFINED SYMBOLS
+_basegetc

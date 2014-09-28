@@ -1,0 +1,68 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"fprintf.c"
+   3               	.text
+   4               	.align2
+   5               	.globlvfprintf
+   7               	vfprintf:
+   8 0000 4E56 FFF8 	link.w %fp,#-8
+   9 0004 42AE FFF8 	clr.l -8(%fp)
+  10 0008 2F2E 0010 	move.l 16(%fp),-(%sp)
+  11 000c 2F2E 000C 	move.l 12(%fp),-(%sp)
+  12 0010 200E      	move.l %fp,%d0
+  13 0012 5180      	subq.l #8,%d0
+  14 0014 2F00      	move.l %d0,-(%sp)
+  15 0016 4EB9 0000 	jsr vsprintf
+  15      0000 
+  16 001c 4FEF 000C 	lea (12,%sp),%sp
+  17 0020 2D40 FFFC 	move.l %d0,-4(%fp)
+  18 0024 202E FFF8 	move.l -8(%fp),%d0
+  19 0028 2F2E 0008 	move.l 8(%fp),-(%sp)
+  20 002c 2F00      	move.l %d0,-(%sp)
+  21 002e 4EB9 0000 	jsr fputs
+  21      0000 
+  22 0034 508F      	addq.l #8,%sp
+  23 0036 72FF      	moveq #-1,%d1
+  24 0038 B280      	cmp.l %d0,%d1
+  25 003a 6604      	jne .L2
+  26 003c 42AE FFFC 	clr.l -4(%fp)
+  27               	.L2:
+  28 0040 202E FFF8 	move.l -8(%fp),%d0
+  29 0044 2F00      	move.l %d0,-(%sp)
+  30 0046 4EB9 0000 	jsr free
+  30      0000 
+  31 004c 588F      	addq.l #4,%sp
+  32 004e 202E FFFC 	move.l -4(%fp),%d0
+  33 0052 4E5E      	unlk %fp
+  34 0054 4E75      	rts
+  36               	.align2
+  37               	.globlfprintf
+  39               	fprintf:
+  40 0056 4E56 0000 	link.w %fp,#0
+  41 005a 700C      	moveq #12,%d0
+  42 005c D08E      	add.l %fp,%d0
+  43 005e 5880      	addq.l #4,%d0
+  44 0060 222E 000C 	move.l 12(%fp),%d1
+  45 0064 2F00      	move.l %d0,-(%sp)
+  46 0066 2F01      	move.l %d1,-(%sp)
+  47 0068 2F2E 0008 	move.l 8(%fp),-(%sp)
+  48 006c 4EBA FF92 	jsr vfprintf
+  49 0070 4FEF 000C 	lea (12,%sp),%sp
+  50 0074 4E5E      	unlk %fp
+  51 0076 4E75      	rts
+  53               	.ident"GCC: (GNU) 4.5.1"
+  54               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 fprintf.c
+    {standard input}:7      .text:00000000 vfprintf
+    {standard input}:39     .text:00000056 fprintf
+
+UNDEFINED SYMBOLS
+vsprintf
+fputs
+free

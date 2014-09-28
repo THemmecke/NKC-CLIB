@@ -1,0 +1,330 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"tmpfil.c"
+   3               	.localibuf
+   4               	.commibuf,256,1
+   5               	.section.rodata
+   6               	.LC0:
+   7 0000 7262 00   	.string"rb"
+   8               	.text
+   9               	.align2
+  10               	.globltmpnam
+  12               	tmpnam:
+  13 0000 4E56 FFE8 	link.w %fp,#-24
+  14 0004 2F02      	move.l %d2,-(%sp)
+  15 0006 42AE FFF8 	clr.l -8(%fp)
+  16 000a 70E8      	moveq #-24,%d0
+  17 000c D08E      	add.l %fp,%d0
+  18 000e 2F00      	move.l %d0,-(%sp)
+  19 0010 4EB9 0000 	jsr time
+  19      0000 
+  20 0016 588F      	addq.l #4,%sp
+  21 0018 70E8      	moveq #-24,%d0
+  22 001a D08E      	add.l %fp,%d0
+  23 001c 2F00      	move.l %d0,-(%sp)
+  24 001e 4EB9 0000 	jsr localtime
+  24      0000 
+  25 0024 588F      	addq.l #4,%sp
+  26 0026 2D48 FFF4 	move.l %a0,-12(%fp)
+  27 002a 4EB9 0000 	jsr clock
+  27      0000 
+  28 0030 2D40 FFF0 	move.l %d0,-16(%fp)
+  29               	.L8:
+  30 0034 202E FFF4 	move.l -12(%fp),%d0
+  31 0038 2240      	move.l %d0,%a1
+  32 003a 2069 0014 	move.l 20(%a1),%a0
+  33 003e 2208      	move.l %a0,%d1
+  34 0040 4C3C 1C00 	muls.l #1321528399,%d0:%d1
+  34      4EC4 EC4F 
+  35 0048 E680      	asr.l #3,%d0
+  36 004a 2208      	move.l %a0,%d1
+  37 004c D281      	add.l %d1,%d1
+  38 004e 9381      	subx.l %d1,%d1
+  39 0050 2400      	move.l %d0,%d2
+  40 0052 9481      	sub.l %d1,%d2
+  41 0054 2202      	move.l %d2,%d1
+  42 0056 2001      	move.l %d1,%d0
+  43 0058 2400      	move.l %d0,%d2
+  44 005a E58A      	lsl.l #2,%d2
+  45 005c 2242      	move.l %d2,%a1
+  46 005e 2009      	move.l %a1,%d0
+  47 0060 E588      	lsl.l #2,%d0
+  48 0062 9089      	sub.l %a1,%d0
+  49 0064 D081      	add.l %d1,%d0
+  50 0066 D080      	add.l %d0,%d0
+  51 0068 2208      	move.l %a0,%d1
+  52 006a 9280      	sub.l %d0,%d1
+  53 006c 1001      	move.b %d1,%d0
+  54 006e 13C0 0000 	move.b %d0,ibuf
+68K GAS   			page 2
+
+
+  54      0000 
+  55 0074 202E FFF4 	move.l -12(%fp),%d0
+  56 0078 2040      	move.l %d0,%a0
+  57 007a 2028 0008 	move.l 8(%a0),%d0
+  58 007e 1000      	move.b %d0,%d0
+  59 0080 13C0 0000 	move.b %d0,ibuf+1
+  59      0000 
+  60 0086 202E FFF4 	move.l -12(%fp),%d0
+  61 008a 2240      	move.l %d0,%a1
+  62 008c 2029 0004 	move.l 4(%a1),%d0
+  63 0090 2400      	move.l %d0,%d2
+  64 0092 4C3C 2C01 	muls.l #954437177,%d1:%d2
+  64      38E3 8E39 
+  65 009a E681      	asr.l #3,%d1
+  66 009c D080      	add.l %d0,%d0
+  67 009e 9180      	subx.l %d0,%d0
+  68 00a0 2401      	move.l %d1,%d2
+  69 00a2 9480      	sub.l %d0,%d2
+  70 00a4 2002      	move.l %d2,%d0
+  71 00a6 1000      	move.b %d0,%d0
+  72 00a8 13C0 0000 	move.b %d0,ibuf+2
+  72      0000 
+  73 00ae 202E FFF4 	move.l -12(%fp),%d0
+  74 00b2 2040      	move.l %d0,%a0
+  75 00b4 2228 0004 	move.l 4(%a0),%d1
+  76 00b8 2401      	move.l %d1,%d2
+  77 00ba 4C3C 2C00 	muls.l #954437177,%d0:%d2
+  77      38E3 8E39 
+  78 00c2 E680      	asr.l #3,%d0
+  79 00c4 2401      	move.l %d1,%d2
+  80 00c6 D482      	add.l %d2,%d2
+  81 00c8 9582      	subx.l %d2,%d2
+  82 00ca 2042      	move.l %d2,%a0
+  83 00cc 9088      	sub.l %a0,%d0
+  84 00ce E588      	lsl.l #2,%d0
+  85 00d0 2400      	move.l %d0,%d2
+  86 00d2 E78A      	lsl.l #3,%d2
+  87 00d4 2042      	move.l %d2,%a0
+  88 00d6 D088      	add.l %a0,%d0
+  89 00d8 2401      	move.l %d1,%d2
+  90 00da 9480      	sub.l %d0,%d2
+  91 00dc 2002      	move.l %d2,%d0
+  92 00de 1000      	move.b %d0,%d0
+  93 00e0 13C0 0000 	move.b %d0,ibuf+3
+  93      0000 
+  94 00e6 202E FFF4 	move.l -12(%fp),%d0
+  95 00ea 2040      	move.l %d0,%a0
+  96 00ec 2010      	move.l (%a0),%d0
+  97 00ee 2400      	move.l %d0,%d2
+  98 00f0 4C3C 2C01 	muls.l #954437177,%d1:%d2
+  98      38E3 8E39 
+  99 00f8 E681      	asr.l #3,%d1
+ 100 00fa D080      	add.l %d0,%d0
+ 101 00fc 9180      	subx.l %d0,%d0
+ 102 00fe 2401      	move.l %d1,%d2
+ 103 0100 9480      	sub.l %d0,%d2
+ 104 0102 2002      	move.l %d2,%d0
+68K GAS   			page 3
+
+
+ 105 0104 1000      	move.b %d0,%d0
+ 106 0106 13C0 0000 	move.b %d0,ibuf+4
+ 106      0000 
+ 107 010c 202E FFF4 	move.l -12(%fp),%d0
+ 108 0110 2040      	move.l %d0,%a0
+ 109 0112 2210      	move.l (%a0),%d1
+ 110 0114 2401      	move.l %d1,%d2
+ 111 0116 4C3C 2C00 	muls.l #954437177,%d0:%d2
+ 111      38E3 8E39 
+ 112 011e E680      	asr.l #3,%d0
+ 113 0120 2401      	move.l %d1,%d2
+ 114 0122 D482      	add.l %d2,%d2
+ 115 0124 9582      	subx.l %d2,%d2
+ 116 0126 2042      	move.l %d2,%a0
+ 117 0128 9088      	sub.l %a0,%d0
+ 118 012a E588      	lsl.l #2,%d0
+ 119 012c 2400      	move.l %d0,%d2
+ 120 012e E78A      	lsl.l #3,%d2
+ 121 0130 2042      	move.l %d2,%a0
+ 122 0132 D088      	add.l %a0,%d0
+ 123 0134 2401      	move.l %d1,%d2
+ 124 0136 9480      	sub.l %d0,%d2
+ 125 0138 2002      	move.l %d2,%d0
+ 126 013a 1000      	move.b %d0,%d0
+ 127 013c 13C0 0000 	move.b %d0,ibuf+5
+ 127      0000 
+ 128 0142 202E FFF0 	move.l -16(%fp),%d0
+ 129 0146 2400      	move.l %d0,%d2
+ 130 0148 4C3C 2C01 	muls.l #954437177,%d1:%d2
+ 130      38E3 8E39 
+ 131 0150 E681      	asr.l #3,%d1
+ 132 0152 D080      	add.l %d0,%d0
+ 133 0154 9180      	subx.l %d0,%d0
+ 134 0156 2401      	move.l %d1,%d2
+ 135 0158 9480      	sub.l %d0,%d2
+ 136 015a 2002      	move.l %d2,%d0
+ 137 015c 1000      	move.b %d0,%d0
+ 138 015e 13C0 0000 	move.b %d0,ibuf+6
+ 138      0000 
+ 139 0164 222E FFF0 	move.l -16(%fp),%d1
+ 140 0168 2401      	move.l %d1,%d2
+ 141 016a 4C3C 2C00 	muls.l #954437177,%d0:%d2
+ 141      38E3 8E39 
+ 142 0172 E680      	asr.l #3,%d0
+ 143 0174 2401      	move.l %d1,%d2
+ 144 0176 D482      	add.l %d2,%d2
+ 145 0178 9582      	subx.l %d2,%d2
+ 146 017a 2042      	move.l %d2,%a0
+ 147 017c 9088      	sub.l %a0,%d0
+ 148 017e E588      	lsl.l #2,%d0
+ 149 0180 2400      	move.l %d0,%d2
+ 150 0182 E78A      	lsl.l #3,%d2
+ 151 0184 2042      	move.l %d2,%a0
+ 152 0186 D088      	add.l %a0,%d0
+ 153 0188 2401      	move.l %d1,%d2
+ 154 018a 9480      	sub.l %d0,%d2
+ 155 018c 2002      	move.l %d2,%d0
+68K GAS   			page 4
+
+
+ 156 018e 1000      	move.b %d0,%d0
+ 157 0190 13C0 0000 	move.b %d0,ibuf+7
+ 157      0000 
+ 158 0196 13FC 002E 	move.b #46,ibuf+8
+ 158      0000 0000 
+ 159 019e 13FC 0054 	move.b #84,ibuf+9
+ 159      0000 0000 
+ 160 01a6 13FC 004D 	move.b #77,ibuf+10
+ 160      0000 0000 
+ 161 01ae 13FC 0050 	move.b #80,ibuf+11
+ 161      0000 0000 
+ 162 01b6 4239 0000 	clr.b ibuf+12
+ 162      0000 
+ 163 01bc 42AE FFFC 	clr.l -4(%fp)
+ 164 01c0 605C      	jra .L2
+ 165               	.L4:
+ 166 01c2 202E FFFC 	move.l -4(%fp),%d0
+ 167 01c6 0680 0000 	add.l #ibuf,%d0
+ 167      0000 
+ 168 01cc 2040      	move.l %d0,%a0
+ 169 01ce 1010      	move.b (%a0),%d0
+ 170 01d0 0600 0041 	add.b #65,%d0
+ 171 01d4 1200      	move.b %d0,%d1
+ 172 01d6 202E FFFC 	move.l -4(%fp),%d0
+ 173 01da 0680 0000 	add.l #ibuf,%d0
+ 173      0000 
+ 174 01e0 2240      	move.l %d0,%a1
+ 175 01e2 1281      	move.b %d1,(%a1)
+ 176 01e4 202E FFFC 	move.l -4(%fp),%d0
+ 177 01e8 0680 0000 	add.l #ibuf,%d0
+ 177      0000 
+ 178 01ee 2040      	move.l %d0,%a0
+ 179 01f0 1010      	move.b (%a0),%d0
+ 180 01f2 0C00 005A 	cmp.b #90,%d0
+ 181 01f6 6F22      	jle .L3
+ 182 01f8 202E FFFC 	move.l -4(%fp),%d0
+ 183 01fc 0680 0000 	add.l #ibuf,%d0
+ 183      0000 
+ 184 0202 2240      	move.l %d0,%a1
+ 185 0204 1011      	move.b (%a1),%d0
+ 186 0206 0600 FFEF 	add.b #-17,%d0
+ 187 020a 1200      	move.b %d0,%d1
+ 188 020c 202E FFFC 	move.l -4(%fp),%d0
+ 189 0210 0680 0000 	add.l #ibuf,%d0
+ 189      0000 
+ 190 0216 2040      	move.l %d0,%a0
+ 191 0218 1081      	move.b %d1,(%a0)
+ 192               	.L3:
+ 193 021a 52AE FFFC 	addq.l #1,-4(%fp)
+ 194               	.L2:
+ 195 021e 7007      	moveq #7,%d0
+ 196 0220 B0AE FFFC 	cmp.l -4(%fp),%d0
+ 197 0224 6C9C      	jge .L4
+ 198 0226 4879 0000 	pea .LC0
+ 198      0000 
+ 199 022c 4879 0000 	pea ibuf
+ 199      0000 
+68K GAS   			page 5
+
+
+ 200 0232 4EB9 0000 	jsr fopen
+ 200      0000 
+ 201 0238 508F      	addq.l #8,%sp
+ 202 023a 2D48 FFEC 	move.l %a0,-20(%fp)
+ 203 023e 4AAE FFEC 	tst.l -20(%fp)
+ 204 0242 6608      	jne .L5
+ 205 0244 4AAE 0008 	tst.l 8(%fp)
+ 206 0248 6612      	jne .L6
+ 207 024a 6028      	jra .L10
+ 208               	.L5:
+ 209 024c 2F2E FFEC 	move.l -20(%fp),-(%sp)
+ 210 0250 4EB9 0000 	jsr fclose
+ 210      0000 
+ 211 0256 588F      	addq.l #4,%sp
+ 212 0258 6000 FDDA 	jra .L8
+ 213               	.L6:
+ 214 025c 4879 0000 	pea ibuf
+ 214      0000 
+ 215 0262 2F2E 0008 	move.l 8(%fp),-(%sp)
+ 216 0266 4EB9 0000 	jsr strcpy
+ 216      0000 
+ 217 026c 508F      	addq.l #8,%sp
+ 218 026e 202E 0008 	move.l 8(%fp),%d0
+ 219 0272 6006      	jra .L9
+ 220               	.L10:
+ 221 0274 203C 0000 	move.l #ibuf,%d0
+ 221      0000 
+ 222               	.L9:
+ 223 027a 2200      	move.l %d0,%d1
+ 224 027c 2041      	move.l %d1,%a0
+ 225 027e 242E FFE4 	move.l -28(%fp),%d2
+ 226 0282 4E5E      	unlk %fp
+ 227 0284 4E75      	rts
+ 229               	.section.rodata
+ 230               	.LC1:
+ 231 0003 7762 2B00 	.string"wb+"
+ 232               	.text
+ 233               	.align2
+ 234               	.globltmpfile
+ 236               	tmpfile:
+ 237 0286 4E56 FFE8 	link.w %fp,#-24
+ 238 028a 70E8      	moveq #-24,%d0
+ 239 028c D08E      	add.l %fp,%d0
+ 240 028e 2F00      	move.l %d0,-(%sp)
+ 241 0290 4EBA FD6E 	jsr tmpnam
+ 242 0294 588F      	addq.l #4,%sp
+ 243 0296 2008      	move.l %a0,%d0
+ 244 0298 4879 0000 	pea .LC1
+ 244      0000 
+ 245 029e 2F00      	move.l %d0,-(%sp)
+ 246 02a0 4EB9 0000 	jsr fopen
+ 246      0000 
+ 247 02a6 508F      	addq.l #8,%sp
+ 248 02a8 2D48 FFFC 	move.l %a0,-4(%fp)
+ 249 02ac 4AAE FFFC 	tst.l -4(%fp)
+ 250 02b0 670C      	jeq .L12
+ 251 02b2 202E FFFC 	move.l -4(%fp),%d0
+68K GAS   			page 6
+
+
+ 252 02b6 7201      	moveq #1,%d1
+ 253 02b8 2040      	move.l %d0,%a0
+ 254 02ba 2141 0016 	move.l %d1,22(%a0)
+ 255               	.L12:
+ 256 02be 202E FFFC 	move.l -4(%fp),%d0
+ 257 02c2 2200      	move.l %d0,%d1
+ 258 02c4 2041      	move.l %d1,%a0
+ 259 02c6 4E5E      	unlk %fp
+ 260 02c8 4E75      	rts
+ 262               	.ident"GCC: (GNU) 4.5.1"
+ 263               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 7
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 tmpfil.c
+                             .bss:00000000 ibuf
+    {standard input}:12     .text:00000000 tmpnam
+    {standard input}:236    .text:00000286 tmpfile
+
+UNDEFINED SYMBOLS
+time
+localtime
+clock
+fopen
+fclose
+strcpy

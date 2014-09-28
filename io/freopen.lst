@@ -1,0 +1,50 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"freopen.c"
+   3               	.text
+   4               	.align2
+   5               	.globlfreopen
+   7               	freopen:
+   8 0000 4E56 0000 	link.w %fp,#0
+   9 0004 42A7      	clr.l -(%sp)
+  10 0006 2F2E 0010 	move.l 16(%fp),-(%sp)
+  11 000a 4EB9 0000 	jsr _basefclose
+  11      0000 
+  12 0010 508F      	addq.l #8,%sp
+  13 0012 4A80      	tst.l %d0
+  14 0014 6704      	jeq .L2
+  15 0016 4280      	clr.l %d0
+  16 0018 6024      	jra .L3
+  17               	.L2:
+  18 001a 2F2E 0010 	move.l 16(%fp),-(%sp)
+  19 001e 2F2E 000C 	move.l 12(%fp),-(%sp)
+  20 0022 2F2E 0008 	move.l 8(%fp),-(%sp)
+  21 0026 4EB9 0000 	jsr _basefopen
+  21      0000 
+  22 002c 4FEF 000C 	lea (12,%sp),%sp
+  23 0030 2008      	move.l %a0,%d0
+  24 0032 4A80      	tst.l %d0
+  25 0034 6604      	jne .L4
+  26 0036 4280      	clr.l %d0
+  27 0038 6004      	jra .L3
+  28               	.L4:
+  29 003a 202E 0010 	move.l 16(%fp),%d0
+  30               	.L3:
+  31 003e 2200      	move.l %d0,%d1
+  32 0040 2041      	move.l %d1,%a0
+  33 0042 4E5E      	unlk %fp
+  34 0044 4E75      	rts
+  36               	.ident"GCC: (GNU) 4.5.1"
+  37               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 freopen.c
+    {standard input}:7      .text:00000000 freopen
+
+UNDEFINED SYMBOLS
+_basefclose
+_basefopen

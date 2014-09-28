@@ -1,0 +1,93 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"s_ldexp.c"
+   3               	.text
+   4               	.align2
+   5               	.globlldexp
+   7               	ldexp:
+   8 0000 4E56 0000 	link.w %fp,#0
+   9 0004 2F2E 000C 	move.l 12(%fp),-(%sp)
+  10 0008 2F2E 0008 	move.l 8(%fp),-(%sp)
+  11 000c 4EB9 0000 	jsr finite
+  11      0000 
+  12 0012 508F      	addq.l #8,%sp
+  13 0014 4A80      	tst.l %d0
+  14 0016 6724      	jeq .L2
+  15 0018 206E 0008 	move.l 8(%fp),%a0
+  16 001c 226E 000C 	move.l 12(%fp),%a1
+  17 0020 4280      	clr.l %d0
+  18 0022 4281      	clr.l %d1
+  19 0024 2F09      	move.l %a1,-(%sp)
+  20 0026 2F08      	move.l %a0,-(%sp)
+  21 0028 F21F 5400 	fmove.d (%sp)+,%fp0
+  22 002c 2F01      	move.l %d1,-(%sp)
+  23 002e 2F00      	move.l %d0,-(%sp)
+  24 0030 F21F 5480 	fmove.d (%sp)+,%fp1
+  25 0034 F200 0438 	fcmp.x %fp1,%fp0
+  26 0038 F28E 000C 	fjne .L3
+  27               	.L2:
+  28 003c 202E 0008 	move.l 8(%fp),%d0
+  29 0040 222E 000C 	move.l 12(%fp),%d1
+  30 0044 606A      	jra .L4
+  31               	.L3:
+  32 0046 2F2E 0010 	move.l 16(%fp),-(%sp)
+  33 004a 2F2E 000C 	move.l 12(%fp),-(%sp)
+  34 004e 2F2E 0008 	move.l 8(%fp),-(%sp)
+  35 0052 4EB9 0000 	jsr scalbn
+  35      0000 
+  36 0058 4FEF 000C 	lea (12,%sp),%sp
+  37 005c F22E 7400 	fmove.d %fp0,8(%fp)
+  37      0008 
+  38 0062 2F2E 000C 	move.l 12(%fp),-(%sp)
+  39 0066 2F2E 0008 	move.l 8(%fp),-(%sp)
+  40 006a 4EB9 0000 	jsr finite
+  40      0000 
+  41 0070 508F      	addq.l #8,%sp
+  42 0072 4A80      	tst.l %d0
+  43 0074 6724      	jeq .L5
+  44 0076 206E 0008 	move.l 8(%fp),%a0
+  45 007a 226E 000C 	move.l 12(%fp),%a1
+  46 007e 4280      	clr.l %d0
+  47 0080 4281      	clr.l %d1
+  48 0082 2F09      	move.l %a1,-(%sp)
+  49 0084 2F08      	move.l %a0,-(%sp)
+  50 0086 F21F 5400 	fmove.d (%sp)+,%fp0
+  51 008a 2F01      	move.l %d1,-(%sp)
+  52 008c 2F00      	move.l %d0,-(%sp)
+  53 008e F21F 5480 	fmove.d (%sp)+,%fp1
+  54 0092 F200 0438 	fcmp.x %fp1,%fp0
+68K GAS   			page 2
+
+
+  55 0096 F28E 0010 	fjne .L6
+  56               	.L5:
+  57 009a 4EB9 0000 	jsr __getErrno
+  57      0000 
+  58 00a0 2008      	move.l %a0,%d0
+  59 00a2 7222      	moveq #34,%d1
+  60 00a4 2040      	move.l %d0,%a0
+  61 00a6 2081      	move.l %d1,(%a0)
+  62               	.L6:
+  63 00a8 202E 0008 	move.l 8(%fp),%d0
+  64 00ac 222E 000C 	move.l 12(%fp),%d1
+  65               	.L4:
+  66 00b0 2F01      	move.l %d1,-(%sp)
+  67 00b2 2F00      	move.l %d0,-(%sp)
+  68 00b4 F21F 5400 	fmove.d (%sp)+,%fp0
+  69 00b8 4E5E      	unlk %fp
+  70 00ba 4E75      	rts
+  72               	.ident"GCC: (GNU) 4.5.1"
+  73               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 3
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 s_ldexp.c
+    {standard input}:7      .text:00000000 ldexp
+
+UNDEFINED SYMBOLS
+finite
+scalbn
+__getErrno

@@ -1,0 +1,40 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               		.global strncpy
+   3               	
+   4               	/*
+   5               		char * strncpy ( char * destination, const char * source, size_t num )
+   6               	*/
+   7               		
+   8               	strncpy:
+   9 0000 222F 000C 		move.l	(12,%a7),%d1	/* count*/
+  10 0004 226F 0008 		move.l	(8,%a7),%a1	/* src	*/
+  11 0008 206F 0004 		move.l	(4,%a7),%a0	/* dest	*/
+  12 000c 2008      		move.l	%a0,%d0		/* dest	*/
+  13               	lp:
+  14 000e 10D9      		move.b	(%a1)+,(%a0)+
+  15 0010 670A      		beq.b	pad
+  16 0012 5341      		subq	#1,%d1
+  17 0014 6600 FFF8 		bne	lp
+  18               	quit:
+  19 0018 2040      		move.l	%d0,%a0
+  20 001a 4E75      		rts
+  21               	pad:
+  22 001c 5341      		subq	#1,%d1
+  23 001e 67F8      		beq.b	quit
+  24 0020 10FC 0000 		move.b	#0,(%a0)+
+  25 0024 6000 FFF6 		bra	pad
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+           strncpy.S:8      .text:00000000 strncpy
+           strncpy.S:13     .text:0000000e lp
+           strncpy.S:21     .text:0000001c pad
+           strncpy.S:18     .text:00000018 quit
+
+NO UNDEFINED SYMBOLS

@@ -1,0 +1,36 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"w_fmod.c"
+   3               	.text
+   4               	.align2
+   5               	.globlfmod
+   7               	fmod:
+   8 0000 4E56 0000 	link.w %fp,#0
+   9 0004 2F2E 0014 	move.l 20(%fp),-(%sp)
+  10 0008 2F2E 0010 	move.l 16(%fp),-(%sp)
+  11 000c 2F2E 000C 	move.l 12(%fp),-(%sp)
+  12 0010 2F2E 0008 	move.l 8(%fp),-(%sp)
+  13 0014 4EB9 0000 	jsr __ieee754_fmod
+  13      0000 
+  14 001a 4FEF 0010 	lea (16,%sp),%sp
+  15 001e F227 7400 	fmove.d %fp0,-(%sp)
+  16 0022 201F      	move.l (%sp)+,%d0
+  17 0024 221F      	move.l (%sp)+,%d1
+  18 0026 2F01      	move.l %d1,-(%sp)
+  19 0028 2F00      	move.l %d0,-(%sp)
+  20 002a F21F 5400 	fmove.d (%sp)+,%fp0
+  21 002e 4E5E      	unlk %fp
+  22 0030 4E75      	rts
+  24               	.ident"GCC: (GNU) 4.5.1"
+  25               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 w_fmod.c
+    {standard input}:7      .text:00000000 fmod
+
+UNDEFINED SYMBOLS
+__ieee754_fmod

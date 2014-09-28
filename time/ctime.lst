@@ -1,0 +1,90 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"ctime.c"
+   3               	.text
+   4               	.align2
+   5               	.globlctime
+   7               	ctime:
+   8 0000 4E56 FFD8 	link.w %fp,#-40
+   9 0004 2F2E 0008 	move.l 8(%fp),-(%sp)
+  10 0008 4EB9 0000 	jsr localtime
+  10      0000 
+  11 000e 588F      	addq.l #4,%sp
+  12 0010 2D48 FFFC 	move.l %a0,-4(%fp)
+  13 0014 202E FFFC 	move.l -4(%fp),%d0
+  14 0018 2200      	move.l %d0,%d1
+  15 001a 70D8      	moveq #-40,%d0
+  16 001c D08E      	add.l %fp,%d0
+  17 001e 2040      	move.l %d0,%a0
+  18 0020 2241      	move.l %d1,%a1
+  19 0022 2091      	move.l (%a1),(%a0)
+  20 0024 5880      	addq.l #4,%d0
+  21 0026 5881      	addq.l #4,%d1
+  22 0028 2040      	move.l %d0,%a0
+  23 002a 2241      	move.l %d1,%a1
+  24 002c 2091      	move.l (%a1),(%a0)
+  25 002e 5880      	addq.l #4,%d0
+  26 0030 5881      	addq.l #4,%d1
+  27 0032 2040      	move.l %d0,%a0
+  28 0034 2241      	move.l %d1,%a1
+  29 0036 2091      	move.l (%a1),(%a0)
+  30 0038 5880      	addq.l #4,%d0
+  31 003a 5881      	addq.l #4,%d1
+  32 003c 2040      	move.l %d0,%a0
+  33 003e 2241      	move.l %d1,%a1
+  34 0040 2091      	move.l (%a1),(%a0)
+  35 0042 5880      	addq.l #4,%d0
+  36 0044 5881      	addq.l #4,%d1
+  37 0046 2040      	move.l %d0,%a0
+  38 0048 2241      	move.l %d1,%a1
+  39 004a 2091      	move.l (%a1),(%a0)
+  40 004c 5880      	addq.l #4,%d0
+  41 004e 5881      	addq.l #4,%d1
+  42 0050 2040      	move.l %d0,%a0
+  43 0052 2241      	move.l %d1,%a1
+  44 0054 2091      	move.l (%a1),(%a0)
+  45 0056 5880      	addq.l #4,%d0
+  46 0058 5881      	addq.l #4,%d1
+  47 005a 2040      	move.l %d0,%a0
+  48 005c 2241      	move.l %d1,%a1
+  49 005e 2091      	move.l (%a1),(%a0)
+  50 0060 5880      	addq.l #4,%d0
+  51 0062 5881      	addq.l #4,%d1
+  52 0064 2040      	move.l %d0,%a0
+  53 0066 2241      	move.l %d1,%a1
+  54 0068 2091      	move.l (%a1),(%a0)
+  55 006a 5880      	addq.l #4,%d0
+  56 006c 5881      	addq.l #4,%d1
+  57 006e 2040      	move.l %d0,%a0
+68K GAS   			page 2
+
+
+  58 0070 2241      	move.l %d1,%a1
+  59 0072 2091      	move.l (%a1),(%a0)
+  60 0074 5880      	addq.l #4,%d0
+  61 0076 5881      	addq.l #4,%d1
+  62 0078 70D8      	moveq #-40,%d0
+  63 007a D08E      	add.l %fp,%d0
+  64 007c 2F00      	move.l %d0,-(%sp)
+  65 007e 4EB9 0000 	jsr asctime
+  65      0000 
+  66 0084 588F      	addq.l #4,%sp
+  67 0086 2008      	move.l %a0,%d0
+  68 0088 2200      	move.l %d0,%d1
+  69 008a 2041      	move.l %d1,%a0
+  70 008c 4E5E      	unlk %fp
+  71 008e 4E75      	rts
+  73               	.ident"GCC: (GNU) 4.5.1"
+  74               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 3
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 ctime.c
+    {standard input}:7      .text:00000000 ctime
+
+UNDEFINED SYMBOLS
+localtime
+asctime

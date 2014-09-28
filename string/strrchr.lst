@@ -1,0 +1,39 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               		.global strrchr
+   3               		
+   4               	/*
+   5               		char * strrchr (       char * str, int character )
+   6               	*/	
+   7               	
+   8               	strrchr:
+   9 0000 222F 0008 		move.l	(8,%a7),%d1	/* char to search for	*/
+  10 0004 206F 0004 		move.l	(4,%a7),%a0	/* string		*/
+  11 0008 2248      		move.l	%a0,%a1
+  12 000a 4280      		clr.l 	%d0
+  13               	lp1:
+  14 000c 4A18      		tst.b	(%a0)+
+  15 000e 66FC      		bne.b	lp1
+  16               	lp2:
+  17 0010 B3C8      		cmpa.l	%a0,%a1
+  18 0012 6706      		beq.b	out
+  19 0014 B220      		cmp.b	-(%a0),%d1
+  20 0016 66F8      		bne.b	lp2
+  21 0018 2008      		move.l	%a0,%d0
+  22               	out:
+  23 001a 2040      		move.l  %d0,%a0
+  24 001c 4E75      		rts
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+           strrchr.S:8      .text:00000000 strrchr
+           strrchr.S:13     .text:0000000c lp1
+           strrchr.S:16     .text:00000010 lp2
+           strrchr.S:22     .text:0000001a out
+
+NO UNDEFINED SYMBOLS

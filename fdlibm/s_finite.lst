@@ -1,0 +1,33 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"s_finite.c"
+   3               	.text
+   4               	.align2
+   5               	.globlfinite
+   7               	finite:
+   8 0000 4E56 FFFC 	link.w %fp,#-4
+   9 0004 200E      	move.l %fp,%d0
+  10 0006 5080      	addq.l #8,%d0
+  11 0008 2040      	move.l %d0,%a0
+  12 000a 2D50 FFFC 	move.l (%a0),-4(%fp)
+  13 000e 202E FFFC 	move.l -4(%fp),%d0
+  14 0012 0880 001F 	bclr #31,%d0
+  15 0016 0680 8010 	add.l #-2146435072,%d0
+  15      0000 
+  16 001c D080      	add.l %d0,%d0
+  17 001e 9180      	subx.l %d0,%d0
+  18 0020 4480      	neg.l %d0
+  19 0022 4E5E      	unlk %fp
+  20 0024 4E75      	rts
+  22               	.ident"GCC: (GNU) 4.5.1"
+  23               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 s_finite.c
+    {standard input}:7      .text:00000000 finite
+
+NO UNDEFINED SYMBOLS

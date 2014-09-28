@@ -1,0 +1,60 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"abs.c"
+   3               	.text
+   4               	.align2
+   5               	.globlabs
+   7               	abs:
+   8 0000 4E56 0000 	link.w %fp,#0
+   9 0004 4AAE 0008 	tst.l 8(%fp)
+  10 0008 6C08      	jge .L2
+  11 000a 202E 0008 	move.l 8(%fp),%d0
+  12 000e 4480      	neg.l %d0
+  13 0010 6004      	jra .L3
+  14               	.L2:
+  15 0012 202E 0008 	move.l 8(%fp),%d0
+  16               	.L3:
+  17 0016 4E5E      	unlk %fp
+  18 0018 4E75      	rts
+  20               	.align2
+  21               	.globl__abs__
+  23               	__abs__:
+  24 001a 4E56 0000 	link.w %fp,#0
+  25 001e 4AAE 0008 	tst.l 8(%fp)
+  26 0022 6C08      	jge .L5
+  27 0024 202E 0008 	move.l 8(%fp),%d0
+  28 0028 4480      	neg.l %d0
+  29 002a 6004      	jra .L6
+  30               	.L5:
+  31 002c 202E 0008 	move.l 8(%fp),%d0
+  32               	.L6:
+  33 0030 4E5E      	unlk %fp
+  34 0032 4E75      	rts
+  36               	.align2
+  37               	.globllabs
+  39               	labs:
+  40 0034 4E56 0000 	link.w %fp,#0
+  41 0038 4AAE 0008 	tst.l 8(%fp)
+  42 003c 6C08      	jge .L8
+  43 003e 202E 0008 	move.l 8(%fp),%d0
+  44 0042 4480      	neg.l %d0
+  45 0044 6004      	jra .L9
+  46               	.L8:
+  47 0046 202E 0008 	move.l 8(%fp),%d0
+  48               	.L9:
+  49 004a 4E5E      	unlk %fp
+  50 004c 4E75      	rts
+  52               	.ident"GCC: (GNU) 4.5.1"
+  53               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 abs.c
+    {standard input}:7      .text:00000000 abs
+    {standard input}:23     .text:0000001a __abs__
+    {standard input}:39     .text:00000034 labs
+
+NO UNDEFINED SYMBOLS

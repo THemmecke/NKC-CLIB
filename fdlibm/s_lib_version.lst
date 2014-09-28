@@ -1,0 +1,20 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"s_lib_version.c"
+   3               	.globl_fdlib_version
+   4               	.data
+   5               	.align2
+   8               	_fdlib_version:
+   9 0000 FFFF FFFF 	.long-1
+  10               	.ident"GCC: (GNU) 4.5.1"
+  11               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 s_lib_version.c
+    {standard input}:8      .data:00000000 _fdlib_version
+
+NO UNDEFINED SYMBOLS

@@ -1,0 +1,37 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"w_gamma.c"
+   3               	.text
+   4               	.align2
+   5               	.globlgamma
+   7               	gamma:
+   8 0000 4E56 0000 	link.w %fp,#0
+   9 0004 4879 0000 	pea signgam
+   9      0000 
+  10 000a 2F2E 000C 	move.l 12(%fp),-(%sp)
+  11 000e 2F2E 0008 	move.l 8(%fp),-(%sp)
+  12 0012 4EB9 0000 	jsr __ieee754_gamma_r
+  12      0000 
+  13 0018 4FEF 000C 	lea (12,%sp),%sp
+  14 001c F227 7400 	fmove.d %fp0,-(%sp)
+  15 0020 201F      	move.l (%sp)+,%d0
+  16 0022 221F      	move.l (%sp)+,%d1
+  17 0024 2F01      	move.l %d1,-(%sp)
+  18 0026 2F00      	move.l %d0,-(%sp)
+  19 0028 F21F 5400 	fmove.d (%sp)+,%fp0
+  20 002c 4E5E      	unlk %fp
+  21 002e 4E75      	rts
+  23               	.ident"GCC: (GNU) 4.5.1"
+  24               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 w_gamma.c
+    {standard input}:7      .text:00000000 gamma
+
+UNDEFINED SYMBOLS
+signgam
+__ieee754_gamma_r

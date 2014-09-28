@@ -1,0 +1,53 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"puts.c"
+   3               	.text
+   4               	.align2
+   5               	.globlputs
+   7               	puts:
+   8 0000 4E56 FFFC 	link.w %fp,#-4
+   9 0004 203C 0000 	move.l #_pstreams,%d0
+   9      0000 
+  10 000a 5880      	addq.l #4,%d0
+  11 000c 2040      	move.l %d0,%a0
+  12 000e 2010      	move.l (%a0),%d0
+  13 0010 2F00      	move.l %d0,-(%sp)
+  14 0012 2F2E 0008 	move.l 8(%fp),-(%sp)
+  15 0016 4EB9 0000 	jsr fputs
+  15      0000 
+  16 001c 508F      	addq.l #8,%sp
+  17 001e 2D40 FFFC 	move.l %d0,-4(%fp)
+  18 0022 70FF      	moveq #-1,%d0
+  19 0024 B0AE FFFC 	cmp.l -4(%fp),%d0
+  20 0028 6604      	jne .L2
+  21 002a 70FF      	moveq #-1,%d0
+  22 002c 601A      	jra .L3
+  23               	.L2:
+  24 002e 203C 0000 	move.l #_pstreams,%d0
+  24      0000 
+  25 0034 5880      	addq.l #4,%d0
+  26 0036 2040      	move.l %d0,%a0
+  27 0038 2010      	move.l (%a0),%d0
+  28 003a 2F00      	move.l %d0,-(%sp)
+  29 003c 4878 000A 	pea 10.w
+  30 0040 4EB9 0000 	jsr fputc
+  30      0000 
+  31 0046 508F      	addq.l #8,%sp
+  32               	.L3:
+  33 0048 4E5E      	unlk %fp
+  34 004a 4E75      	rts
+  36               	.ident"GCC: (GNU) 4.5.1"
+  37               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 puts.c
+    {standard input}:7      .text:00000000 puts
+
+UNDEFINED SYMBOLS
+_pstreams
+fputs
+fputc

@@ -1,0 +1,53 @@
+ #
+ # 68K/386 32-bit C compiler.
+ #
+ # copyright (c) 1996, David Lindauer
+ # 
+ # This compiler is intended for educational use.  It may not be used
+ # for profit without the express written consent of the author.
+ #
+ # It may be freely redistributed, as long as this notice remains intact
+ # and sources are distributed along with any executables derived from them.
+ #
+ # The author is not responsible for damages, either direct or consequential,
+ # that may arise from use of this software.
+ #
+ # v1.35 March 1997
+ # David Lindauer, gclind01@starbase.spd.louisville.edu
+ #
+ # Credits to Mathew Brandt for original K&R C compiler
+ #
+ #
+This compiler is presented on an 'as-is' basis without any guarantee of
+usability or fitness for any given application.  Risks associated with
+using it, both direct and consequential, which include but are not
+limited to financial loss or loss of life are not the 
+responsibility of the authors.  However, this compiler is intended as 
+an educational tool, and is not to be used commercially in any case 
+without the express written consent of the authors.
+
+All software in this package is freeware.  This includes the compiler,
+the DPMI system, and the CL386 program.  The basic agreement is that it
+is freely re-distributable in other freeware packages; if you distribute 
+EXE files derived either directly or indirectly from any of these sources 
+you must at LEAST make the original source code available, if not your 
+modifications.  No for-profit use allowed without consent of the authors.  
+The authors must be credited in derived works.  This software may not 
+be used for profit however Nominal distribution charges may be charged 
+for distributing this software.
+
+Copyrights for portions of this software are held by the writers of
+whichever portion they wrote and all rights are reserved.
+
+Any redistribution which includes any part of this distribution
+(e.g. either sources or executables or both) must also include this notice.
+
+credits to Thomas Pytel and Charles Scheffold for creating the dos
+extenders found in msdos\pmode307 amd msdos\pmw132.  Read their
+licensing information if you are interested in redistributing those files.
+
+David Lindauer
+1428 Hepburn Ave
+Louisville, KY 40204
+
+email:  gclind01@starbase.spd.louisville.edu

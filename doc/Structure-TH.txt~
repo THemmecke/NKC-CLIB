@@ -1,0 +1,619 @@
+        * = Hardwarabhängige Funktionen
+
+ToDo:
+- pragma# Direktiven
+
+
+Offene Funktionen:
+------------------
+
+- _ll_rename (llstd.S)
+- _ll_remove (llstd.S)		--> nkc_erase (JADOS)
+ok- _ll_gettime(llmisc.S)
+ok- _ll_ticks (llmisc.S)
+- _ll_system (llmisc.S)		- erledigt, J.M.
+- _ll_getenv (llmisc.S)
+- * (llsig.S)			<---- Ctrl-Break Handling ,- erledigt
+- 
+
+
+
+Verzeichnis-Struktur:
+---------------------
+
+Probleme:
+
+
+#pragma function <prio>
+
+Nach dieser Pragma Definition wird nur noch die in der pragma Anweisung angegebene Funktion compiliert, danach
+nichts mehr (Bug?)
+
+WorkAround for now: Ans Ende stellen oder weglassen, das Aufrufen dieser Funktionen bei Start und Ende kann
+                    man auch anders lösen, ohne PRAGMA (manuell aufrufen)
+
+Vorkommen:
+
+
+startup/envset.c:#pragma startup envset 19
+startup/argset.c:#pragma startup argset 19
+string/mbtowc.c:#pragma startup mbinit 120
+string/wctomb.c:#pragma startup wcinit 120
+io/fclose.c:#pragma startup fileinit 120
+procont/signal.c:#pragma startup siginit 128
+
+
+procont/atexit.c:#pragma rundown procexit 128
+io/fclose.c:#pragma rundown closeall 10
+alloc/malloc.c:#pragma rundown memdelete 0
+
+
+=> Manuell Aufrufen in startup.S
+
+---------------------------------------------------------------------------------------------------------
+
+
+bsr Aufrufe in Assembler-Modulen werden zu R_68K_PC16 relocation, was nicht reloziert werden kann....
+
+bsr kann maximal 16Bit Adressdistanzen verarbeiten !
+
+bsr.l gibt es ab 68020 !!
+
+Ändern in jsr 
+
+Vorsicht:
+bsr verzweigt PC relativ
+jsr nicht zwangsläufig, aber alle Aufrufe in den Compilaten sind jsr Calls....
+
+gleiches Problem mit bra:
+
+ab 68020 bra.l
+
+jmp verwenden, ab 68020 auch PC relativ
+        
+Vorkommen:
+string/strcspn.S:	bra.b	lp
+string/strstr.S:	bra	lp
+string/strcmp.S:	
+  :
+  :
+
+
+Das Laden einer effektiven Adresse pc-relativ kann mit dem 68000er nur mit 16Bit Displacement erfolgen,
+also "lea d16(%pc),%a0". Für den M68000 gibt es deswegen ein Macro LEA32A0 (nkc/macros.h), das diese
+Funktionalität für d32 bereitstellt.
+Beim 68020 ist "von Haus aus" ein "lea d32(%pc),%a0" möglich.
+
+Das LEA32A0 Macro wird in startup/start00.S benötigt, bevor die Relokation des Codes durchgeführt wurde.
+
+---------------------------------------------------------------------------------------------------------
+
+Speicheraufteilung (68020/4MB RAM):
+
+0x000000	INTERRUPT-VEKTOREN
+0x000400	----- SPEICHER-ANFANG -----
+		Benutzer-Speicher (Ladeadresse)
+		(.text)
+		(.data)
+		(.bss)
+		HEAP _BREAK=_ebss (wächst aufsteigend ab Ende des bss Segmentes)
+			|
+			v
+			
+			:
+			:
+		Durch malloc verwalteter Speicherbereich (s.U.)
+			:
+			:
+			
+			^
+			|
+0x3AB7BE	Benutzer-Stack = %sp, (wächst fallend)	
+
+0x3AB7FE	----- USER-SPEICHER-ENDE -----
+		(kann durch Laden residenter Programme nach Unten verschoben werden)
+
+		(Residente Programme)		
+				
+0x......	JADOS (.text)
+0x......	JADOS (.data)
+0x......	RAMDISK
+0x3C0000	GRUNDPROGRAMM (.text)
+0x3D0000	GRUNDPROGRAMM (.data)	
+0x3CFFFF	
+0x3FFFFF	-------- RAM-ENDE 4MB -------
+
+
+-----------------------------------------------------------------------------------------------------
+C-Datentype für m68k:
+
+Typ	Bits
+
+char	8
+short	16
+int	32
+
+long	32
+
+float   32  single precision floating point (IEEE754: Sign[1]|Exponent[8]|Fraction[23]  = 32bit)
+double  64  double precision floating point (IEEE754: Sign[1]|Exponent[11]|Fraction[52]  = 64bit)
+
+long double  128 quadruple precision floating point (IEEE754-2008: Sign[1]|Exponent[15]|Fraction[112]  = 128bit)
+
+
+Schlüsselwörter:
+
+static 	- bei globalen Variablen -> diese kommen damit in's BSS Segment (ansonsten im DATA Segment und damit nicht initialisiert !!)
+	- bei funktionen -> sind nur im lokalen File sichtbar
+
+
+C-Aufrufkonventionen:
+
+
+Parameter werden "von Rechts nach Links" auf dem Stack abgelegt.
+Integer-Werte werden über %d0 zurückgegeben.
+Pointer werden über %a0 zurückgegeben !!
+
+Siehe dazu \TEST\test.c
+
+a0,a1,d0,d1,fp0,fp1 sind Scratchregister (müssen nicht gerettet werden)
+
+
+%sp == %a7
+%fp == %a6
+
+---- BEISPIELE ----
+
+A) C ruft ASM:
+--------------
+
+-> Assembler Funktion:
+
+Der 68000er ist eine Big Endian Machine, d.h. das höchstwertige Byte kommt im Speicher als Erstes. z.B:
+Der Wert 0x12345678 in Register d0 wird in den Speicher in dieser Reihenfolge abgelegt:  ... 12,34,56,78 ...
+Bei der Parameter-Übergabe werden nun immer 32-Bit Register "ge-pusht" und es muss daher im Unterprogramm korrekt 
+auf die Parameter zugegriffen werden !
+Wenn man jetzt einen Byte-Wert in einem Register stehen hat, z.B. 0x00000012 in d0 und d0 jetzt als 32 Bit
+Wert in den Speicher schreibt (so wie es be der Parameterübergabe immer gemacht wird), dann wird d0 in folgender
+Reihenfolge abgelegt: ...00,00,00,12; Das bedeutet, das auf den übergebenen 8-Bit Wert mit einem Offset von 3 Bytes
+zugegriffen werdden muss (Bytezugriff vorrausgesetzt).
+
+Man kann es sich im Grunde einfach machen,  und grundsätzlich zunächst ganze 32Bit Werte in die register laden und dann entsprechend
+des Typs weiterarbeiten, also z.B. bei Byte Werten:
+
+move.l 4(sp5),d0  // 32-Bit Zugriff
+move.b d0,....    //  8-Bit Weiterverarbeitung
+
+In manchen Situationen ist das aber nicht praktikabel, z.B. wenn ganze Strukturen über den Stack übergeben werden.
+
+
+A.1) Parameter ist 32Bit
+*
+ void nkc_write(char* message)
+*/
+
+
+Stack:
+Stackpointer zeigt effektiv auf y
+
+			32          0
+	-0x0004		[  I  I  I x]   Pointer auf char (32Bit) fängt bei Bit 0 an
+sp ->  	 0x0000 	[  I  I  I y]	Rücksprungadresse
+
+nkc_write: .global nkc_write
+
+	movea.l 4(%sp),%a0	// message  (32bit pointer)
+	:
+	:
+	rts 	
+
+
+A.2) Parameter ist 16Bit
+
+/*
+ void nkc_putchar(short var)
+*/
+
+Stack:
+Stackpointer zeigt effektiv auf y
+
+			32          0
+	-0x0004		[  I xI  I  ]   short (16Bit) fängt bei Bit 16 an
+sp ->  	 0x0000 	[  I  I  I y]	Rücksprungadresse
+
+
+nkc_putchar: .global nkc_putchar
+
+    move.w 6(%sp),%d0      // var (16 bit)
+    :
+    :
+    rts
+
+3) Parameter ist 8Bit
+/*
+ void nkc_putchar(char c)
+*/
+
+Stack:
+Stackpointer zeigt effektiv auf y
+
+			32          0
+	-0x0004		[ xI  I  I  ]   char (8Bit) fängt bei Bit 24 an
+sp ->  	 0x0000 	[  I  I  I y]	Rücksprungadresse
+
+
+nkc_putchar: .global nkc_putchar
+
+    move.b 7(%sp),%d0      // c (8 bit)
+    :
+    :
+    rts
+   
+
+
+B) ASM ruft C:
+
+Wichtig: nach Unterprogrammaufruf muss der Stack "aufgeräumt" werden.
+
+B.1) C-Funktion:
+
+void func(int par1, short par2, char par3);
+
+
+Aufruf aus Assembler: "func(1,2,3);"
+
+move.l #3,-(%sp)  // par 3
+move.l #2,-(%sp)  // par 2
+move.l #1,-(%sp)  // par 1         
+bsr.l func
+add.l #12,%sp        /* Stack aufräumen */
+
+
+
+Aufruf von "double fmod(double,double)" MIT FPU:
+(Ergebnis wird in FP0 erwartet)
+
+move.l -20(%fp),-(%sp)
+move.l -24(%fp),-(%sp)  // arg2
+move.l -12(%fp),-(%sp)
+move.l -16(%fp),-(%sp)	// arg1
+jsr fmod
+lea (16,%sp),%sp	// Stackpopinter-Korrektur
+fmove.d %fp0,-8(%fp)	// result
+
+
+Aufruf von "double fmod(double,double)" OHNE FPU:
+(Ergebnis wird in D0/D1 erwartet)
+
+move.l -20(%fp),-(%sp)
+move.l -24(%fp),-(%sp)
+move.l -12(%fp),-(%sp)
+move.l -16(%fp),-(%sp)
+jsr fmod
+lea (16,%sp),%sp
+move.l %d0,-8(%fp)
+move.l %d1,-4(%fp)
+
+
+Lokalen Stack aufbauen:
+-----------------------
+
+
+
+-------------
+Inline Assembler:
+
+Easy Example:
+-------------
+
+
+
+Complex Example:
+----------------
+
+ asm   volatile(
+    "# asm"						                              "\n\t"  \
+    "movel %1,%%a1"     /* Pointer auf args */      "\n\t"  \
+    "movel %2,%%a2"     /* Pointer auf jados_cmd */ "\n\t"  \
+    "clrl %%d1"         /* Argumente Zaehlen */     "\n\t"  \
+    "clrl %%d7"                                     "\n\t"  \
+    "clrl %%d6"         /* Argumente Zaehlen */     "\n\t"  \
+"m2: moveb %%a2@+,%%d7"                              "\n\t"  \
+    "trap #6"           /* Gesamte Commandline */   "\n\t"  \
+    "#movel %%a0,%%d0"   /* Pointer auf Cmdline */   "\n\t"  \
+    "movel %%a0,%%a1@+"  /* Store to Args */         "\n\t"  \
+    "tstb (%%a0)"                                   "\n\t"  \
+    "beqs m1"                                       "\n\t"  \
+    "addq #1,%%d6"                                  "\n\t"  \
+    "cmpw %3,%%d6"                                  "\n\t"  \
+    "bnes m2"                                       "\n\t"  \
+"m1: movel %%d6,%0"      /* Anz. Args nach cnt */   "\n\t"  \
+    : "=g" (cnt)                /* outputs */    \
+    : "g"(args),"g"(jados_cmd),"g"(sizeof(jados_cmd))  /* inputs */    \
+    : "%d0","%d1", "%d6","%d7", "%a0","%a1","%a2"    /* clobbered regs */ \
+    );
+
+Fehlermeldungen/Probleme mit Inline-Assembler:
+----------------------------------------------
+
+
+--------------------------------------------------------------------------------------------------------
+llmalloc.S - Speicherverwaltung (first-fit --> first.c)
+- Die Speicherverwaltung musste komplett umgeschrieben werden, weil zu fehlerhaft.
+
+Bei Programmstart werden in envset und argset jeweils 4 Bytes für _env_arr und _argv_arr reserviert
+und nicht mehr freigegeben....
+Allerdings werden alle Blöcke über "memdelete" grundsätzlich freigegeben.
+--------------------------------------------------------------------------------------------------------
+atexit.c
+ Hier ist eine Funktion "procexit" die bei Programmende registrierte Funktionen aufruft.
+ Mit "atexit" kann man Funktionen registrieren.
+--------------------------------------------------------------------------------------------------------
+stdio:
+-----
+
+In nkc/llstd.S sind output_file,error_file sowie stdin, stdout ind sdterr definiert.
+Buffer für diese Standard-IOs sind satisch in llstd.S (inbuf,outbuf,errbuf)
+In _ll_init (nkc/llopen.S) werden die Standard-Files in _pstreams initialisiert.
+Es gibt maximal 10 (maxfiles auch in _ll_init gesetzt) Standard-Files
+Das Token in den Standard-Files wird auf NOFILTOK geändert, damit bei Programm-Ende 
+nicht versucht wird nichtallokierten Speicher freizugeben (in _basefclose).
+Es ist weiter zu prüfen, ob sich durch das geänderte Token Probleme ergeben.
+
+bsize in der FILE Struktur von stdin uns stderr ist auf 1 Bytes gesetzt (max. 512 im original)
+(in llstd.S). Wenn ein Buffer benutz wird wird dieser erst geflusht, wenn ein \n kommt oder der Buffer voll ist !
+
+Nachtrag: Es ergeben sich Probleme, daher geht das so nicht.
+Der Versuch, nichallokierten Speicher freizugeben ist zwar unschön, aber führt zunächst mal nicht zu Problemen.
+
+stdin  fd=1
+stdout fd=1
+stderr fd=2
+--------------------------------------------------------------------------------------------------------
+llopen.S - 
+ _ll_init - original
+ 
+ ansonsten sind einige Funktionen erst mal nach llopenc.c gewandert, weil schneller zu implementieren
+-------------------------------------------------------------------------------------------------------- 
+Achtung !
+Besonders aufpassen muss man beim Verwenden von Strukturen in C und Assembler Code: Der GCCompiler
+versucht zugriffe auf struct Felder auszurichten, d.h. Zugriffe auf 16Bit Felder (short) werden auf
+16bit Grenzen aligned und Zugriffe auf 32Bit Felder entspr. auf 32Bit Grenzen. Beispiel: JADOS FCB
+
+Das Ergebnis der sizeof Funktion muss ge-castet werden, ansonsten entstehen Rechenfehler (siehe first.c)
+
+---------------------------------------------------------------------------------------------------------
+Sonstige Probleme:
+
+1)
+printf(*buffer); die Stringlänge in Printf ist auf 512Bytes beschränkt ! ==>
+
+int vfprintf(FILE *stream, const char *format, void *list)
+{
+	int rv;
+	char buffer[512]; <------------  !! Mann müsset hier entweder eine Längenprüfung vollziehen oder das Ganze Längenunabhängig machen ...
+	
+	Siehe USE_DYNAMIC_VSPRINTF_BUFFER in fprintf.c und sprintfc:
+	
+	
+	rv = vsprintf(buffer,format,list);	
+	if (fputs(buffer,stream) == EOF)
+		return 0;
+	return rv;
+}
+
+2)
+int scanf(const char *format, ...)
+{
+	char buf[512];	<----- !!
+	
+	if (!gets(buf))
+		return 0;
+	return _scanf(buf,format,((char *)&format+sizeof(char *)));
+}
+
+3)
+_baseputc und _basegetc in putget.c behandeln CR-LF \n \r etc. und das ist auf jedem System anders geregelt (z.B. LINUX()/DOS()/JADOS() )
+Hier muss also angepasst werden, am besten, man verwendet bei den files nur den Binär-Mode...fopen("DATEI.EXT","bw") oder "br"
+
+=> am besten das Handling in der CLIB so lassen und in die low level routinen anpassen...()
+
+In der Funktion _baseputc ist das JADOS TEXT EOF Handling mit der Zeile
+"if(*stream->curp == 0)" angepasst. Das müsste in die _ll - Routinen verlagert werden, hier muss dann der Modus geführt werden (r,w,rb,wb etc.)
+
+In fgets musste die Zeile "buf[i++] = (char)rv;" verschoben werden.
+
+4) div Funktion:
+
+5) Funktionen der clib sind nicht reentrant, dh. innerhalb einer Bibliotheksfunktion dürfen i.A. keine Bibliotheksfunktionen aufgerufen werden.
+   Z.B. verwendet die Funtion fread lokale Variable die ansonsten verändert würden ...
+   In diesen Fällen nkc_xxx Funktionen verwenden.
+-----------------------------------------------------------------------------------------------------------
+
+Relocator:
+----------
+
+In elf2bin werden Relocation-Informationen in das bss Segment geschrieben:
+
+Relocation Information:
+
+Programm-Aufbau:
+
+CODE
+DATA
+BSS
+
+Das BSS Segment enthält die Relocation Information :
+
+_sbss:
+OFFSET		Bedeutung
+0			Magic-Cookie 0xDEADBEAF
+4			Magic-Cookie 0x5AA58001
+8			Magic-Cookie 0xDEADBEAF
+12			Start-Adresse, für die das Programm kompiliert wurde
+16			0x00000000 Anzahl der Relocation Entries
+
+20			Entries
+:			
+:		
+
+in startup wird nun anhand des Cookies geprüft, ob Relocation Informations vorhanden sind, und diese dann abgearbeitet:
+Jeder Entry enthält die Adresse deren Inhalt um die Ladeadresse des Programms incrementiert werden muss, sowie den Typ:
+
+Entry: (alle Addressen relativ 0x0 !)
+	OFFSET	32BIT
+	TYPE	32BIT
+	VALUE   32BIT
+
+TYPE:
+ R_68K_32 (Direct 32 bit)
+ R_68K_PC32(PC relative 32 bit)
+ R_68K_16 (Direct 16 bit)
+ R_68K_PC16(PC relative 16 bit)
+ R_68K_8 (Direct 8 Bit)
+ R_68K_PC8 (PC relative 8 bit)
+
+Die PC realtiven Relocations dürften eigentlich gar nicht auftauchen und eigentlich dürften auch nur _32 Relocations
+auftreten, da sonst das Progamm nicht beliebig verschiebbar wäre.
+
+_32:
+     OFFSET+0 <--- (value & 0xFF000000) >> 24
+     OFFSET+1 <--- (value & 0x00FF0000) >> 16
+     OFFSET+2 <--- (value & 0x0000FF00) >> 8
+     OFFSET+3 <--- (value & 0x000000FF) >> 0
+
+_16:
+     OFFSET+0 <--- (value & 0x0000FF00) >> 8
+     OFFSET+1 <--- (value & 0x000000FF) >> 0
+
+_8:
+     OFFSET+0 <--- (value & 0x000000FF) >> 0
+     
+/* m68k relocs.  */
+
+#define R_68K_NONE	0		/* No reloc */
+#define R_68K_32	1		/* Direct 32 bit  */
+#define R_68K_16	2		/* Direct 16 bit  */
+#define R_68K_8		3		/* Direct 8 bit  */
+#define R_68K_PC32	4		/* PC relative 32 bit */
+#define R_68K_PC16	5		/* PC relative 16 bit */
+#define R_68K_PC8	6		/* PC relative 8 bit */
+#define R_68K_GOT32	7		/* 32 bit PC relative GOT entry */
+#define R_68K_GOT16	8		/* 16 bit PC relative GOT entry */
+#define R_68K_GOT8	9		/* 8 bit PC relative GOT entry */
+#define R_68K_GOT32O	10		/* 32 bit GOT offset */
+#define R_68K_GOT16O	11		/* 16 bit GOT offset */
+#define R_68K_GOT8O	12		/* 8 bit GOT offset */
+#define R_68K_PLT32	13		/* 32 bit PC relative PLT address */
+#define R_68K_PLT16	14		/* 16 bit PC relative PLT address */
+#define R_68K_PLT8	15		/* 8 bit PC relative PLT address */
+#define R_68K_PLT32O	16		/* 32 bit PLT offset */
+#define R_68K_PLT16O	17		/* 16 bit PLT offset */
+#define R_68K_PLT8O	18		/* 8 bit PLT offset */
+#define R_68K_COPY	19		/* Copy symbol at runtime */
+#define R_68K_GLOB_DAT	20		/* Create GOT entry */
+#define R_68K_JMP_SLOT	21		/* Create PLT entry */
+#define R_68K_RELATIVE	22		/* Adjust by program base */   
+
+
+
+start:				  /* 68000       68020 */
+	lea data01,%a0		  /* R_68K_32    _32   */
+	lea data01(%a1),%a0	  /* R_68K_16    _32   */
+        lea data02(%pc),%a0       /* R_68K_PC16  _PC32 */ 
+	lea data03(%a1,%pc),%a0   /* R_68K_PC8   _PC32 */
+	lea data01(%a1,%d2),%a0	  /* R_68K_8     _32   */
+
+       
+     
+-----------------------------------------------------------------------------------------------------------
+
+Verwenden als Bibliothek:
+=========================
+
+Das Makefile im Hauptverzeichnis kompiliert alle Module der Bibliothek und erzeugt die Lib libCC.a und die 
+libfdlibm.a (IEEE 754 floating-point arithmetic - FDLIBM Version 5.3, Sun Microsystems).
+Ausserdem ist das Linker-Script ram.ld in /lib enthalten.
+Im Verzeichnis TEST ist ein Beispielprojekt das die Lib verwendet.
+
+Die Lib muss mit der Linker Option --whole-archive gelinkt werden (siehe TEST Projekt).
+Diese Option weisst den Linker an, alle enthaltenen Object Files in das Exeutable zu linken. Das ist notwendig,
+da innerhalb der LIB Verweise vorhanden sind, die der Linker nicht "sehen" kann. Bei dynamisch gelinkten
+Bibliotheken ist das i.d.R. kein Problem, da diese ja komplett im Speicher vorhanden sind und fehlende Module
+dynamisch nachgeladen werden können.
+
+Einstellungen in Makefile.rules:
+Für CPU68k00 (M68000, keine FPU):
+CPU=68000
+CONFIG_FPU=0
+CONFIG_IEEE_MATH=1
+
+Für CPU68k20 (M68020, M68881/2):
+CPU=68020
+CONFIG_FPU=1
+CONFIG_IEEE_MATH=0
+
+-------------------------------------------------------------------------------------------------------------
+
+Mathe-Bibliothek:
+-----------------
+
+/complib
+(CompilerLibrary)
+Enthält Funktionen, für die der Compiler (GCC) Aufrufe emitiert (z.B _muldi3 etc)
+
+/math
+MatheLib nach ANSI (z.B. sin, cos etc.), verwendet FPU (68881 mit 68020)
+Wenn keine FPU vorhanden oder verwendet werden soll (CONFIG_FPU=0 in Makefile.rules) muss
+die fdlibm dazugelinkt werden (CONFIG_IEEE_MATH=1 in Makefile.rules). Diese muss ebenfalls
+mit CONFIG_FPU=0 erstellt worden sein. Die Aufrufe für sin, cos etc. gehen dann in diese Lib.
+
+
+
+float   32  single precision floating point (IEEE754: Sign[1]|Exponent[8]|Fraction[23]  = 32bit):
+-------------------------------------------------------------------------------------------------
+supported by 68881
+
+
+double  64  double precision floating point (IEEE754: Sign[1]|Exponent[11]|Fraction[52]  = 64bit):
+-------------------------------------------------------------------------------------------------
+supported by 68881
+
+extended precition format (IEEE754: Sign[1]Exponent[15]Fraction[63] =80Bit):
+---------------------------------------------------------------------------
+supported by 68881
+
+long double  128 quadruple precision floating point (IEEE754-2008: Sign[1]|Exponent[15]|Fraction[112]  = 128bit) 
+----------------------------------------------------------------------------------------------------------------
+not supported by 68881
+
+
+
+
+=========================================== DEBUG TOOLS =================================
+
+
+
+binutils:
+---------
+
+- Disassemblieren:
+
+ m68k-elf-objdump -d printf.elf > printf.disass
+
+
+- disassemblies vergleichen:
+
+ diff -y test.68k.S test.68k.ok.S > test.68k.S.diff
+
+
+
+- ELF Datei bearbeiten:
+
+ m68k-elf-readelf -a printf.elf 
+ 
+
+
+
+
+

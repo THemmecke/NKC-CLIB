@@ -1,0 +1,36 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"s_fabs.c"
+   3               	.text
+   4               	.align2
+   5               	.globlfabs
+   7               	fabs:
+   8 0000 4E56 0000 	link.w %fp,#0
+   9 0004 200E      	move.l %fp,%d0
+  10 0006 5080      	addq.l #8,%d0
+  11 0008 220E      	move.l %fp,%d1
+  12 000a 5081      	addq.l #8,%d1
+  13 000c 2041      	move.l %d1,%a0
+  14 000e 2210      	move.l (%a0),%d1
+  15 0010 0881 001F 	bclr #31,%d1
+  16 0014 2040      	move.l %d0,%a0
+  17 0016 2081      	move.l %d1,(%a0)
+  18 0018 202E 0008 	move.l 8(%fp),%d0
+  19 001c 222E 000C 	move.l 12(%fp),%d1
+  20 0020 2F01      	move.l %d1,-(%sp)
+  21 0022 2F00      	move.l %d0,-(%sp)
+  22 0024 F21F 5400 	fmove.d (%sp)+,%fp0
+  23 0028 4E5E      	unlk %fp
+  24 002a 4E75      	rts
+  26               	.ident"GCC: (GNU) 4.5.1"
+  27               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 s_fabs.c
+    {standard input}:7      .text:00000000 fabs
+
+NO UNDEFINED SYMBOLS

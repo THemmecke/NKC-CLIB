@@ -1,0 +1,711 @@
+68K GAS   			page 1
+
+
+   1               	#include "../nkc/nkc.h"
+   0               	
+   0               	
+   1               	#ifndef __EQU_H
+   2               	#include "../nkc/macros.h"
+   1               	#ifndef __MACROS_H
+   2               	#define __MACROS_H
+   3               	
+   4               	
+   5               	/* DEBUG MACROS */
+   6               	#ifdef CONFIG_DEBUG_GIDE_S
+   7               	
+   8               	.macro dbg msg
+   9               	        writeln \msg
+  10               	.endm   
+  11               	
+  12               	.macro dbgwait
+  13               	        waitcr
+  14               	.endm
+  15               	
+  16               	
+  17               	#else
+  18               	.macro dbg msg
+  19               	.endm
+  20               	
+  21               	.macro dbgwait
+  22               	.endm
+  23               	#endif     
+  24               	
+  25               	/*
+  26               	   Ermittelt die PC-realtive effekive Addresse von var und legt sie in a0 ab.
+  27               	   Wird für 68000 gebraucht, da dieser nur 64KB Addressierung kennt:
+  28               		lea var(pc),a0 ; funktioniert i.A. nur ab 68020
+  29               		LEA32A0 var    ; erledigt das für den 68000
+  30               	
+  31               		Die Subroutine _LEA32A0 liegt in start00.S
+  32               	*/
+  33               	
+  34               	#ifdef M68000
+  35               	.macro LEA32A0 var
+  36               		move.l #\var,-(%sp)
+  37               		move.l #1f,-(%sp)
+  38               		jsr _LEA32A0
+  39               	1:	addq.l #8,%sp
+  40               	.endm
+  41               	
+  42               	.macro LEA32 var,reg
+  43               		move.l #\var,-(%sp)
+  44               		move.l #1f,-(%sp)
+  45               		jsr _LEA32A0
+  46               	1:	addq.l #8,%sp
+  47               		movea.l %a0,\reg
+  48               	.endm
+  49               	
+  50               	/* pea kann auch nur mit 16Bit Displacements ! i.e. "pea d16(pc)" */
+  51               	.macro _LEA var,reg
+  52               		pea #\var
+68K GAS   			page 2
+
+
+  53               		move.l (%sp)+,\reg
+  54               	.endm
+  55               	#endif
+  56               	
+  57               	
+  58               	/* Gibt Text an momentaner Cursor Position aus */
+  59               	.macro writeln  text             
+  60               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+  61               	#ifdef M68000
+  62               		LEA32A0 \text
+  63               	#else
+  64               	        lea \text,%a0
+  65               	#endif
+  66               	1:
+  67               	        move.b (%a0)+,%d0
+  68               	        beq 2f
+  69               	        moveq #_CO2,%d7
+  70               	        trap #1
+  71               	        bra 1b
+  72               	2:
+  73               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+  74               	.endm
+  75               	
+  76               	.macro prntdot             
+  77               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+  78               	        move.b #'.',%d0
+  79               	        moveq #_CO2,%d7
+  80               	        trap #1
+  81               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+  82               	.endm
+  83               	
+  84               	
+  85               	.macro crlf                      
+  86               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+  87               	        moveq #_CRLF,%d7
+  88               	        trap #1
+  89               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+  90               	.endm
+  91               	
+  92               	
+  93               	/* jumps to x,y position */
+  94               	
+  95               	.macro gotoxy x y           
+  96               	 	movem.l %a0-%a6/%d0-%d7,-(%a7)
+  97               	 	move.b #\x,%d1           /* d1=X (0..79)*/
+  98               	 	move.b #\y,%d2           /* d2=Y (0..23)*/
+  99               	 	moveq #_SETCURXY,%d7
+ 100               	 	trap #1
+ 101               	 	movem.l (%a7)+,%a0-%a6/%d0-%d7
+ 102               	.endm
+ 103               	
+ 104               	
+ 105               	.macro getxy x y           
+ 106               	 	movem.l %a0-%a6/%d0-%d7,-(%a7)
+ 107               	 	moveq #_GETCURXY,%d7
+ 108               	 	trap #1
+ 109               	 	move.b %d1,#\x           /* d1=X (0..79)*/
+68K GAS   			page 3
+
+
+ 110               	 	move.b %d2,#\y           /* d2=Y (0..23)*/
+ 111               	 	movem.l (%a7)+,%a0-%a6/%d0-%d7
+ 112               	.endm
+ 113               	
+ 114               	.macro writexy size x y text            /* gibt einen text an x/y position aus*/
+ 115               	                            	   	/* TextGrüsse,X,Y,TextAddr (Nullterminiert)*/
+ 116               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+ 117               	        move.b #\size,%d0
+ 118               	        move.w #\x,%d1
+ 119               	        move.w #\y,%d2
+ 120               	        lea \text,%a0
+ 121               	        moveq #_WRITE,%d7
+ 122               	        trap #1
+ 123               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+ 124               	.endm
+ 125               	
+ 126               	
+ 127               	
+ 128               	.macro clrscr                    /* loescht den Bildschirm */
+ 129               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+ 130               	        moveq #_CLRSCREEN,%d7
+ 131               	        trap #1
+ 132               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+ 133               	.endm
+ 134               	
+ 135               	
+ 136               	
+ 137               	
+ 138               	.macro prthex2  value                 	/* gibt 2stellige HEX Zahl aus*/
+ 139               	                                	/* IN: WERT*/
+ 140               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+ 141               	        move.l \value,%d0
+ 142               	        lea buffer(%pc),%a0
+ 143               	        moveq #_PRINT2X,%d7
+ 144               	        trap #1
+ 145               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+ 146               	.endm
+ 147               	
+ 148               	
+ 149               	.macro prthex8  value            /* gibt 8stellige Hex Zahl aus */
+ 150               	                                 /* In: WERT */
+ 151               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+ 152               	        move.l \value,%d0
+ 153               	#ifdef M68000
+ 154               		LEA32A0 buffer
+ 155               	#else
+ 156               	        lea buffer(%pc),%a0
+ 157               	#endif
+ 158               	        moveq #_PRINT8X,%d7
+ 159               	        trap #1
+ 160               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+ 161               	.endm
+ 162               	
+ 163               	.macro waitcr                    /* Wartet auf CR (Enter) */
+ 164               	        movem.l %a0-%a6/%d0-%d7,-(%a7)
+ 165               	1:
+ 166               	        moveq #_CI,%d7
+68K GAS   			page 4
+
+
+ 167               	        trap #1
+ 168               	        cmp.b #0xd,%d0
+ 169               	        bne.s 1b
+ 170               	        movem.l (%a7)+,%a0-%a6/%d0-%d7
+ 171               	.endm
+ 172               	
+ 173               	
+ 174               	.macro CMOS_READ index
+ 175               		movem.l %a0-%a1,-(%a7)
+ 176               		clr.l %d0
+ 177               		move.b \index,RTC_DS12887_INDEX.w
+ 178               		move.b RTC_DS12887_DATA.w,%d0
+ 179               		movem.l (%a7)+,%a0-%a1
+ 180               	.endm
+ 181               	
+ 182               	.macro BCD_TO_BIN
+ 183               		movem.l %d1,-(%a7)
+ 184               		move.l %d0,%d1
+ 185               		andi #0x0f,%d0
+ 186               		lsr #4,%d1
+ 187               		mulu #10,%d1
+ 188               		add %d1,%d0
+ 189               		movem.l (%a7)+,%d1
+ 190               	.endm
+ 191               	
+ 192               	.macro BIN_TO_BCD		/*ist zwar 2 Befehle länger, aber schneller und für alle 68xxx*/
+ 193               		movem.l %d1,-(%a7)
+ 194               		and.l #0xff,%d0		/*nur Byte gültig*/
+ 195               		divu #10,%d0
+ 196               		move %d0,%d1
+ 197               		lsl #4, %d1
+ 198               		swap %d0
+ 199               		add %d0, %d1
+ 200               		exg %d0, %d1
+ 201               		movem.l (%a7)+,%d1
+ 202               	.endm
+ 203               	
+   3               	
+   4               		.text
+   5               	
+   6               	/*
+   7               	
+   8               	 --------------------------------------------------- Hier folgend GrundProgramm- und JADOS-Aufrufe,
+   9               	
+  10               	*/ 	
+  11               	
+  12               	
+  13               	/*    --------- AUFRUFE IN's GRUNDPROGRAMM ----------  */
+  14               	 	
+  15               	/*
+  16               	void nkc_clrscr(void);
+  17               	*/ 	
+  18               	nkc_clrscr: .global nkc_clrscr
+  19 0000 48E7 FFFE 		clrscr
+  19      7E14 4E41 
+  19      4CDF 7FFF 
+  20 000c 4E75      		rts
+68K GAS   			page 5
+
+
+  21               	
+  22               	/*
+  23               	unsigned char nkc_kbhit(void);
+  24               	*/	
+  25               	nkc_kbhit: .global nkc_kbhit
+  26 000e 7E0D      		moveq #_CSTS,%d7
+  27 0010 4E41      		trap #1
+  28 0012 4E75      		rts
+  29               	/*
+  30               	 void nkc_write(char* message)
+  31               	*/
+  32               	nkc_write: .global nkc_write
+  33               	
+  34               		
+  35 0014 48E7 FFFE 		movem.l %a0-%a6/%d0-%d7,-(%a7)      
+  36 0018 206F 0040 		movea.l 64(%sp),%a0	
+  37               	
+  38               	1:
+  39 001c 1018      	        move.b (%a0)+,%d0
+  40 001e 6700 001A 	        beq 3f
+  41 0022 0C00 000A 		cmp.b #0x0A,%d0
+  42 0026 6600 000A 		bne 2f
+  43 002a 700D      		move.l #0x0D,%d0
+  44 002c 7E21      		moveq #_CO2,%d7
+  45 002e 4E41      	        trap #1
+  46 0030 700A      	        move.l #0x0A,%d0  
+  47               	              	
+  48 0032 7E21      	2:      moveq #_CO2,%d7
+  49 0034 4E41      	        trap #1
+  50 0036 6000 FFE4 	        bra 1b
+  51               	3:	  
+  52 003a 4CDF 7FFF 		movem.l (%a7)+,%a0-%a6/%d0-%d7
+  53 003e 4E75      		rts 	
+  54               	
+  55               		
+  56               	/*
+  57               	 void nkc_getxy(unsigned char *x, unsigned char *y)
+  58               	*/
+  59               	nkc_getxy: .global nkc_getxy
+  60               	
+  61               		
+  62 0040 48E7 FFFE 		movem.l %a0-%a6/%d0-%d7,-(%a7)      
+  63 0044 206F 0040 		movea.l 64(%sp),%a0	/* *x */
+  64 0048 226F 0044 	        movea.l 68(%sp),%a1	/* *y */
+  65 004c 7E65      	        moveq #_GETCURXY,%d7
+  66 004e 4E41      	 	trap #1
+  67 0050 1081      	 	move.b %d1,(%a0)           /* d1=X (0..79)*/
+  68 0052 1282      	 	move.b %d2,(%a1)           /* d2=Y (0..23)*/
+  69 0054 4CDF 7FFF 		movem.l (%a7)+,%a0-%a6/%d0-%d7
+  70 0058 4E75      		rts 
+  71               		
+  72               	/*
+  73               	 void nkc_setxy(unsigned char x, unsigned char y)
+  74               	*/
+  75               	nkc_setxy: .global nkc_setxy
+  76               		
+  77 005a 48E7 FFFE 		movem.l %a0-%a6/%d0-%d7,-(%a7)      
+68K GAS   			page 6
+
+
+  78 005e 122F 0043 		move.b 67(%sp),%d1	/* x */
+  79 0062 142F 0047 	        move.b 71(%sp),%d2	/* y */
+  80 0066 7E66      	        moveq #_SETCURXY,%d7
+  81 0068 4E41      	 	trap #1
+  82 006a 4CDF 7FFF 		movem.l (%a7)+,%a0-%a6/%d0-%d7
+  83 006e 4E75      		rts 		
+  84               	
+  85               		
+  86               	/*
+  87               	 void nkc_write_hex2(unsigned char val)
+  88               	*/	  
+  89               	nkc_write_hex2: .global nkc_write_hex2
+  90 0070 102F 0007 		move.b 7(%sp),%d0
+  91               	#ifdef M68000
+  92               		LEA32A0 buffer
+  93               	#else
+  94 0074 41FB 0170 		lea buffer(%pc),%a0
+  94      0000 0000 
+  95               	#endif
+  96 007c 7E29      	        moveq #_PRINT2X,%d7
+  97 007e 4E41      	        trap #1
+  98               	#ifdef M68000
+  99               		writeln buffer
+ 100               	#else
+ 101 0080 48E7 FFFE 	        writeln buffer(%pc)
+ 101      41FB 0170 
+ 101      0000 0000 
+ 101      1018 6700 
+ 101      000A 7E21 
+ 102               	#endif
+ 103 009e 4E75      		rts	
+ 104               	/*
+ 105               	 void nkc_write_hex8(unsigned int val)
+ 106               	 
+ 107               	*/	  	  
+ 108               	nkc_write_hex8: .global nkc_write_hex8
+ 109 00a0 202F 0004 		move.l 4(%sp),%d0
+ 110               	#ifdef M68000
+ 111               		LEA32A0 buffer
+ 112               	#else
+ 113 00a4 41FB 0170 		lea buffer(%pc),%a0
+ 113      0000 0000 
+ 114               	#endif
+ 115 00ac 7E2C      	        moveq #_PRINT8X,%d7
+ 116 00ae 4E41      	        trap #1
+ 117               	#ifdef M68000
+ 118               		writeln buffer
+ 119               	#else
+ 120 00b0 48E7 FFFE 	        writeln buffer(%pc)
+ 120      41FB 0170 
+ 120      0000 0000 
+ 120      1018 6700 
+ 120      000A 7E21 
+ 121               	#endif
+ 122 00ce 4E75      		rts	
+ 123               		
+ 124               	/*
+68K GAS   			page 7
+
+
+ 125               	 void nkc_write_dec_dw(unsigned int val)
+ 126               	*/	  
+ 127               	nkc_write_dec_dw: .global nkc_write_dec_dw
+ 128 00d0 202F 0004 		move.l 4(%sp),%d0
+ 129               	#ifdef M68000
+ 130               		LEA32A0 buffer
+ 131               	#else
+ 132 00d4 41FB 0170 		lea buffer(%pc),%a0
+ 132      0000 0000 
+ 133               	#endif
+ 134 00dc 7E46      	        moveq #_PRINT8D,%d7
+ 135 00de 4E41      	        trap #1
+ 136               	#ifdef M68000
+ 137               		writeln buffer
+ 138               	#else
+ 139 00e0 48E7 FFFE 	        writeln buffer(%pc)
+ 139      41FB 0170 
+ 139      0000 0000 
+ 139      1018 6700 
+ 139      000A 7E21 
+ 140               	#endif
+ 141 00fe 4E75      		rts	
+ 142               				  
+ 143               	/*
+ 144               	char nkc_getchar(void);
+ 145               	*/
+ 146               	nkc_getchar: .global nkc_getchar
+ 147 0100 48E7 7FFE 		movem.l %a0-%a6/%d1-%d7,-(%a7)
+ 148 0104 7E0C      	        moveq #_CI,%d7
+ 149 0106 4E41      	        trap #1       
+ 150 0108 4CDF 7FFE 	        movem.l (%a7)+,%a0-%a6/%d1-%d7
+ 151 010c 4E75      		rts
+ 152               	
+ 153               	/*
+ 154               	 void nkc_putchar(char c)
+ 155               	*/
+ 156               	nkc_putchar: .global nkc_putchar
+ 157               	
+ 158 010e 102F 0007 		move.b 7(%sp),%d0	  
+ 159               	
+ 160 0112 6700 0016 	        beq 3f
+ 161 0116 0C00 000A 		cmp.b #0x0A,%d0
+ 162 011a 6600 000A 		bne 2f
+ 163 011e 700D      		move.l #0x0D,%d0
+ 164 0120 7E21      		moveq #_CO2,%d7
+ 165 0122 4E41      	        trap #1
+ 166 0124 700A      	        move.l #0x0A,%d0  
+ 167               	              	
+ 168 0126 7E21      	2:      moveq #_CO2,%d7
+ 169 0128 4E41      	        trap #1
+ 170               	        //bra 1b
+ 171               	3:	  
+ 172               		
+ 173 012a 4E75      		  rts 	
+ 174               	
+ 175               	/*
+ 176               	 void nkc_curoff(void)
+68K GAS   			page 8
+
+
+ 177               	*/
+ 178               	nkc_curoff: .global nkc_curoff
+ 179 012c 7E52      		moveq #_CUROFF,%d7 /* Cursor ausschalten */
+ 180 012e 4E41      		trap #1
+ 181 0130 4E75      		rts
+ 182               	
+ 183               	/*
+ 184               	 void nkc_curon(void)
+ 185               	*/
+ 186               	nkc_curon: .global nkc_curon
+ 187 0132 7E51      		moveq #_CURON,%d7 /* Cursor einschalten */
+ 188 0134 4E41      		trap #1
+ 189 0136 4E75      		rts	
+ 190               	
+ 191               	/*
+ 192               	 void nkc_setflip(unsigned char flip2pages, unsigned char flip4pages)
+ 193               	*/
+ 194               	nkc_setflip: .global nkc_setflip
+ 195 0138 4280      		clr.l %d0
+ 196 013a 4281      		clr.l %d1
+ 197 013c 102F 0007 	    move.b 7(%sp),%d0   /* Blinkrate für 2-Seiten-Umschaltung */
+ 198 0140 122F 000B 	    move.b 11(%sp),%d1  /* Blinkrate für 4-Seiten-Umschaltung */
+ 199 0144 7E22      		moveq #_SETFLIP,%d7 /* Fliprate setzen */
+ 200 0146 4E41      		trap #1
+ 201 0148 4E75      		rts	
+ 202               	
+ 203               	/*
+ 204               	 void nkc_setpage(unsigned char writepage, unsigned char viewpage)
+ 205               	*/
+ 206               	nkc_setpage: .global nkc_setpage
+ 207 014a 4280      		clr.l %d0
+ 208 014c 4281      		clr.l %d1
+ 209 014e 102F 0007 	    move.b 7(%sp),%d0   /* writepage */
+ 210 0152 122F 000B 	    move.b 11(%sp),%d1  /* viewpage */
+ 211 0156 7E1B      		moveq #_NEWPAGE,%d7 /* setzen */
+ 212 0158 4E41      		trap #1
+ 213 015a 4E75      		rts		
+ 214               	
+ 215               		  
+ 216               	/*  -------------------------- JADOS FUNKTIONEN ------------------------------- */ 	
+ 217               	/*
+ 218               	 UCHAR nkc_fillfcb(struct fcb *FCB,char *name)
+ 219               	 returns 0 if successful
+ 220               	*/	
+ 221               	nkc_fillfcb: .global nkc_fillfcb 	
+ 222 015c 48E7 0002 		movem.l %a6,-(%a7)	/* used by jados frame-pointer */
+ 223 0160 206F 000C 		movea.l 12(%sp),%a0  	/* *name */
+ 224 0164 7E0B      		moveq #__uppercas, %d7	/* Dateinamen immer in Großbuchstaben */
+ 225 0166 4E46      		trap #6
+ 226 0168 226F 0008 		movea.l 8(%sp),%a1   	/* *fcb  */
+ 227 016c 206F 000C 		movea.l 12(%sp),%a0  	/* *name */
+ 228 0170 7E12      		moveq #__fillfcb,%d7
+ 229 0172 4E46      		trap #6
+ 230 0174 4CDF 4000 		movem.l (%a7)+,%a6
+ 231 0178 4E75      		rts
+ 232               	
+ 233               	/*
+68K GAS   			page 9
+
+
+ 234               	 UCHAR nkc_open(struct fcb *FCB)
+ 235               	 returns 0 if successful
+ 236               	*/	
+ 237               	nkc_open: .global nkc_open 	
+ 238 017a 48E7 0002 		movem.l %a6,-(%a7)	/* used by jados frame-pointer */
+ 239 017e 226F 0008 		movea.l 8(%sp),%a1 	/* *fcb  */
+ 240 0182 7E13      		moveq #__open,%d7
+ 241 0184 4E46      		trap #6
+ 242 0186 4CDF 4000 		movem.l (%a7)+,%a6
+ 243 018a 4E75      		rts
+ 244               		
+ 245               	/*
+ 246               	 UCHAR nkc_create(struct fcb *FCB)
+ 247               	 returns 0 if successful
+ 248               	*/	
+ 249               	nkc_create: .global nkc_create 	
+ 250 018c 48E7 0002 		movem.l %a6,-(%a7)	/* used by jados frame-pointer */
+ 251 0190 226F 0008 		movea.l 8(%sp),%a1 	/* *fcb  */
+ 252 0194 7E10      		moveq #__create,%d7
+ 253 0196 4E46      		trap #6
+ 254 0198 4CDF 4000 		movem.l (%a7)+,%a6
+ 255 019c 4E75      		rts	
+ 256               	
+ 257               	/*
+ 258               	 void nkc_close(struct fcb *FCB)
+ 259               	*/	
+ 260               	nkc_close: .global nkc_close 	
+ 261 019e 48E7 0002 		movem.l %a6,-(%a7)	/* used by jados frame-pointer */
+ 262 01a2 226F 0008 		movea.l 8(%sp),%a1 	/* *fcb  */
+ 263 01a6 7E0E      		moveq #__close,%d7
+ 264 01a8 4E46      		trap #6
+ 265 01aa 4CDF 4000 		movem.l (%a7)+,%a6
+ 266 01ae 4E75      		rts
+ 267               		
+ 268               	/*
+ 269               	 UCHAR nkc_erase(struct fcb *FCB)
+ 270               	 
+ 271               	 result	Bedeutung
+ 272               			0	Datei gelöscht
+ 273               			2	Datei nicht vorhanden
+ 274               			0xff	Fehler beim Zugriff auf den Massenspeicher
+ 275               			
+ 276               			Achtung: falls die Datei schon existiert, wird sie lediglich geöffnet !
+ 277               			
+ 278               	*/	
+ 279               	nkc_erase: .global nkc_erase 	
+ 280 01b0 48E7 0002 		movem.l %a6,-(%a7)	/* used by jados frame-pointer */
+ 281 01b4 226F 0008 		movea.l 8(%sp),%a1 	/* *fcb  */
+ 282 01b8 7E11      		moveq #__erase,%d7
+ 283 01ba 4E46      		trap #6
+ 284 01bc 4CDF 4000 		movem.l (%a7)+,%a6
+ 285 01c0 4E75      		rts			
+ 286               	
+ 287               	/*
+ 288               	 UCHAR nkc_readrec(struct fcb *FCB)
+ 289               	 returns 	   0 - if successful
+ 290               	 		   1 - EOF
+68K GAS   			page 10
+
+
+ 291               	 		  99 - end of memory
+ 292               	 		0xFF - access error 
+ 293               	*/	
+ 294               	nkc_readrec: .global nkc_readrec
+ 295 01c2 48E7 0002 		movem.l %a6,-(%a7)	/* used by jados frame-pointer */
+ 296 01c6 226F 0008 		movea.l 8(%sp),%a1 	/* *fcb  */
+ 297 01ca 7E14      		moveq #__readrec,%d7
+ 298 01cc 4E46      		trap #6
+ 299 01ce 4CDF 4000 		movem.l (%a7)+,%a6
+ 300 01d2 4E75      		rts		
+ 301               	
+ 302               	/*
+ 303               	 UCHAR nkc_writerec(struct fcb *FCB)
+ 304               	 returns 	   0 - if successful
+ 305               	 		   5 - disk full
+ 306               	 		0xFF - access error 
+ 307               	*/	
+ 308               	nkc_writerec: .global nkc_writerec
+ 309 01d4 48E7 0002 		movem.l %a6,-(%a7)	/* used by jados frame-pointer */
+ 310 01d8 226F 0008 		movea.l 8(%sp),%a1 	/* *fcb  */
+ 311 01dc 7E17      		moveq #__writerec,%d7
+ 312 01de 4E46      		trap #6
+ 313 01e0 4CDF 4000 		movem.l (%a7)+,%a6
+ 314 01e4 4E75      		rts		
+ 315               	
+ 316               	/*
+ 317               	 UCHAR nkc_setrec(struct fcb *FCB, int sector)
+ 318               	 returns 	   0 - if successful
+ 319               	 		   1 - EOF
+ 320               	 		0xFF - access error 
+ 321               	*/	
+ 322               	nkc_setrec: .global nkc_setrec	
+ 323 01e6 48E7 0002 		movem.l %a6,-(%a7)	/* used by jados frame-pointer */
+ 324 01ea 226F 0008 		movea.l 8(%sp),%a1 	/* *fcb  */
+ 325 01ee 222F 000C 		move.l 12(%sp),%d1 	/* sector  */
+ 326 01f2 7E5D      		moveq #__setrec,%d7
+ 327 01f4 4E46      		trap #6
+ 328 01f6 4CDF 4000 		movem.l (%a7)+,%a6
+ 329 01fa 4E75      		rts		
+ 330               		
+ 331               	/*
+ 332               	 void nkc_setdta(struct fcb *FCB, void* buffer)
+ 333               	*/	
+ 334               	nkc_setdta: .global nkc_setdta
+ 335 01fc 48E7 0002 		movem.l %a6,-(%a7)	/* used by jados frame-pointer */
+ 336 0200 226F 0008 		movea.l 8(%sp),%a1 	/* *fcb  */
+ 337 0204 206F 000C 		movea.l 12(%sp),%a0 	/* buffer  */	
+ 338               		/*
+ 339               		moveq #__setdta,%d7
+ 340               		trap #6
+ 341               		*/	
+ 342 0208 2348 002C 		move.l %a0,44(%a1)	 
+ 343               		
+ 344 020c 4CDF 4000 		movem.l (%a7)+,%a6
+ 345 0210 4E75      		rts	
+ 346               	
+ 347               	/*
+68K GAS   			page 11
+
+
+ 348               	void nkc_showsp()
+ 349               	*/
+ 350               	nkc_showsp: .global nkc_showsp	
+ 351 0212 48E7 FFFE 		prthex8 %a7
+ 351      200F 41FB 
+ 351      0170 0000 
+ 351      0000 7E2C 
+ 351      4E41 4CDF 
+ 352               	#ifdef M68000
+ 353               		writeln buffer
+ 354               	#else
+ 355 0228 48E7 FFFE 	        writeln buffer(%pc)
+ 355      41FB 0170 
+ 355      0000 0000 
+ 355      1018 6700 
+ 355      000A 7E21 
+ 356               	#endif      
+ 357 0246 48E7 FFFE 	        crlf
+ 357      7E63 4E41 
+ 357      4CDF 7FFF 
+ 358 0252 4E75      	        rts
+ 359               	
+ 360               	/*  -------------------------- VERSCH. HILFS FUNKTIONEN ------------------------------- */ 	
+ 361               	/*
+ 362               	 unsigned char nkc_bcd2bin(unsigned char val)
+ 363               	*/	  
+ 364               	nkc_bcd2bin: .global nkc_bcd2bin
+ 365 0254 4280      		clr.l %d0
+ 366 0256 102F 0007 		move.b 7(%sp),%d0
+ 367 025a 48E7 4000 		BCD_TO_BIN
+ 367      2200 0240 
+ 367      000F E849 
+ 367      C2FC 000A 
+ 367      D041 4CDF 
+ 368 0270 4E75      		rts	
+ 369               	
+ 370               	/*
+ 371               	 unsigned char nkc_bin2bcd(unsigned char val)
+ 372               	*/	  
+ 373               	nkc_bin2bcd: .global nkc_bin2bcd
+ 374 0272 4280      		clr.l %d0
+ 375 0274 102F 0007 		move.b 7(%sp),%d0	
+ 376 0278 48E7 4000 		BIN_TO_BCD 
+ 376      0280 0000 
+ 376      00FF 80FC 
+ 376      000A 3200 
+ 376      E949 4840 
+ 377 0294 4E75      		rts		
+ 378               	
+ 379               	/*
+ 380               	 unsigned char nkc_cmos_read(unsigned char index)
+ 381               	*/	  
+ 382               	
+ 383               	nkc_cmos_read: .global nkc_cmos_read
+ 384 0296 122F 0007 		move.b 7(%sp),%d1
+ 385 029a 48E7 00C0 		CMOS_READ %d1
+ 385      4280 11C1 
+68K GAS   			page 12
+
+
+ 385      FFE8 1038 
+ 385      FFEC 4CDF 
+ 385      0300 
+ 386 02ac 4E75      		rts
+ 387               		
+ 388               		
+ 389               	
+ 390               	.data
+ 391               	
+ 392 0000 0000 0000 	buffer:		ds.b 255 	
+ 392      0000 0000 
+ 392      0000 0000 
+ 392      0000 0000 
+ 392      0000 0000 
+68K GAS   			page 13
+
+
+DEFINED SYMBOLS
+             llnkc.S:18     .text:00000000 nkc_clrscr
+             llnkc.S:25     .text:0000000e nkc_kbhit
+             llnkc.S:32     .text:00000014 nkc_write
+             llnkc.S:59     .text:00000040 nkc_getxy
+             llnkc.S:75     .text:0000005a nkc_setxy
+             llnkc.S:89     .text:00000070 nkc_write_hex2
+             llnkc.S:392    .data:00000000 buffer
+             llnkc.S:108    .text:000000a0 nkc_write_hex8
+             llnkc.S:127    .text:000000d0 nkc_write_dec_dw
+             llnkc.S:146    .text:00000100 nkc_getchar
+             llnkc.S:156    .text:0000010e nkc_putchar
+             llnkc.S:178    .text:0000012c nkc_curoff
+             llnkc.S:186    .text:00000132 nkc_curon
+             llnkc.S:194    .text:00000138 nkc_setflip
+             llnkc.S:206    .text:0000014a nkc_setpage
+             llnkc.S:221    .text:0000015c nkc_fillfcb
+             llnkc.S:237    .text:0000017a nkc_open
+             llnkc.S:249    .text:0000018c nkc_create
+             llnkc.S:260    .text:0000019e nkc_close
+             llnkc.S:279    .text:000001b0 nkc_erase
+             llnkc.S:294    .text:000001c2 nkc_readrec
+             llnkc.S:308    .text:000001d4 nkc_writerec
+             llnkc.S:322    .text:000001e6 nkc_setrec
+             llnkc.S:334    .text:000001fc nkc_setdta
+             llnkc.S:350    .text:00000212 nkc_showsp
+             llnkc.S:364    .text:00000254 nkc_bcd2bin
+             llnkc.S:373    .text:00000272 nkc_bin2bcd
+             llnkc.S:383    .text:00000296 nkc_cmos_read
+
+NO UNDEFINED SYMBOLS

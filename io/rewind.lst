@@ -1,0 +1,29 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"rewind.c"
+   3               	.text
+   4               	.align2
+   5               	.globlrewind
+   7               	rewind:
+   8 0000 4E56 0000 	link.w %fp,#0
+   9 0004 42A7      	clr.l -(%sp)
+  10 0006 42A7      	clr.l -(%sp)
+  11 0008 2F2E 0008 	move.l 8(%fp),-(%sp)
+  12 000c 4EB9 0000 	jsr fseek
+  12      0000 
+  13 0012 4FEF 000C 	lea (12,%sp),%sp
+  14 0016 4E5E      	unlk %fp
+  15 0018 4E75      	rts
+  17               	.ident"GCC: (GNU) 4.5.1"
+  18               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 rewind.c
+    {standard input}:7      .text:00000000 rewind
+
+UNDEFINED SYMBOLS
+fseek

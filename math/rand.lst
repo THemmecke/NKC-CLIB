@@ -1,0 +1,50 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"rand.c"
+   3               	.globlseed
+   4               	.data
+   5               	.align2
+   8               	seed:
+   9 0000 4516 8297 	.long1159103127
+  10               	.text
+  11               	.align2
+  12               	.globlsrand
+  14               	srand:
+  15 0000 4E56 0000 	link.w %fp,#0
+  16 0004 23EE 0008 	move.l 8(%fp),seed
+  16      0000 0000 
+  17 000c 4E5E      	unlk %fp
+  18 000e 4E75      	rts
+  20               	.align2
+  21               	.globlrand
+  23               	rand:
+  24 0010 4E56 0000 	link.w %fp,#0
+  25 0014 2039 0000 	move.l seed,%d0
+  25      0000 
+  26 001a 4C3C 0800 	muls.l #22695477,%d0
+  26      015A 4E35 
+  27 0022 5280      	addq.l #1,%d0
+  28 0024 23C0 0000 	move.l %d0,seed
+  28      0000 
+  29 002a 2039 0000 	move.l seed,%d0
+  29      0000 
+  30 0030 4240      	clr.w %d0
+  31 0032 4840      	swap %d0
+  32 0034 0280 0000 	and.l #32767,%d0
+  32      7FFF 
+  33 003a 4E5E      	unlk %fp
+  34 003c 4E75      	rts
+  36               	.ident"GCC: (GNU) 4.5.1"
+  37               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 rand.c
+    {standard input}:8      .data:00000000 seed
+    {standard input}:14     .text:00000000 srand
+    {standard input}:23     .text:00000010 rand
+
+NO UNDEFINED SYMBOLS

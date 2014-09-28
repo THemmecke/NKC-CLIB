@@ -1,0 +1,26 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               		.global asin
+   3               	
+   4               	/*	double asin(double t)
+   5               	*
+   6               	*	Rückgabe: arcus-sinus in %fp0, falls FPU
+   7               	*
+   8               	*/
+   9               	
+  10               	asin:
+  11               	
+  12 0000 F22F 540C 	      	fasin.d	(4,%sp),%FP0
+  12      0004 
+  13 0006 4E75      		rts	
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+              asin.S:10     .text:00000000 asin
+
+NO UNDEFINED SYMBOLS

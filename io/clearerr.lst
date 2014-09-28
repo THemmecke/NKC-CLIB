@@ -1,0 +1,36 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"clearerr.c"
+   3               	.text
+   4               	.align2
+   5               	.globlclearerr
+   7               	clearerr:
+   8 0000 4E56 0000 	link.w %fp,#0
+   9 0004 202E 0008 	move.l 8(%fp),%d0
+  10 0008 2040      	move.l %d0,%a0
+  11 000a 3028 001A 	move.w 26(%a0),%d0
+  12 000e 0C40 444C 	cmp.w #17484,%d0
+  13 0012 6618      	jne .L1
+  14 0014 202E 0008 	move.l 8(%fp),%d0
+  15 0018 2040      	move.l %d0,%a0
+  16 001a 2028 0004 	move.l 4(%a0),%d0
+  17 001e 72CF      	moveq #-49,%d1
+  18 0020 C280      	and.l %d0,%d1
+  19 0022 202E 0008 	move.l 8(%fp),%d0
+  20 0026 2040      	move.l %d0,%a0
+  21 0028 2141 0004 	move.l %d1,4(%a0)
+  22               	.L1:
+  23 002c 4E5E      	unlk %fp
+  24 002e 4E75      	rts
+  26               	.ident"GCC: (GNU) 4.5.1"
+  27               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 clearerr.c
+    {standard input}:7      .text:00000000 clearerr
+
+NO UNDEFINED SYMBOLS

@@ -1,0 +1,44 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"realloc.c"
+   3               	.text
+   4               	.align2
+   5               	.globlrealloc
+   7               	realloc:
+   8 0000 4E56 FFFC 	link.w %fp,#-4
+   9 0004 2F2E 000C 	move.l 12(%fp),-(%sp)
+  10 0008 4EB9 0000 	jsr malloc
+  10      0000 
+  11 000e 588F      	addq.l #4,%sp
+  12 0010 2008      	move.l %a0,%d0
+  13 0012 2D40 FFFC 	move.l %d0,-4(%fp)
+  14 0016 2F2E 000C 	move.l 12(%fp),-(%sp)
+  15 001a 2F2E 0008 	move.l 8(%fp),-(%sp)
+  16 001e 2F2E FFFC 	move.l -4(%fp),-(%sp)
+  17 0022 4EB9 0000 	jsr memcpy
+  17      0000 
+  18 0028 4FEF 000C 	lea (12,%sp),%sp
+  19 002c 2F2E 0008 	move.l 8(%fp),-(%sp)
+  20 0030 4EB9 0000 	jsr free
+  20      0000 
+  21 0036 588F      	addq.l #4,%sp
+  22 0038 202E FFFC 	move.l -4(%fp),%d0
+  23 003c 2200      	move.l %d0,%d1
+  24 003e 2041      	move.l %d1,%a0
+  25 0040 4E5E      	unlk %fp
+  26 0042 4E75      	rts
+  28               	.ident"GCC: (GNU) 4.5.1"
+  29               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 realloc.c
+    {standard input}:7      .text:00000000 realloc
+
+UNDEFINED SYMBOLS
+malloc
+memcpy
+free

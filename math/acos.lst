@@ -1,0 +1,27 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               		.global acos
+   3               	
+   4               	/*	double acos(double t)
+   5               	*
+   6               	*	Rückgabe: arcus-cosinus in %fp0, falls FPU
+   7               	*
+   8               	*/
+   9               	
+  10               	acos:
+  11               		
+  12 0000 F22F 541C 	      	facos.d	(4,%sp),%FP0
+  12      0004 
+  13               	
+  14 0006 4E75      		rts	
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+              acos.S:10     .text:00000000 acos
+
+NO UNDEFINED SYMBOLS

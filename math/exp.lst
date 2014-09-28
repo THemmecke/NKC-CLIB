@@ -1,0 +1,27 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               		.global	exp
+   3               	
+   4               	/*	double exp(double t)
+   5               	*
+   6               	*	Rückgabe: exp in %fp0, falls FPU
+   7               	*
+   8               	*/
+   9               	
+  10               	
+  11               	exp:
+  12               		
+  13 0000 F22F 5410 	      	fetox.d	4(%sp),%FP0
+  13      0004 
+  14 0006 4E75      		rts	
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+               exp.S:11     .text:00000000 exp
+
+NO UNDEFINED SYMBOLS

@@ -1,0 +1,39 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               		.global pow 
+   3               	/*
+   4               		double      pow     (double __x, double __y);
+   5               	
+   6               		returns __x ^ __y in fp0
+   7               	
+   8               		calculation:
+   9               	
+  10               		e^(y*ln(x)) = e^(ln(x^y)) = x^y
+  11               	*/
+  12               	
+  13               	pow:
+  14               	
+  15 0000 41EF 0004 		lea.l	(4,%A7),%A0	/* get pointer to parameters */
+  16 0004 4E56 FFF8 		link %fp,#-8		/* local double variable */	
+  17               	
+  18 0008 F210 5414 	      	flogn.d	(%a0),%FP0	/* fp0 = logn(__x) */
+  19 000c F228 5423 		fmul.d	(8,%a0),%FP0	/* fp0 = __y * fp0 */
+  19      0008 
+  20 0012 F22E 7400 		fmove.d %fp0,-8(%fp)	/* exp(fp0) directly only in extended mode ! */
+  20      FFF8 
+  21 0018 F22E 5410 		fetox.d	-8(%fp),%fp0	/* fp0 = exp(fp0)  */
+  21      FFF8 
+  22               	
+  23 001e 4E5E      		unlk %fp	
+  24 0020 4E75      		rts	
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+               pow.S:13     .text:00000000 pow
+
+NO UNDEFINED SYMBOLS

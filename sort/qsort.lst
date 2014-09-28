@@ -1,0 +1,100 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"qsort.c"
+   3               	.text
+   4               	.align2
+   5               	.globlqsort
+   7               	qsort:
+   8 0000 4E56 FFEC 	link.w %fp,#-20
+   9 0004 2F2E 0010 	move.l 16(%fp),-(%sp)
+  10 0008 4EB9 0000 	jsr malloc
+  10      0000 
+  11 000e 588F      	addq.l #4,%sp
+  12 0010 2D48 FFEC 	move.l %a0,-20(%fp)
+  13 0014 2D6E 0008 	move.l 8(%fp),-12(%fp)
+  13      FFF4 
+  14 001a 4AAE FFEC 	tst.l -20(%fp)
+  15 001e 6700 00BA 	jeq .L9
+  16               	.L2:
+  17 0022 42AE FFFC 	clr.l -4(%fp)
+  18 0026 6000 0094 	jra .L4
+  19               	.L8:
+  20 002a 202E FFF4 	move.l -12(%fp),%d0
+  21 002e D0AE 0010 	add.l 16(%fp),%d0
+  22 0032 2D40 FFF0 	move.l %d0,-16(%fp)
+  23 0036 202E FFFC 	move.l -4(%fp),%d0
+  24 003a 5280      	addq.l #1,%d0
+  25 003c 2D40 FFF8 	move.l %d0,-8(%fp)
+  26 0040 6064      	jra .L5
+  27               	.L7:
+  28 0042 2F2E FFF0 	move.l -16(%fp),-(%sp)
+  29 0046 2F2E FFF4 	move.l -12(%fp),-(%sp)
+  30 004a 202E 0014 	move.l 20(%fp),%d0
+  31 004e 2040      	move.l %d0,%a0
+  32 0050 4E90      	jsr (%a0)
+  33 0052 508F      	addq.l #8,%sp
+  34 0054 4A80      	tst.l %d0
+  35 0056 6F42      	jle .L6
+  36 0058 2F2E 0010 	move.l 16(%fp),-(%sp)
+  37 005c 2F2E FFF4 	move.l -12(%fp),-(%sp)
+  38 0060 2F2E FFEC 	move.l -20(%fp),-(%sp)
+  39 0064 4EB9 0000 	jsr memcpy
+  39      0000 
+  40 006a 4FEF 000C 	lea (12,%sp),%sp
+  41 006e 2F2E 0010 	move.l 16(%fp),-(%sp)
+  42 0072 2F2E FFF0 	move.l -16(%fp),-(%sp)
+  43 0076 2F2E FFF4 	move.l -12(%fp),-(%sp)
+  44 007a 4EB9 0000 	jsr memcpy
+  44      0000 
+  45 0080 4FEF 000C 	lea (12,%sp),%sp
+  46 0084 2F2E 0010 	move.l 16(%fp),-(%sp)
+  47 0088 2F2E FFEC 	move.l -20(%fp),-(%sp)
+  48 008c 2F2E FFF0 	move.l -16(%fp),-(%sp)
+  49 0090 4EB9 0000 	jsr memcpy
+  49      0000 
+  50 0096 4FEF 000C 	lea (12,%sp),%sp
+  51               	.L6:
+  52 009a 202E 0010 	move.l 16(%fp),%d0
+  53 009e D1AE FFF0 	add.l %d0,-16(%fp)
+68K GAS   			page 2
+
+
+  54 00a2 52AE FFF8 	addq.l #1,-8(%fp)
+  55               	.L5:
+  56 00a6 202E FFF8 	move.l -8(%fp),%d0
+  57 00aa B0AE 000C 	cmp.l 12(%fp),%d0
+  58 00ae 6592      	jcs .L7
+  59 00b0 202E 0010 	move.l 16(%fp),%d0
+  60 00b4 D1AE FFF4 	add.l %d0,-12(%fp)
+  61 00b8 52AE FFFC 	addq.l #1,-4(%fp)
+  62               	.L4:
+  63 00bc 222E FFFC 	move.l -4(%fp),%d1
+  64 00c0 202E 000C 	move.l 12(%fp),%d0
+  65 00c4 5380      	subq.l #1,%d0
+  66 00c6 B081      	cmp.l %d1,%d0
+  67 00c8 6200 FF60 	jhi .L8
+  68 00cc 2F2E FFEC 	move.l -20(%fp),-(%sp)
+  69 00d0 4EB9 0000 	jsr free
+  69      0000 
+  70 00d6 588F      	addq.l #4,%sp
+  71 00d8 6002      	jra .L1
+  72               	.L9:
+  73 00da 4E71      	nop
+  74               	.L1:
+  75 00dc 4E5E      	unlk %fp
+  76 00de 4E75      	rts
+  78               	.ident"GCC: (GNU) 4.5.1"
+  79               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 3
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 qsort.c
+    {standard input}:7      .text:00000000 qsort
+
+UNDEFINED SYMBOLS
+malloc
+memcpy
+free

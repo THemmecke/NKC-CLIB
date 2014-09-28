@@ -1,0 +1,35 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               		
+   3               		.global ceil
+   4               	
+   5               	
+   6               	/*	double ceil(double t)
+   7               	*
+   8               	*	Rückgabe: Rounds t up to the next integer in %fp0, falls FPU
+   9               	*
+  10               	*/
+  11               	
+  12               	ceil:
+  13 0000 41EF 0004 		lea.l	(4,%A7),%A0	/* get pointer to parameters */
+  14               	
+  15 0004 F210 5400 		fmove.d	(%a0),%fp0
+  16 0008 F200 0001 		fint.x	%fp0
+  17               		//fmovecr.x #0x32 ,%fp1  // move 1.0 from ROM to FP1
+  18               		//fadd.x	%fp1,%fp0
+  19 000c F23C 5422 		fadd.d #0x3ff0000000000000,%fp0 // add 1.0 to fp0 (gnu-as needs ieee representation !)
+  19      3FF0 0000 
+  19      0000 0000 
+  20               	
+  21 0018 4E75      		rts	
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+              ceil.S:12     .text:00000000 ceil
+
+NO UNDEFINED SYMBOLS

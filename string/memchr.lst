@@ -1,0 +1,39 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               		.global _memchr
+   3               		
+   4               	/*
+   5               		void *memchr(const void *s, int c, size_t n)
+   6               	*/		
+   7               	
+   8               	_memchr:
+   9 0000 242F 000C 		move.l	(12,%a7),%d2	/* downward count */
+  10 0004 222F 0008 		move.l	(8,%a7),%d1	/* char		*/
+  11 0008 206F 0004 		move.l  (4,%A7),%a0	/* buffer */
+  12               	lp:
+  13 000c B210      		cmp.b	(%a0),%d1
+  14 000e 670E      		beq.b	out
+  15 0010 4A10      		tst.b	(%a0)
+  16 0012 6708      		beq.b	badout
+  17 0014 5288      		addq.l	#1,%a0
+  18 0016 5342      		subq	#1,%d2
+  19 0018 6600 FFF2 		bne	lp
+  20               	badout:
+  21 001c 4280      		clr.l	%d0
+  22               	out:
+  23               		//move.l	%a0,%d0
+  24 001e 4E75      		rts
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+            memchr.S:8      .text:00000000 _memchr
+            memchr.S:12     .text:0000000c lp
+            memchr.S:22     .text:0000001e out
+            memchr.S:20     .text:0000001c badout
+
+NO UNDEFINED SYMBOLS

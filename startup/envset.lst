@@ -1,0 +1,131 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"envset.c"
+   3               	.globl_env_arr
+   4               	.section.bss
+   5               	.align2
+   8               	_env_arr:
+   9 0000 0000 0000 	.zero4
+  10               	.text
+  11               	.align2
+  12               	.globlenvset
+  14               	envset:
+  15 0000 4E56 FBF8 	link.w %fp,#-1032
+  16 0004 2F02      	move.l %d2,-(%sp)
+  17 0006 42A7      	clr.l -(%sp)
+  18 0008 42A7      	clr.l -(%sp)
+  19 000a 4EB9 0000 	jsr _ll_getenv
+  19      0000 
+  20 0010 508F      	addq.l #8,%sp
+  21 0012 2D40 FFF8 	move.l %d0,-8(%fp)
+  22 0016 4AAE FFF8 	tst.l -8(%fp)
+  23 001a 6700 00BC 	jeq .L2
+  24 001e 202E FFF8 	move.l -8(%fp),%d0
+  25 0022 5280      	addq.l #1,%d0
+  26 0024 E588      	lsl.l #2,%d0
+  27 0026 2F00      	move.l %d0,-(%sp)
+  28 0028 4EB9 0000 	jsr malloc
+  28      0000 
+  29 002e 588F      	addq.l #4,%sp
+  30 0030 2008      	move.l %a0,%d0
+  31 0032 23C0 0000 	move.l %d0,_env_arr
+  31      0000 
+  32 0038 7001      	moveq #1,%d0
+  33 003a 2D40 FFFC 	move.l %d0,-4(%fp)
+  34 003e 6078      	jra .L3
+  35               	.L4:
+  36 0040 2F2E FFFC 	move.l -4(%fp),-(%sp)
+  37 0044 200E      	move.l %fp,%d0
+  38 0046 0680 FFFF 	add.l #-1032,%d0
+  38      FBF8 
+  39 004c 2F00      	move.l %d0,-(%sp)
+  40 004e 4EB9 0000 	jsr _ll_getenv
+  40      0000 
+  41 0054 508F      	addq.l #8,%sp
+  42 0056 2239 0000 	move.l _env_arr,%d1
+  42      0000 
+  43 005c 202E FFFC 	move.l -4(%fp),%d0
+  44 0060 5380      	subq.l #1,%d0
+  45 0062 E588      	lsl.l #2,%d0
+  46 0064 2401      	move.l %d1,%d2
+  47 0066 D480      	add.l %d0,%d2
+  48 0068 200E      	move.l %fp,%d0
+  49 006a 0680 FFFF 	add.l #-1032,%d0
+  49      FBF8 
+  50 0070 2F00      	move.l %d0,-(%sp)
+  51 0072 4EB9 0000 	jsr strlen
+  51      0000 
+  52 0078 588F      	addq.l #4,%sp
+68K GAS   			page 2
+
+
+  53 007a 5280      	addq.l #1,%d0
+  54 007c 2F00      	move.l %d0,-(%sp)
+  55 007e 4EB9 0000 	jsr malloc
+  55      0000 
+  56 0084 588F      	addq.l #4,%sp
+  57 0086 2008      	move.l %a0,%d0
+  58 0088 2042      	move.l %d2,%a0
+  59 008a 2080      	move.l %d0,(%a0)
+  60 008c 2239 0000 	move.l _env_arr,%d1
+  60      0000 
+  61 0092 202E FFFC 	move.l -4(%fp),%d0
+  62 0096 5380      	subq.l #1,%d0
+  63 0098 E588      	lsl.l #2,%d0
+  64 009a D081      	add.l %d1,%d0
+  65 009c 2040      	move.l %d0,%a0
+  66 009e 2210      	move.l (%a0),%d1
+  67 00a0 200E      	move.l %fp,%d0
+  68 00a2 0680 FFFF 	add.l #-1032,%d0
+  68      FBF8 
+  69 00a8 2F00      	move.l %d0,-(%sp)
+  70 00aa 2F01      	move.l %d1,-(%sp)
+  71 00ac 4EB9 0000 	jsr strcpy
+  71      0000 
+  72 00b2 508F      	addq.l #8,%sp
+  73 00b4 52AE FFFC 	addq.l #1,-4(%fp)
+  74               	.L3:
+  75 00b8 202E FFFC 	move.l -4(%fp),%d0
+  76 00bc B0AE FFF8 	cmp.l -8(%fp),%d0
+  77 00c0 6F00 FF7E 	jle .L4
+  78 00c4 2239 0000 	move.l _env_arr,%d1
+  78      0000 
+  79 00ca 202E FFF8 	move.l -8(%fp),%d0
+  80 00ce E588      	lsl.l #2,%d0
+  81 00d0 D081      	add.l %d1,%d0
+  82 00d2 2040      	move.l %d0,%a0
+  83 00d4 4290      	clr.l (%a0)
+  84 00d6 601E      	jra .L1
+  85               	.L2:
+  86 00d8 4878 0004 	pea 4.w
+  87 00dc 4EB9 0000 	jsr malloc
+  87      0000 
+  88 00e2 588F      	addq.l #4,%sp
+  89 00e4 2008      	move.l %a0,%d0
+  90 00e6 23C0 0000 	move.l %d0,_env_arr
+  90      0000 
+  91 00ec 2039 0000 	move.l _env_arr,%d0
+  91      0000 
+  92 00f2 2040      	move.l %d0,%a0
+  93 00f4 4290      	clr.l (%a0)
+  94               	.L1:
+  95 00f6 242E FBF4 	move.l -1036(%fp),%d2
+  96 00fa 4E5E      	unlk %fp
+  97 00fc 4E75      	rts
+  99               	.ident"GCC: (GNU) 4.5.1"
+ 100               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 3
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 envset.c
+    {standard input}:8      .bss:00000000 _env_arr
+    {standard input}:14     .text:00000000 envset
+
+UNDEFINED SYMBOLS
+_ll_getenv
+malloc
+strlen
+strcpy

@@ -1,0 +1,32 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               		.global floor
+   3               	
+   4               	
+   5               	/*	double floor(double t)
+   6               	*
+   7               	*	Rückgabe: rundet t auf den nächsten Integer-Wert ab
+   8               	*
+   9               	*
+  10               	*
+  11               	*/
+  12               	
+  13               	floor:
+  14               	
+  15               	
+  16 0000 F22F 5400 		fmove.d	4(%sp),%fp0
+  16      0004 
+  17 0006 F200 0001 		fint.x	%fp0
+  18               	
+  19 000a 4E75      		rts	
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+             floor.S:13     .text:00000000 floor
+
+NO UNDEFINED SYMBOLS

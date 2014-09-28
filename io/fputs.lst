@@ -1,0 +1,55 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"fputs.c"
+   3               	.text
+   4               	.align2
+   5               	.globlfputs
+   7               	fputs:
+   8 0000 4E56 FFF8 	link.w %fp,#-8
+   9 0004 2F2E 0008 	move.l 8(%fp),-(%sp)
+  10 0008 4EB9 0000 	jsr strlen
+  10      0000 
+  11 000e 588F      	addq.l #4,%sp
+  12 0010 2D40 FFF8 	move.l %d0,-8(%fp)
+  13 0014 42AE FFFC 	clr.l -4(%fp)
+  14 0018 602A      	jra .L2
+  15               	.L5:
+  16 001a 202E FFFC 	move.l -4(%fp),%d0
+  17 001e D0AE 0008 	add.l 8(%fp),%d0
+  18 0022 2040      	move.l %d0,%a0
+  19 0024 1010      	move.b (%a0),%d0
+  20 0026 49C0      	extb.l %d0
+  21 0028 2F2E 000C 	move.l 12(%fp),-(%sp)
+  22 002c 2F00      	move.l %d0,-(%sp)
+  23 002e 4EB9 0000 	jsr fputc
+  23      0000 
+  24 0034 508F      	addq.l #8,%sp
+  25 0036 72FF      	moveq #-1,%d1
+  26 0038 B280      	cmp.l %d0,%d1
+  27 003a 6604      	jne .L3
+  28 003c 70FF      	moveq #-1,%d0
+  29 003e 6010      	jra .L4
+  30               	.L3:
+  31 0040 52AE FFFC 	addq.l #1,-4(%fp)
+  32               	.L2:
+  33 0044 206E FFFC 	move.l -4(%fp),%a0
+  34 0048 B1EE FFF8 	cmp.l -8(%fp),%a0
+  35 004c 6DCC      	jlt .L5
+  36 004e 7001      	moveq #1,%d0
+  37               	.L4:
+  38 0050 4E5E      	unlk %fp
+  39 0052 4E75      	rts
+  41               	.ident"GCC: (GNU) 4.5.1"
+  42               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 fputs.c
+    {standard input}:7      .text:00000000 fputs
+
+UNDEFINED SYMBOLS
+strlen
+fputc

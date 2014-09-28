@@ -1,0 +1,27 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"system.c"
+   3               	.text
+   4               	.align2
+   5               	.globlsystem
+   7               	system:
+   8 0000 4E56 0000 	link.w %fp,#0
+   9 0004 2F2E 0008 	move.l 8(%fp),-(%sp)
+  10 0008 4EB9 0000 	jsr _ll_system
+  10      0000 
+  11 000e 588F      	addq.l #4,%sp
+  12 0010 4E5E      	unlk %fp
+  13 0012 4E75      	rts
+  15               	.ident"GCC: (GNU) 4.5.1"
+  16               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 system.c
+    {standard input}:7      .text:00000000 system
+
+UNDEFINED SYMBOLS
+_ll_system

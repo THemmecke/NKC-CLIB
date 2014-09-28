@@ -1,0 +1,50 @@
+68K GAS   			page 1
+
+
+   1               	
+   2               	.file"printf.c"
+   3               	.text
+   4               	.align2
+   5               	.globlprintf
+   7               	printf:
+   8 0000 4E56 0000 	link.w %fp,#0
+   9 0004 720C      	moveq #12,%d1
+  10 0006 D28E      	add.l %fp,%d1
+  11 0008 206E 0008 	move.l 8(%fp),%a0
+  12 000c 203C 0000 	move.l #_pstreams,%d0
+  12      0000 
+  13 0012 5880      	addq.l #4,%d0
+  14 0014 2240      	move.l %d0,%a1
+  15 0016 2011      	move.l (%a1),%d0
+  16 0018 2F01      	move.l %d1,-(%sp)
+  17 001a 2F08      	move.l %a0,-(%sp)
+  18 001c 2F00      	move.l %d0,-(%sp)
+  19 001e 4EB9 0000 	jsr vfprintf
+  19      0000 
+  20 0024 4FEF 000C 	lea (12,%sp),%sp
+  21 0028 4E5E      	unlk %fp
+  22 002a 4E75      	rts
+  24               	.align2
+  25               	.globlperror
+  27               	perror:
+  28 002c 4E56 0000 	link.w %fp,#0
+  29 0030 2F2E 0008 	move.l 8(%fp),-(%sp)
+  30 0034 4EB9 0000 	jsr nkc_write
+  30      0000 
+  31 003a 588F      	addq.l #4,%sp
+  32 003c 4E5E      	unlk %fp
+  33 003e 4E75      	rts
+  35               	.ident"GCC: (GNU) 4.5.1"
+  36               	.section.note.GNU-stack,"",@progbits
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 printf.c
+    {standard input}:7      .text:00000000 printf
+    {standard input}:27     .text:0000002c perror
+
+UNDEFINED SYMBOLS
+_pstreams
+vfprintf
+nkc_write

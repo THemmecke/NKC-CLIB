@@ -1,0 +1,32 @@
+68K GAS   			page 1
+
+
+   1               		.text
+   0               	
+   0               	
+   2               	
+   3               		.global log
+   4               	
+   5               	
+   6               	/*	double log(double t)
+   7               	*
+   8               	*	Compute natural logarithm
+   9               		Returns the natural logarithm of x.
+  10               	
+  11               		The natural logarithm is the base-e logarithm: the inverse of the natural exponential function (ex
+  12               	*/
+  13               	
+  14               	
+  15               	log:
+  16               	
+  17 0000 F22F 5414 	      	flogn.d	4(%sp),%FP0
+  17      0004 
+  18               	
+  19 0006 4E75      		rts	
+68K GAS   			page 2
+
+
+DEFINED SYMBOLS
+               log.S:15     .text:00000000 log
+
+NO UNDEFINED SYMBOLS
