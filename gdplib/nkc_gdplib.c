@@ -20,20 +20,20 @@ static unsigned char linecnt[TEXT_SIZE_Y]; // Zähler für Anzahl Zeichen in Zei
 static unsigned char chtbl0[ANZTAB] = {0xdb,0xdc,0xdd,0xfb,0xfc,0xfd,0xfe,0x81,0x82}; // Sonderzeichen
 static unsigned char chtbl1[ANZTAB] = {0x5b,0x5c,0x5d,0x7b,0x7c,0x7d,0x7e,0x01,0x02}; // Sonderzeichen für Umcodierung
 static unsigned char chtbl2[ANZTAB][5] = {  
-             {0x7d,0x0a,0x09,0x0a,0x7d},       // Ä
-				     {0x3d,0x42,0x42,0x42,0x3d},       // Ö
-				     {0x7d,0x40,0x40,0x40,0x7d},       // Ü
-				     {0x71,0x54,0x54,0x78,0x41},       // ä
-				     {0x00,0x39,0x44,0x44,0x39},       // ö
-				     {0x3d,0x40,0x40,0x7d,0x40},       // ü
-				     {0x00,0x7f,0x01,0x4d,0x32},       // ß
-				     {0x00,0x7f,0x3e,0x1c,0x08},
-				     {0x08,0x1c,0x3e,0x7f,0x00} }; // Bitcode Sonderzeichen
+                                             {0x7d,0x0a,0x09,0x0a,0x7d},       // Ä
+                                				     {0x3d,0x42,0x42,0x42,0x3d},       // Ö
+                                				     {0x7d,0x40,0x40,0x40,0x7d},       // Ü
+                                				     {0x71,0x54,0x54,0x78,0x41},       // ä
+                                				     {0x00,0x39,0x44,0x44,0x39},       // ö
+                                				     {0x3d,0x40,0x40,0x7d,0x40},       // ü
+                                				     {0x00,0x7f,0x01,0x4d,0x32},       // ß
+                                				     {0x00,0x7f,0x3e,0x1c,0x08},
+				                                     {0x08,0x1c,0x3e,0x7f,0x00} }; // Bitcode Sonderzeichen
 #include "nkc_fonts.h"
 
 /* Erklärung der Bitcodetabelle:
 
-   chtbl2 enthälz die Bitcodes für Sonderzeichen als doppelt indizierte Liste.
+   chtbl2 enthält die Bitcodes für Sonderzeichen als doppelt indizierte Liste.
    Index 0 gibt an, um welches Sonderzeichen es sich handelt. 
    Index 1 gibt den Bitcode für die 5 Spalten eines 8x5 grossen Zeichens an.
 
@@ -63,6 +63,11 @@ static unsigned char gdp_char_direction;		// direction of textoutput (8=vertical
 static unsigned char gdp_char_tilted;			// type of character output(4=tilted, 0=normal)
 static unsigned char gdp_char_scalex;			// character scaling 0..16 (0=16)
 static unsigned char gdp_char_scaley;
+static unsigned char gdp_char_sizex;
+static unsigned char gdp_char_sizey;
+static unsigned char gdp_char_spacex;
+static unsigned char gdp_char_spacey;
+
 static unsigned char gdp_page;				// view- and write-page
 static unsigned char gdp_cursor_x;			// position of text cursor (origin is top-left
 static unsigned char gdp_cursor_y;
@@ -72,11 +77,14 @@ static unsigned char gdp_fgcolor;			// foreground color
 static unsigned char gdp_bkcolor;			// backgroud color
 static unsigned char gdp_scrollreg;			// copy of scroll register
 static unsigned char gdp_mode;				// GDP mode text 80x25, 40x25 or graphics 512x256
-static unsigned char gdp_transparent;			// 0=transparent mode off, 1=transparent mode on (GDP-FPGA)
+static unsigned char gdp_transparent;			// 0=transparent mode off, 1=transparent mode on (GDP-FPGA CTRL2)
+static unsigned char gdp_xormode;       // see page register
 static unsigned char gdp_max_cx;			// current maximum text cursor position
-static unsigned char gdp_max_cy;
-static unsigned int gdp_max_gx;			// current maximum graphic cursor position
-static unsigned int gdp_max_gy;
+static unsigned char gdp_max_cy;      // origin top-left is (1|1)
+static unsigned int  gdp_max_gx;			// current maximum graphic cursor position 
+static unsigned int  gdp_max_gy;     // origin bottom-left is (0|0), top-right is (255|511)
+
+
 
 
 
@@ -108,14 +116,37 @@ void gdp_init( void )
   unsigned char c;
   
   gdp_set_textmode(GDP_MODE_TEXT_80x25);
+
+  GDP_WAIT_READY; SET_BIT(6,GDP_CTRL2); // Enable Hardware Cursor
   
   gdp_setcolor(GDP_COLOR_RED, GDP_COLOR_BLACK); gdp_put_char('N');
   gdp_setcolor(GDP_COLOR_GREEN, GDP_COLOR_BLACK); gdp_put_char('K');
   gdp_setcolor(GDP_COLOR_BLUE, GDP_COLOR_BLACK); gdp_put_char('C');
-  gdp_setcolor(GDP_COLOR_BLACK, GDP_COLOR_WHITE); 
+ 
 
 
-  gdp_print_line(" GDP Driver Version 0.1 beta (C) 2009 Torsten Hemmecke");
+  gdp_setcolor(GDP_COLOR_BLACK, GDP_COLOR_RED );
+ 
+
+  gdp_gotoxy(1,2); gdp_print_line(" GDP Driver Version 0.1 beta (C) 2009 Torsten Hemmecke");
+
+
+  gdp_set_exfont((unsigned char *)DOS_EXTENSIONS); // User Zeichensatz (neu) laden
+
+  GDP_WAIT_READY; SET_BIT(4,GDP_CTRL2); // select user char set
+  gdp_gotoxy(1,3); gdp_print_line("!\"§$\%&/\\}{()=?1234567890abcdefghijklmnopqrstuvwxyzÄÖÜ°@<>|,;.:-_#+*€");
+  GDP_WAIT_READY; CLEAR_BIT(4,GDP_CTRL2); // de-select user char set
+  gdp_gotoxy(1,2);
+return;
+  gdp_gotoxy(1,3); gdp_print_line("!\"§$\%&/\\}{()=?1234567890abcdefghijklmnopqrstuvwxyzÄÖÜ°@<>|,;.:-_#+*€");
+  gdp_gotoxy(1,10); gdp_print_line("!\"§$\%&/\\}{()=?1234567890abcdefghijklmnopqrstuvwxyzÄÖÜ°@<>|,;.:-_#+*€");
+  gdp_gotoxy(1,3); gdp_print_line("!\"§$\%&/\\}{()=?1234567890abcdefghijklmnopqrstuvwxyzÄÖÜ°@<>|,;.:-_#+*€");
+  gdp_gotoxy(1,3); gdp_print_line("!\"§$\%&/\\}{()=?1234567890abcdefghijklmnopqrstuvwxyzÄÖÜ°@<>|,;.:-_#+*€");
+  gdp_gotoxy(1,20); gdp_print_line("!\"§$\%&/\\}{()=?1234567890abcdefghijklmnopqrstuvwxyzÄÖÜ°@<>|,;.:-_#+*€");
+  gdp_gotoxy(1,25); gdp_print_line("!\"§$\%&/\\}{()=?1234567890abcdefghijklmnopqrstuvwxyzÄÖÜ°@<>|,;.:-_#+*€");
+  gdp_print_line("!\"§$\%&/\\}{()=?1234567890abcdefghijklmnopqrstuvwxyzÄÖÜ°@<>|,;.:-_#+*€");
+  gdp_print_line("!\"§$\%&/\\}{()=?1234567890abcdefghijklmnopqrstuvwxyzÄÖÜ°@<>|,;.:-_#+*€");
+  gdp_print_line("!\"§$\%&/\\}{()=?1234567890abcdefghijklmnopqrstuvwxyzÄÖÜ°@<>|,;.:-_#+*€");
   
   return;
   gdp_set_exfont((unsigned char *)DOS_EXTENSIONS);
@@ -197,14 +228,14 @@ unsigned char gdp_set_exfont(unsigned char *pbitcode)
 
   if(!GDP_FPGA) return 0;	// only with GDP-FPGA  
 
-  GDP_WAIT_READY;		// wait fpr gdp to be ready
+  GDP_WAIT_READY;		// wait for gdp to be ready
   
   save_ctrl2 = GDP_CTRL2;	// save registers
   save_xmsb  = GDP_X_MSB;
   save_xlsb  = GDP_X_LSB;
   
   SET_BIT(4,GDP_CTRL2);		// select user character set
-  SET_BIT(5,GDP_CTRL2);		// set transparent mode
+  //SET_BIT(5,GDP_CTRL2);		// set transparent mode
   
   cc = 0;
   
@@ -239,34 +270,45 @@ void gdp_set_textmode(unsigned char mode)
       case GDP_MODE_TEXT_40x25:
 		      gdp_char_scalex = 2;		// set scale to 1:2
 		      gdp_char_scaley = 1;	
+          gdp_char_sizex  = CHAR_DOTS_X * gdp_char_scalex;
+          gdp_char_sizey  = CHAR_DOTS_Y * gdp_char_scaley;
+          gdp_char_spacex = gdp_char_scalex;
+          gdp_char_spacey = gdp_char_scaley;
 		      GDP_WAIT_READY;
 		      GDP_CSIZE = GDP_SET_SCALE(gdp_char_scalex, gdp_char_scaley);
 		      gdp_char_direction = 0;	// set char output to horizointal 
 		      gdp_char_tilted = 0;		// normal characters
 		      gdp_scrollreg = 0;
 		      gdp_transparent = 0;		// disable transparent mode
+          gdp_xormode = 0;
 		      GDP_SCROLL = gdp_scrollreg;
 		      gdp_mode = GDP_MODE_TEXT_40x25;
-		      gdp_max_cx = 39;
-		      gdp_max_cy = 24;
-		      gdp_max_gx = 511;
-		      gdp_max_gy = 255;
+		      gdp_max_cx = 40;
+		      gdp_max_cy = 25;
+		      gdp_max_gx = 255;
+		      gdp_max_gy = 511;
 		      gdp_bkcolor = GDP_COLOR_BLACK;
 		      gdp_fgcolor = GDP_COLOR_WHITE;
 		      break;
       case GDP_MODE_TEXT_85x28:
-		      gdp_char_scalex = 1;		// set scale to 1:2
-		      gdp_char_scaley = 1;			      
+		      gdp_char_scalex = 1;		// set scale to 1:1
+		      gdp_char_scaley = 1;		
+          gdp_char_sizex  = CHAR_DOTS_X * gdp_char_scalex;
+          gdp_char_sizey  = CHAR_DOTS_Y * gdp_char_scaley;
+          gdp_char_spacex = gdp_char_scalex;
+          gdp_char_spacey = gdp_char_scaley;	      
+          GDP_SET_SCALE(gdp_char_scalex, gdp_char_scaley);
 		      gdp_char_direction = 0;	// set char output to horizointal 
 		      gdp_char_tilted = 0;		// normal characters
 		      gdp_scrollreg = 0;
 		      gdp_transparent = 0;		// disable transparent mode
+          gdp_xormode = 0;
 		      GDP_SCROLL = gdp_scrollreg;
 		      gdp_mode = GDP_MODE_TEXT_85x28;
-		      gdp_max_cx = 84;
-		      gdp_max_cy = 27;
-		      gdp_max_gx = 511;
-		      gdp_max_gy = 255;
+		      gdp_max_cx = 85;
+		      gdp_max_cy = 28;
+		      gdp_max_gx = 255;
+		      gdp_max_gy = 511;
 		      gdp_bkcolor = GDP_COLOR_BLACK;
 		      gdp_fgcolor = GDP_COLOR_WHITE;
 		      break;
@@ -274,17 +316,22 @@ void gdp_set_textmode(unsigned char mode)
 	    default:
 		      gdp_char_scalex = 1;		// set scale to 1:1
 		      gdp_char_scaley = 1;	
-		      //GDP_SET_SCALE(gdp_char_scalex, gdp_char_scaley);
+          gdp_char_sizex  = CHAR_DOTS_X * gdp_char_scalex;
+          gdp_char_sizey  = CHAR_DOTS_Y * gdp_char_scaley;
+          gdp_char_spacex = gdp_char_scalex;
+          gdp_char_spacey = gdp_char_scaley;
+		      GDP_SET_SCALE(gdp_char_scalex, gdp_char_scaley);
 		      gdp_char_direction = 0;	// set char output to horizointal 
 		      gdp_char_tilted = 0;		// normal characters		      
 		      gdp_scrollreg = 0;
-		      gdp_transparent = 1;		// enable transparent mode
+		      gdp_transparent = 1;		// enable transparent mode in CTRL2 Register (no need to erase character prior to writing)
+          gdp_xormode = 0;
 		      GDP_SCROLL = gdp_scrollreg;
 		      gdp_mode = GDP_MODE_TEXT_80x25;
-		      gdp_max_cx = 79;
-		      gdp_max_cy = 24;
-		      gdp_max_gx = 511;
-		      gdp_max_gy = 255;
+		      gdp_max_cx = 80;
+		      gdp_max_cy = 25;
+		      gdp_max_gx = 255;
+		      gdp_max_gy = 511;
 		      gdp_bkcolor = GDP_COLOR_BLACK;
 		      gdp_fgcolor = GDP_COLOR_WHITE;
 		     
@@ -298,8 +345,8 @@ void gdp_set_textmode(unsigned char mode)
     GDP_CPORT_FG = GDP_COLOR_WHITE;
     GDP_CPORT_BK = GDP_COLOR_BLACK;
 
-    gdp_set_page(0,0,0);	// set r/w page 0, xor-mode = OFF
-    gdp_gotoxy(0,0);		// initialize text cursor to top left
+    gdp_set_page(0,0,gdp_xormode);	// set r/w page 0, xor-mode = OFF
+    gdp_gotoxy(1,1);		// initialize text cursor to top left
 }
 
 void gdp_setcolor(unsigned char fgcolor, unsigned char bkcolor)
@@ -322,6 +369,26 @@ void gdp_setcolor(unsigned char fgcolor, unsigned char bkcolor)
 
 }
 
+void gdp_set_page(unsigned char writepage, unsigned char viewpage, unsigned char xormode)
+{
+  unsigned long flags;
+
+  gdp_page = (writepage << 6) + (viewpage << 4) + xormode;   // save to global flag
+ 
+  GDP_WAIT_READY; // wait for gdp to be ready for new command  
+  GDP_PAGE = gdp_page;  
+
+        // dodo: fix display error 
+  if(GDP_FPGA){       // set transparent mode (only GDP-FPGA)
+    GDP_WAIT_READY;       // wait for gdp to be ready for new command
+    if(gdp_transparent){
+      SET_BIT(5,GDP_CTRL2);
+    }else{
+      CLEAR_BIT(5,GDP_CTRL2);
+    }
+  }
+}
+
 void gdp_clear_viewpage( void )
 {
   GDP_WAIT_READY; // wait for gdp to be ready for new command
@@ -330,29 +397,33 @@ void gdp_clear_viewpage( void )
 
 void gdp_clear_page(unsigned char which)
 { 
-  unsigned char page;  
+  unsigned char saved_page = gdp_page;
 
-  page = (gdp_page & ~0xC0) | (which << 6);   // save to global flag
+  gdp_page = (gdp_page & ~0xC0) | (which << 6);   // save to global flag
   
 
   GDP_WAIT_READY; // wait for gdp to be ready for new command
 
-  GDP_PAGE = page;	// select page
+  GDP_PAGE = gdp_page;	// select page
   GDP_CMD = 0x06;	// erase page  
+
+  GDP_PAGE = saved_page;  
 }
 
 void gdp_clear_all( void )
 {
-  unsigned char page,ii;  
+  unsigned char ii;  
+  unsigned char saved_page = gdp_page;
   
   for (ii=0; ii<4; ii++){
-    page = (gdp_page & ~0xC0) | (ii << 6);  // save to global flag
-    GDP_PAGE = page;	                      // select page
+    gdp_page =  (gdp_page & ~0xC0) | (ii << 6);  // save to global flag
+    GDP_PAGE = gdp_page;	                      // select page
     GDP_WAIT_READY;                         // wait for gdp to be ready for new command
     GDP_CMD = 0x06;	                        // erase page
   }
   gdp_scrollreg = 0;			                  // reset scroll register
   GDP_SCROLL = gdp_scrollreg;
+  GDP_PAGE = saved_page;
 }
 
 unsigned char gdp_movetoxy(unsigned int x, unsigned int y)
@@ -441,56 +512,33 @@ void gdp_setpnt(unsigned char x, unsigned char y)
 unsigned char gdp_gotoxy(unsigned char x, unsigned char y)
 // moves the text cursor to specified position, home position is top-left
 {
-  unsigned int curx;
-  unsigned char cury,scroll;
+  unsigned char xx,yy;
 
-  scroll = 0;
-  scroll -= gdp_scrollreg;
-  
-  
-  switch(gdp_mode){
-      case GDP_MODE_TEXT_85x28:
-	    if( (x > 84) || (y > 27) ) return 0;	// x = 0..84, y = 0..27
-	    break;
-      case GDP_MODE_TEXT_80x25: 
-	    if( (x > 79) || (y > 24) ) return 0;	// x = 0..79, y = 0..24
-	    break;
-      case GDP_MODE_TEXT_40x25:
-	    if( (x > 39) || (y > 24) ) return 0;	// x = 0..39, y = 0..24
-	    break;
-      case GDP_MODE_GRAPH_512x256:
-	    return 0;					// no real cursor in graphics mode, application has to take care....
-	    break;
-  }
+  if(gdp_mode == GDP_MODE_GRAPH_512x256) return 0;
 
+  xx=x;
+  yy=y;
 
-  if( gdp_char_scalex == 0 ){ 		// calc values
-	gdp_char_scalex = 16;
-	curx = x*(16*6);		
-  }
-  else{ 
-	curx = x*(gdp_char_scalex*6);
-  }
+  // check range
+  if(xx < 1)  xx= 1;
+  if(yy < 1)  yy= 1;
+  if(xx > gdp_max_cx) xx= gdp_max_cx;
+  if(yy > gdp_max_cy) yy= gdp_max_cy;
+  // calculate graphics cursor position
+  gdp_xpos = xx*gdp_char_sizex+(xx-1)*gdp_char_spacex;
+  gdp_ypos = 255-(yy*gdp_char_sizey +(yy-1)*gdp_char_spacey);
+  // move graphics cursor
+  gdp_movetoxy( gdp_xpos , gdp_ypos  );	// graphic origin ist bottom-left !! take care of scroll register !
 
-  if( gdp_char_scaley == 0 ){ 		// calc values
-	gdp_char_scaley = 16;
-	cury = gdp_max_gy - ((y+1)*(16*9) - 16) - scroll;
-  }
-  else{ 
-	//cury = ((y+1)*(gdp_char_scaley*9) - gdp_char_scaley);	
-	cury = gdp_max_gy - ((y+1)*(gdp_char_scaley*9) - gdp_char_scaley) - scroll;
-  }
-
-  gdp_movetoxy( curx , cury  );	// graphic origin ist bottom-left !! take care of scroll register !
-
-  gdp_cursor_x = x;			// save values
-  gdp_cursor_y = y;
+  gdp_cursor_x = xx;			// save values
+  gdp_cursor_y = yy;
   
   return 1;
 }
 
 
 void gdp_getxy(void)
+// get current graphics cursor position from GDP
 {
   unsigned long flags;
 
@@ -510,27 +558,29 @@ void gdp_drawcursor( unsigned char visible )
   
   GDP_WAIT_READY; // wait for gdp to be ready for new command
 
-  if(visible){			// Draw Cursor
-	GDP_CMD = GDP_CMD_5x8;				// Draw Block
-	GDP_WAIT_READY; 
-  }else{			// Erase Cursor
-	SET_BIT(0,gdp_page);	// enable xor-mode
-	GDP_WAIT_READY; 	// wait for gdp to be ready for new command
-	GDP_PAGE = gdp_page;
+  if(visible)
+  {			// Draw Cursor
+  	GDP_CMD = GDP_CMD_5x8;				// Draw Block
+  	GDP_WAIT_READY; 
+  }else
+  {			// Erase Cursor
+  	SET_BIT(0,gdp_page);	// enable xor-mode
+  	GDP_WAIT_READY; 	// wait for gdp to be ready for new command
+  	GDP_PAGE = gdp_page;
 
-	//GDP_WAIT_READY;
-	//GDP_CMD = GDP_CMD_ERASER;		// select erase
+  	//GDP_WAIT_READY;
+  	//GDP_CMD = GDP_CMD_ERASER;		// select erase
 
-	GDP_WAIT_READY;
-	GDP_CMD = GDP_CMD_5x8;	// Draw Block
+  	GDP_WAIT_READY;
+  	GDP_CMD = GDP_CMD_5x8;	// Draw Block
 
-	CLEAR_BIT(0,gdp_page);  // disable xor-mode
-	GDP_WAIT_READY;
-	GDP_PAGE = gdp_page;
+  	CLEAR_BIT(0,gdp_page);  // disable xor-mode
+  	GDP_WAIT_READY;
+  	GDP_PAGE = gdp_page;
 
-	//GDP_WAIT_READY;
-	//GDP_CMD = GDP_CMD_WRITER;		// select write
-	
+  	//GDP_WAIT_READY;
+  	//GDP_CMD = GDP_CMD_WRITER;		// select write
+  	
   }
 
   GDP_X_MSB = HIGH_BYTE(gdp_xpos);	// restore xpos
@@ -607,137 +657,60 @@ void gdp_clreol(unsigned int row, unsigned char eattr)
 
 void gdp_scroll_up( void ) // scroll one line up
 {
-  unsigned long flags;
-  unsigned int xpos,ypos,maxx,maxy,dx;
-  unsigned char sizey; 	// character size
-	
-	sizey = gdp_char_scaley*9;
+  //pixel (x,y) == 1C0.0000 + p<<16 + y<<8 + x/2
+  // video memory start at bottom-left
 
-	gdp_gotoxy(0,0);					// erase first line
+  unsigned int xpos1,ypos1,xpos2,ypos2,xpos3,ypos3;
+  unsigned char *p0,*p1,*p3;
+  unsigned int num;
 
-	xpos = gdp_xpos;
-	ypos = gdp_ypos;
-	maxy = ypos + sizey - gdp_char_scaley;
-	dx = 255;					// erase line in two steps (we assume a maximum of 512 bits h resolution !!)
-      
-	GDP_WAIT_READY;						// wait for GDP 	
-	GDP_CPORT_FG = GDP_COLOR_BLACK;				// a scrolled line will be erased to black
-	GDP_CPORT_BK = GDP_COLOR_BLACK;
+  // Bottom-Left corner source
+  xpos1 = 0;
+  ypos1 = 255-(gdp_max_cy*gdp_char_sizey +(gdp_max_cy-1)*gdp_char_spacey); // exact cursor position of last line
+  //ypos1=0; // few lines more to move but no calculation...
 
-	GDP_WAIT_READY;
-	GDP_CMD = GDP_CMD_ERASER;		// select erase
-      
-	while(ypos < maxy){			// works because maxy and ypos is 16bit (this is important if maxy is wrapped around...)
-						    // erase line by line
-	    GDP_WAIT_READY;
-	    GDP_X_MSB = HIGH_BYTE(xpos);
-	    GDP_X_LSB = LOW_BYTE(xpos);
-	    GDP_Y_LSB = LOW_BYTE(ypos);		// only LSB is needed for 0..255 !!
-						  // draw (erase) vertical line of sizey at xpos (ignore dx)
-	    GDP_WAIT_READY;
-	    GDP_DELTAX = dx;			// need to be done in 2 steps ( 511 > 255)
-	    GDP_WAIT_READY;
-	    GDP_CMD = 0x10;
+  // Top-Right corner source
+  xpos3 = 511;
+  ypos3 = 255-(gdp_char_sizey + gdp_char_spacey); 
+  // Bottom-Left corner destination
+  xpos2 = 0;
+  ypos2 = 255-((gdp_max_cy-1)*gdp_char_sizey +(gdp_max_cy-2)*gdp_char_spacey);
 
-	    GDP_WAIT_READY;
-	    GDP_DELTAX = dx;
-	    GDP_WAIT_READY;
-	    GDP_CMD = 0x10;
-	
-	    ypos++;
-	}
 
-	GDP_WAIT_READY;						// wait for GDP 	
-	GDP_CPORT_FG = gdp_fgcolor;				// restore fg color
-	GDP_CPORT_BK = gdp_bkcolor;				// restore bk color
+  // memory source (Bottom-Left corner of source)
+  p1 = 0x1C00000 + (unsigned int)(gdp_page << 16) + (unsigned int)(ypos1 << 8); 
+  // memory destination (Bottom-Left corner of destonation)
+  p0 = 0x1C00000 + (unsigned int)(gdp_page << 16) + (unsigned int)(ypos2 << 8); 
+  // number of bytes to move
+  // Top-Right corner of source
+  p3 = 0x1C00000 + (unsigned int)(gdp_page << 16) + (unsigned int)(ypos3 << 8) + 255; 
+  num = (unsigned int)p3 - (unsigned int)p1;
 
-	gdp_scrollreg -= sizey;					// scroll 1 line up
-	GDP_SCROLL = gdp_scrollreg;
-
-	gdp_cursor_x = 0;					// move text cursor to start of last line
-	gdp_cursor_y = gdp_max_cy;
-
-	GDP_WAIT_READY;
-	GDP_CMD = GDP_CMD_WRITER;		// select writer
-  
-
-	gdp_gotoxy(gdp_cursor_x,gdp_cursor_y);      
+  memmove(p0,p1,num);
 }
 
 void gdp_scroll_down( void )
 /* läuft noch nicht ! */
 {
 
-  unsigned long flags;
-  unsigned int xpos,ypos,maxx,maxy,dx;
-  unsigned char sizey; 	// character size
-
-	sizey = gdp_char_scaley*9;
-
-	gdp_gotoxy(0,79);					// erase last line
-
-	xpos = gdp_xpos;
-	ypos = gdp_ypos;
-	maxy = ypos + sizey - gdp_char_scaley;
-	dx = 255;					// erase line in two steps (we assume a maximum of 512 bits h resolution !!)
-      
-	GDP_WAIT_READY;						// wait for GDP 	
-	GDP_CPORT_FG = GDP_COLOR_BLACK;				// a scrolled line will be erased to black
-	GDP_CPORT_BK = GDP_COLOR_BLACK;
-
-	GDP_WAIT_READY;
-	GDP_CMD = GDP_CMD_ERASER;		// select erase
-      
-	while(ypos < maxy){			// works because maxy and ypos is 16bit (this is important if maxy is wrapped around...)
-						    // erase line by line
-	    GDP_WAIT_READY;
-	    GDP_X_MSB = HIGH_BYTE(xpos);
-	    GDP_X_LSB = LOW_BYTE(xpos);
-	    GDP_Y_LSB = LOW_BYTE(ypos);		// only LSB is needed for 0..255 !!
-						  // draw (erase) vertical line of sizey at xpos (ignore dx)
-	    GDP_WAIT_READY;
-	    GDP_DELTAX = dx;			// need to be done in 2 steps ( 511 > 255)
-	    GDP_WAIT_READY;
-	    GDP_CMD = 0x10;
-
-	    GDP_WAIT_READY;
-	    GDP_DELTAX = dx;
-	    GDP_WAIT_READY;
-	    GDP_CMD = 0x10;
-	
-	    ypos++;
-	}
-
-	GDP_WAIT_READY;						// wait for GDP 	
-	GDP_CPORT_FG = gdp_fgcolor;				// restore fg color
-	GDP_CPORT_BK = gdp_bkcolor;				// restore bk color
-
-	gdp_scrollreg -= sizey;					// scroll 1 line up
-	GDP_SCROLL = gdp_scrollreg;
-
-	gdp_cursor_x = 0;					// move text cursor to start of first line
-	gdp_cursor_y = 0;
-
-	GDP_WAIT_READY;
-	GDP_CMD = GDP_CMD_WRITER;		// select writer
-
-	gdp_gotoxy(gdp_cursor_x,gdp_cursor_y);      
-
+  
 }
 
 
 unsigned char gdp_extended_char(unsigned char* cc)
 {
   /*
-    checks if extended (8bit ASCII DOS Extension) character set is used 
+    checks if extended (8bit ASCII DOS Extension) character set is used
+    if extended, returns 1 and translates the character to the NKC Code used in GDPFPGA
+    a normal character will be left unchanged and 0 is returneds
   */
 
-  switch (*cc) {
+  switch (*cc) 
+  {
       case 0x15:	*cc = DOS2NKCMAP[245-128]; break;		// § - don't know where this comes from 
-	
       default:	if ((*cc < 128) && (*cc > 31)) { return 0; }		// normal ASCII character
-		if ((*cc > 127)) *cc = DOS2NKCMAP[*cc-128];		// extended DOS		    		     		
-		if (*cc <=31 ) *cc = DOS2NKCMAP[0];		  	// not a printable character		
+            		if ((*cc > 127)) *cc = DOS2NKCMAP[*cc-128];		// extended DOS		    		     		
+            		if (*cc <=31 ) *cc = DOS2NKCMAP[0];		  	// not a printable character		
   }
   
   return 1;
@@ -750,80 +723,59 @@ void gdp_put_char(unsigned char c)
   unsigned char dy,sizey;
   unsigned int xpos,ypos;
 
+
   unsigned char cc = c;
     
   if(cc==0) return;
 
-  //  if(!gdp_gotoxy(gdp_cursor_y++,gdp_cursor_y)) return;		// adjust graphis/text cursor
 
-  sizey = gdp_char_scaley*9;
+  if(gdp_transparent == 0)
+  {    
+    // pre-erase position
+    GDP_WAIT_READY;
+    GDP_CMD = GDP_CMD_ERASER;		// select eraser pen
+    GDP_WAIT_READY;
+    GDP_CMD = GDP_CMD_PENDOWN;
 
-  // pre-erase position
-  gdp_getxy();			// store current cursor position (gdp_xpos, gdp_ypos)
-
-  xpos=gdp_xpos-gdp_char_scalex;		// for moving drawing cursor to start of last spacing
-  ypos=gdp_ypos;
-
-  GDP_WAIT_READY;
-  GDP_CMD = GDP_CMD_ERASER;		// select eraser pen
-  GDP_WAIT_READY;
-  GDP_CMD = GDP_CMD_PENDOWN;
-
-	// 1st step: erase space between last and current character if cursor position > 0:
-  if(gdp_cursor_x > 0){
-    dy = sizey-gdp_char_scaley-1;		// deltaY is size of character without vertical spacing
-    while(xpos < gdp_xpos){			// erase spacing
-	   GDP_WAIT_READY;
-	   GDP_X_MSB = HIGH_BYTE(xpos);
-	   GDP_X_LSB = LOW_BYTE(xpos);
-	   GDP_Y_MSB = HIGH_BYTE(ypos);
-	   GDP_Y_LSB = LOW_BYTE(ypos);
-		 // draw (erase) vertical line of sizey at xpos (ignore dx)
-	   GDP_WAIT_READY;
-	   GDP_DELTAY = dy;			
-	   GDP_WAIT_READY;
-	   GDP_CMD = 0x12;	
-
-	   xpos++;      				
-    }
+  	// erase space of current character
+      
+    GDP_WAIT_READY;			
+    GDP_CMD = GDP_CMD_5x8;		// erase character
 
     GDP_WAIT_READY;
-    GDP_Y_MSB = HIGH_BYTE(gdp_ypos);	// restore cursor position
-    GDP_Y_LSB = LOW_BYTE(gdp_ypos);
-    GDP_X_MSB = HIGH_BYTE(gdp_xpos);
-    GDP_X_LSB = LOW_BYTE(gdp_xpos);
+    GDP_CMD = GDP_CMD_WRITER;		// select writer 
+
+    gdp_gotoxy(gdp_cursor_x,gdp_cursor_y); // move to current cursor position
   }
 
-	// 2nd step: erase space of current character
-    
-
-    //GDP_CPORT_BK = GDP_COLOR_BLACK;	// set bk color to black
-  GDP_WAIT_READY;			
-  GDP_CMD = GDP_CMD_5x8;		// erase character
-
-  GDP_WAIT_READY;
-  GDP_CMD = GDP_CMD_WRITER;		// select writer
-  GDP_WAIT_READY; 
-  GDP_X_MSB = HIGH_BYTE(gdp_xpos);	// restore xpos
-  GDP_X_LSB = LOW_BYTE(gdp_xpos);
-
-  //GDP_CPORT_BK = gdp_bkcolor;		// restore bk color
-    
   // print character
   GDP_WAIT_READY;
-  if(gdp_extended_char(&cc)) {
-	   //GDP_CTRL2 |= GDP_CHAR_USER;	
+  if(gdp_extended_char(&cc)) 
+  {
 	   SET_BIT(4,GDP_CTRL2);	// select user char set
 	   GDP_WAIT_READY;
 	   GDP_CMD =cc;
 	   GDP_WAIT_READY;
-	   CLEAR_BIT(4,GDP_CTRL2);	// select user char set
-	   //GDP_CTRL2 &= ~GDP_CHAR_USER;
+	   CLEAR_BIT(4,GDP_CTRL2);	// de-select user char set
   } else {   
       GDP_CMD =cc; 
   }
 
   gdp_cursor_x++;
+
+  if(gdp_cursor_x > gdp_max_cx)
+  {
+    if(gdp_cursor_y < gdp_max_cy)
+    {
+      gdp_cursor_x = 1;
+      gdp_cursor_y++;
+      gdp_gotoxy(gdp_cursor_x,gdp_cursor_y);
+    }else
+    {
+      //Scoll Page ....
+      gdp_scroll_up();
+    }
+  }
 }
 
 void gdp_print_line(unsigned char *pline)
@@ -833,203 +785,52 @@ void gdp_print_line(unsigned char *pline)
 //		scolling
 
 {
-  unsigned long flags;
-  unsigned char sizex, sizey; 	// character size
-  unsigned int maxx, maxy;
-  unsigned int xpos,ypos,dx;	// graphic cursor position
-  unsigned char dy;
-  
-  sizex = gdp_char_scalex*6;
-  sizey = gdp_char_scaley*9;
- 
-  maxx  = GDP_MAX_X - sizex;
-
-  if(!gdp_gotoxy(gdp_cursor_x,gdp_cursor_y)) return;		// adjust graphis/text cursor
-
- 
-
-  while(*pline){ // eol = NULL
-
-    // pre-erase position
-    gdp_getxy();			// store current cursor position
-
-    xpos=gdp_xpos-gdp_char_scalex;		// for moving drawing cursor to start of last spacing
-    ypos=gdp_ypos;
-
-    GDP_WAIT_READY;
-    GDP_CMD = GDP_CMD_ERASER;		// select eraser pen
-    GDP_WAIT_READY;
-    GDP_CMD = GDP_CMD_PENDOWN;
-
-					// 1st step: erase space between last and current character if cursor position > 0:
-    if(gdp_cursor_x > 0){
-      dy = sizey-gdp_char_scaley-1;		// deltaY is size of character without vertical spacing
-      while(xpos < gdp_xpos){			// erase spacing
-
-	GDP_WAIT_READY;
-	GDP_X_MSB = HIGH_BYTE(xpos);
-	GDP_X_LSB = LOW_BYTE(xpos);
-	GDP_Y_MSB = HIGH_BYTE(ypos);
-	GDP_Y_LSB = LOW_BYTE(ypos);
-						  // draw (erase) vertical line of sizey at xpos (ignore dx)
-	GDP_WAIT_READY;
-	GDP_DELTAY = dy;			
-	GDP_WAIT_READY;
-	GDP_CMD = 0x12;	
-
-	xpos++;      				
-      }
-
-      GDP_WAIT_READY;
-      GDP_Y_MSB = HIGH_BYTE(gdp_ypos);	// restore cursor position
-      GDP_Y_LSB = LOW_BYTE(gdp_ypos);
-      GDP_X_MSB = HIGH_BYTE(gdp_xpos);
-      GDP_X_LSB = LOW_BYTE(gdp_xpos);
- 
-    }
-
-					// 2nd step: erase space of current character
-  
-
-    //GDP_CPORT_BK = GDP_COLOR_BLACK;	// set bk color to black
-    GDP_WAIT_READY;			
-    GDP_CMD = GDP_CMD_5x8;		// erase character
-
-    GDP_WAIT_READY;
-    GDP_CMD = GDP_CMD_WRITER;		// select writer
-    GDP_WAIT_READY; 
-    GDP_X_MSB = HIGH_BYTE(gdp_xpos);	// restore xpos
-    GDP_X_LSB = LOW_BYTE(gdp_xpos);
-
-    //GDP_CPORT_BK = gdp_bkcolor;		// restore bk color
-    
-    // print character
-    GDP_WAIT_READY;
-    
-    if( (*pline  > 0x1F) &&(*pline < 0x7F) ){	// printable character (7bit ASCII)
-    	GDP_CMD =*pline++; 				// print character
-
-	if(gdp_extended_char(pline)) {
-	  GDP_CTRL2 |= GDP_CHAR_USER;
-	  GDP_WAIT_READY;
-	  GDP_CMD =*pline++;
-	  GDP_WAIT_READY;
-	  GDP_CTRL2 &= ~GDP_CHAR_USER;
-	} else {
-	  GDP_CMD =*pline++; 
-	}
-
-
-    	gdp_cursor_x ++;				// advance text cursor
-    }else if( *pline < 0x20 ){			// Ctrl-character
-	switch(*pline){
-		case (ASCII_CR):	if(*pline++ == ASCII_LF){ // DOS CR+LF encoding
-						*pline++;	    	// simply advance pointer
-						gdp_cursor_x = gdp_max_cx + 1; // move cursor to EOL
-					}else{			  // Unix return to SOL
-						gdp_cursor_x = 0; 	// move cursor to start of line
-					}
-					break;
-		case (ASCII_LF):	// Unix CR+LF encoding
-					gdp_cursor_x = gdp_max_cx + 1;					
-					*pline++; 
-					break;
-		case (ASCII_TAB):	// handle tabulator
-					break;
-	}
-    }else{					// extended 8-bit ASCII
-	  gdp_extended_char(pline);
-	  GDP_WAIT_READY;
-	  GDP_CTRL2 |= GDP_CHAR_USER;
-	  GDP_WAIT_READY;
-	  GDP_CMD =*pline++;
-	  GDP_WAIT_READY;
-	  GDP_CTRL2 &= ~GDP_CHAR_USER;
-    }
-
-
-    // check cursor position
-    if(gdp_cursor_x > gdp_max_cx){			// cursor is at eol, so try to advance to next line
-      gdp_cursor_x = 0;					// move textcursor to start of line
-      gdp_cursor_y++;					// advance line
-
-      if(gdp_cursor_y > gdp_max_cy){				// cursor is at bottom of screen, scoll one line up
-	gdp_gotoxy(0,0);					// erase first line
-
-	xpos = gdp_xpos;
-	ypos = gdp_ypos;
-	maxy = ypos + sizey - gdp_char_scaley;
-	dx = 255;					// erase line in two steps (we assume a maximum of 512 bits h resolution !!)
-
-	GDP_WAIT_READY;						// wait for GDP 	
-	GDP_CPORT_FG = GDP_COLOR_BLACK;				// a scrolled line will be erased to black
-	GDP_CPORT_BK = GDP_COLOR_BLACK;
-
-	GDP_WAIT_READY;
-	GDP_CMD = GDP_CMD_ERASER;		// select erase
-      
-	while(ypos < maxy){			// works because maxy and ypos is 16bit (this is important if maxy is wrapped around...)
-						    // erase line by line
-	    GDP_WAIT_READY;
-	    GDP_X_MSB = HIGH_BYTE(xpos);
-	    GDP_X_LSB = LOW_BYTE(xpos);
-	    GDP_Y_LSB = LOW_BYTE(ypos);		// only LSB is needed for 0..255 !!
-						  // draw (erase) vertical line of sizey at xpos (ignore dx)
-	    GDP_WAIT_READY;
-	    GDP_DELTAX = dx;			// need to be done in 2 steps ( 511 > 255)
-	    GDP_WAIT_READY;
-	    GDP_CMD = 0x10;
-
-	    GDP_WAIT_READY;
-	    GDP_DELTAX = dx;
-	    GDP_WAIT_READY;
-	    GDP_CMD = 0x10;
-	
-	    ypos++;
-	}
-
-	GDP_WAIT_READY;						// wait for GDP 	
-	GDP_CPORT_FG = gdp_fgcolor;				// restore fg color
-	GDP_CPORT_BK = gdp_bkcolor;				// restore bk color
-
-	gdp_scrollreg -= sizey;					// scroll 1 line up
-	GDP_SCROLL = gdp_scrollreg;
-
-	gdp_cursor_x = 0;					// move text cursor to start of last line
-	gdp_cursor_y = gdp_max_cy;
-
-	GDP_WAIT_READY;
-	GDP_CMD = GDP_CMD_WRITER;		// select writer
-  
-      }
-  
-      gdp_gotoxy(gdp_cursor_x,gdp_cursor_y);      
-    }
-    
-  }
-}
-
-void gdp_set_page(unsigned char writepage, unsigned char viewpage, unsigned char xormode)
-{
-  unsigned long flags;
-
-  gdp_page = (writepage << 6) + (viewpage << 4) + xormode;   // save to global flag
- 
-  //GDP_WAIT_READY; // wait for gdp to be ready for new command
-  
-  //GDP_PAGE = gdp_page;	
-
-  nkc_setpage(writepage, viewpage);
-				// dodo: fix display error 
-  if(GDP_FPGA){				// set transparent mode (only GDP-FPGA)
-    GDP_WAIT_READY; 			// wait for gdp to be ready for new command
-    if(gdp_transparent){
-      SET_BIT(5,GDP_CTRL2);
-    }else{
-      CLEAR_BIT(5,GDP_CTRL2);
+  while(*pline)
+  { // eol = NULL      
+    if( *pline < 0x20 )
+    {			// Ctrl-character
+      	 switch(*pline)
+         {
+      		case (ASCII_CR):	pline++;
+                            if(*pline == ASCII_LF)
+                            { // DOS CR+LF encoding
+                  					 	pline++;	    	                // simply advance pointer
+                  						gdp_cursor_x = 1;               // move cursor to SOL
+                              gdp_cursor_y++;                 // move cursor to next line
+                  					}else{			                      // Unix return to SOL
+                  						gdp_cursor_x = 1; 	            // move cursor to start of line
+                  					}
+                            if(gdp_cursor_y < gdp_max_cy) gdp_gotoxy(gdp_cursor_x,gdp_cursor_y);
+                            else
+                            {
+                              //Scoll Page ....
+                              gdp_scroll_up();
+                            }
+                            gdp_gotoxy(gdp_cursor_x,gdp_cursor_y); 
+                  					break;
+      		case (ASCII_LF):	// Unix CR+LF encoding
+                  					pline++;                       // simply advance pointer
+                            gdp_cursor_x = 1;               // move cursor to SOL
+                            gdp_cursor_y++;                 // move cursor to next line
+                            if(gdp_cursor_y < gdp_max_cy) gdp_gotoxy(gdp_cursor_x,gdp_cursor_y);
+                            else
+                            {
+                              //Scoll Page ....
+                              gdp_scroll_up();
+                            }
+                            gdp_gotoxy(gdp_cursor_x,gdp_cursor_y);
+                  					break;
+      		case (ASCII_TAB):	// handle tabulator
+      					           break;
+      	}
+    }else
+    {			
+      gdp_put_char(*pline++);
     }
   }
 }
+
+
 
 void gdp_set_textscale(unsigned char scalex, unsigned char scaley)
 {

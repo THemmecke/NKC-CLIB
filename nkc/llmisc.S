@@ -108,10 +108,10 @@ timerinit:
 	clr (%a0)
 
 	lea oldint7c,%a0
-        move.l 0x7c, (%a0)       	/* save old int vector */
+    move.l 0x7c, (%a0)       	/* save old int vector */
 	lea oldint74,%a0
 	move.l 0x74, (%a0)
-        lea trap1F,%a0
+    lea trap1F,%a0
 #else
 	lea kqstart(%pc), %a0		/* clear Key-Queue Vars */
 	clr (%a0)
@@ -121,66 +121,66 @@ timerinit:
 	clr (%a0)
 
 	lea oldint7c(%pc),%a0
-        move.l 0x7c, (%a0)       	/* save old int vector */
+    move.l 0x7c, (%a0)       	/* save old int vector */
 	lea oldint74(%pc),%a0
 	move.l 0x74, (%a0)
-        lea trap1F(%pc),%a0	
+    lea trap1F(%pc),%a0	
 #endif
-        move.l %a0, 0x7c         	/* install new int vector */
+    move.l %a0, 0x7c         	/* install new int vector */
 	move.l %a0, 0x74
         
 #ifdef M68000
-        lea ticks,%a0
+    lea ticks,%a0
 #else
-        lea ticks(%pc),%a0
+    lea ticks(%pc),%a0
 #endif
-        move.b #0x0,(%a0)
+    move.b #0x0,(%a0)
         
-        lea TIMER1_CTRL.w,%a0        	/* adresse ctrl-reg in a0 	*/
-        lea TIMER1_HI.w,%a1          	/* adresse hi-reg in a1	*/
-        lea TIMER1_LO.w,%a2          	/* adresse lo-reg in a2 */
+    lea TIMER1_CTRL.w,%a0        	/* adresse ctrl-reg in a0 	*/
+    lea TIMER1_HI.w,%a1          	/* adresse hi-reg in a1	*/
+    lea TIMER1_LO.w,%a2          	/* adresse lo-reg in a2 */
 
-        move.b #4,(%a0)          	/* schreibe preset und timer register */
+    move.b #4,(%a0)          	/* schreibe preset und timer register */
         				/* timer counts with 1Mhz, CLOCKS_PER_SEC = 1000 => counter=1000=0x03e8 => overflow after 50 days */
-        move.b #0x03,(%a1)        	/* hi-byte */
-        move.b #0xe8,(%a2)        	/* low-byte */
-        move.b #0b10000001,(%a0)  	/* start timer, enable interupt */
+    move.b #0x03,(%a1)        	/* hi-byte */
+    move.b #0xe8,(%a2)        	/* low-byte */
+    move.b #0b10000001,(%a0)  	/* start timer, enable interupt */
 	andi #0xf8ff, %sr		/* Interrups freigeben	*/
 	rts
 	
 timerclose:
 	lea TIMER1_CTRL.w,%a0        	/* adresse ctrl-reg in a0 */
 	move.b #0,(%a0)          	/* stop timer and interrupts */
-        ori #0x0700, %sr		/* Interrupts aus	*/
+    ori #0x0700, %sr		/* Interrupts aus	*/
 #ifdef M68000
-        lea oldint7c,%a0
+    lea oldint7c,%a0
 #else
-        lea oldint7c(%pc),%a0
+    lea oldint7c(%pc),%a0
 #endif
-        move.l (%a0),0x7c       	/* restore old interrupt */
+    move.l (%a0),0x7c       	/* restore old interrupt */
 #ifdef M68000
 	lea oldint74,%a0
 #else
 	lea oldint74(%pc),%a0
 #endif
-        move.l (%a0),0x74       	/* restore old interrupt */
-        rts
+    move.l (%a0),0x74       	/* restore old interrupt */
+    rts
 		
 /* TIMER INTERRUPT ROUTINE */	
 trap1F:
-        movem.l %a0-%a6/%d0-%d7,-(%sp)
-        move %sr,-(%sp)
+    movem.l %a0-%a6/%d0-%d7,-(%sp)
+    move %sr,-(%sp)
 	ori #0x0700, %sr			/* Interrupts aus */
 /*
-        lea TIMER1_CTRL.w,%a0
-        move.b #0b10000001,(%a0)  /* clear ovl bit(6), continue running(0), enable INT(7) */	
+    lea TIMER1_CTRL.w,%a0
+    move.b #0b10000001,(%a0)  /* clear ovl bit(6), continue running(0), enable INT(7) */	
 */        
 #ifdef M68000
-        lea ticks,%a0
+    lea ticks,%a0
 #else
-        lea ticks(%pc),%a0
+    lea ticks(%pc),%a0
 #endif
-        add.l #1,(%a0)			/* increment tick counter */
+    add.l #1,(%a0)			/* increment tick counter */
 	
 	/*----- Ctrl-C check -------*/
 checkkbd:
@@ -190,22 +190,22 @@ checkkbd:
 	cmp.b #0x03, %d0			/* check Ctrl-C (incl. Strobe-Flag) */
  	bne.s getkbd	 			/* kein ctrl-c 	*/
  	
-        tst.b NKC_KEY_DIP.w			/* Reset Strobe-Flag */
+    tst.b NKC_KEY_DIP.w			/* Reset Strobe-Flag */
         
 #ifdef M68000
-        writeln ctrlctxt
+    writeln ctrlctxt
 #else
 	writeln ctrlctxt(%pc)
 #endif
         
-        /* - SIG senden */
-        move.l #21,-(%sp)			/* raise(SIGBREAK); (sollte es raise(SIGINT) sein ?)*/
-        /*bsr.l raise Problem mit 68000 (illegal instruction) => dem Compiler überlassen */
-        bsr raise
+    /* - SIG senden */
+    move.l #21,-(%sp)			/* raise(SIGBREAK); (sollte es raise(SIGINT) sein ?)*/
+    /*bsr.l raise Problem mit 68000 (illegal instruction) => dem Compiler überlassen */
+    bsr raise
 
-        /* muss hier noch ein bra tr1Fend rein oder kommt man hier nie an? */
-        /* im Grunde kommt man hier nie an, weil raise(SIGBREAK) das Programm beendet */
-        bra tr1Fend /* so ist es "sauberer" */
+    /* muss hier noch ein bra tr1Fend rein oder kommt man hier nie an? */
+    /* im Grunde kommt man hier nie an, weil raise(SIGBREAK) das Programm beendet */
+    bra tr1Fend /* so ist es "sauberer" */
         
 getkbd:
 #ifdef M68000
@@ -223,7 +223,7 @@ getkbd:
 	addq #1, (%a1)			/* kqanz - ein Zeichen mehr	*/
 	move (%a2), %d1			/* kqend			*/
 	move.b %d0, 0(%a0, %d1.w)	/* Zeichen speichern		*/
-        tst.b NKC_KEY_DIP.w		/* Reset Strobe-Flag		*/
+    tst.b NKC_KEY_DIP.w		/* Reset Strobe-Flag		*/
 	addq #1, %d1
 	and #0xff, %d1			/* auf 0..255			*/
 	move %d1, (%a2)			/* kqend			*/
@@ -233,12 +233,12 @@ getkbd:
 tr1Fend:
 	
 	lea TIMER1_CTRL.w,%a0
-        move.b #0b10000001,(%a0)  /* clear ovl bit(6), continue running(0), enable INT(7) */	
+    move.b #0b10000001,(%a0)  /* clear ovl bit(6), continue running(0), enable INT(7) */	
         
-        move (%sp)+,%sr 
-        movem.l (%sp)+,%a0-%a6/%d0-%d7
+    move (%sp)+,%sr 
+    movem.l (%sp)+,%a0-%a6/%d0-%d7
 
-        rte
+    rte
 
 
 			
@@ -299,6 +299,63 @@ keyci01:
 	movem.l (%sp)+, %d1/%d7/%a0-%a2
 	rts   
 		
+
+/*
+Ohne GP !
+
+char _keyci(void);
+*/
+_keyci:	.global _keyci
+	movem.l %d1/%d7/%a0-%a2, -(%sp)
+#ifdef M68000
+	lea keyqueue, %a0
+	lea kqanz, %a1
+	lea kqstart, %a2
+#else
+	lea keyqueue(%pc), %a0
+	lea kqanz(%pc), %a1
+	lea kqstart(%pc), %a2
+#endif
+/*
+	move #_CURSEIN, %d7
+	trap #1
+*/	
+_keyci01:
+/*
+	move #_AUTOFLIP, %d7
+	trap #1
+*/
+ 	tst (%a1)			// kqanz
+	beq.s _keyci01			// Warten auf Zeichen
+
+	move (%a2), %d1			// kqstart
+	move.b 0(%a0, %d1.w), %d0
+	addq #1, %d1			// Queue-Start ein nach hinten
+	and #0xff, %d1			// auf 0..255 bringen
+	move %d1, (%a2)			// kqstart speichern
+	sub #1, (%a1)			// kqanz - Anzahl reduzieren
+/*	
+	move #_CURSAUS, %d7
+	trap #1
+*/	
+	movem.l (%sp)+, %d1/%d7/%a0-%a2
+	rts   
+
+/*
+Ohne GP !
+
+char _keypressed(void);
+*/
+_keypressed:	.global _keypressed	
+#ifdef M68000
+	lea kqanz, %a1	
+#else
+	lea kqanz(%pc), %a1
+#endif
+	move (%a1),%d0
+	rts   
+
+
 .data
 
 oldint74:	ds.l 1	

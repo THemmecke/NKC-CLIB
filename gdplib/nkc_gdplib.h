@@ -98,12 +98,16 @@
 #define GDP_CHAR_TILTED		0x04
 #define GDP_CHAR_VERTICAL	0x08
 #define GDP_CHAR_USER		0x10
+#define GDP_CHAR_TRANSP		0x20
+#define GDP_HWCUR_ENABLE	0x40
 
 //CSIZE
 #define GDP_GET_PSCALE(csize)	((csize >> 4) & 0x0f)			
 #define GDP_GET_QSCALE(csize)	(csize & 0x0f)
-#define GDP_SET_SCALE(p,q)	(p << 4) + q
+#define GDP_SET_SCALE(p,q)		(p << 4) + q
 
+#define CHAR_DOTS_X		5
+#define CHAR_DOTS_Y		8
 #define TEXT_SIZE_X 	80
 #define TEXT_SIZE_Y 	25
 #define GDP_MAX_X	511

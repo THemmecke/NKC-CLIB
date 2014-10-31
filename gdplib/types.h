@@ -14,4 +14,6 @@
 #define WORD unsigned short
 #define DWORD unsigned int
 
+#define BOOL u8
+
 #endif
