@@ -4,8 +4,7 @@ LIBCSRC=$(BASEDIR)/lib/
 INCLUDE=$(BASEDIR)/include
 CLIBPATH=$(BASEDIR)/lib
 CLIB=CC
-CONIOLIB=conio
-GDPLIB=gdp
+
 ############## define the target cpu (68000, 68008, 68020) #######################
 CPU=68020
 
@@ -23,9 +22,6 @@ CONFIG_FS = 1
 CONFIG_FS_NKC = 1
 CONFIG_FS_FAT = 1
 
-############## use conio.h ? ####################################################
-CONFIG_CONIO = 1
-
 
 ############# DEBUG configuration #################################################
 CONFIG_DEBUG = 0
@@ -34,9 +30,6 @@ CONFIG_DEBUG_GIDE_C = 0
 CONFIG_DEBUG_GIDE_S = 0
 CONFIG_DEBUG_FF = 0
 CONFIG_DEBUG_XXPRINTF = 1
-
-
-
 
 ############## tell if internal math lib should be used (/math) ############################
 # 0 = no internal, use libgcc routines, 1 = use internal math, needs FPU !
@@ -79,15 +72,6 @@ CCFLAGS += -DCONFIG_FS_NKC
 endif
 ifeq ($(CONFIG_FS_FAT),1)
 CCFLAGS += -DCONFIG_FS_FAT
-endif
-
-# ############ use conio.h ############################
-ifeq ($(CONFIG_CONIO),1)
-CCFLAGS += -DCONFIG_CONIO
-endif
-
-ifeq ($(CONFIG_CONIO),1)
-CCFLAGS += -DCONFIG_GDPLIB
 endif
 
 # DEBUG options ####################
@@ -144,14 +128,6 @@ LDFLAGS += -L$(CLIBPATH)
 # ######### tell use the CLIB #########################
 LDFLAGS += -l$(CLIB)
 
-# ######### tell use CONIO #########################
-ifeq ($(CONFIG_CONIO),1)
-LDFLAGS += -l$(CONIOLIB)
-endif
-
-ifeq ($(CONFIG_CONIO),1)
-LDFLAGS += -l$(GDPLIB)
-endif
 
 # ######### use IEEE754 fdlibm.a ################################
 ifeq ($(CONFIG_IEEE_MATH),1)

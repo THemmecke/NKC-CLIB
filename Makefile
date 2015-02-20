@@ -8,13 +8,6 @@ ifeq ($(CONFIG_FS),1)
 MODULES += fs
 endif
 
-ifeq ($(CONFIG_CONIO),1)
-MODULES += conio
-endif
-
-ifeq ($(CONFIG_CONIO),1)
-MODULES += gdplib
-endif
 
 all:
 	for dir in $(MODULES); do \
@@ -29,5 +22,4 @@ clean:
         done
 	rm -f object/*.o
 	rm -f lib/libCC.a; \
-	rm -f lib/libconio.a; \
 	rm -f lib/startup.o
