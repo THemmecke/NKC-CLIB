@@ -1,0 +1,84 @@
+
+
+# disable all implicit make rules:
+.SUFFIXES:
+
+# wehere am i 
+BASEDIR=$(shell  pwd)/..
+
+
+include $(BASEDIR)/Makefile.rules
+
+
+# ###################################################
+
+CLIBPATH=$(BASEDIR)/object/
+INCLUDE=$(BASEDIR)/include
+ARCH=$(BASEDIR)/arch/m68k
+
+export PATH:=/opt/m68k-elf-tools/bin:$(PATH)
+
+# OBJECTS= abort.o abs.o acos.o argset.o asctime.o asin.o assert.o atan.o atexit.o atof.o atoi.o bsearch.o calloc.o ceil.o clearerr.o clock.o cos.o cosh.o ctime.o ctype.o difftime.o div.o divs.o divu.o envset.o exit.o exp.o fabs.o fclose.o fflush.o fget.o fgetpos.o fgets.o floor.o fmod.o fopen.o fprintf.o fputc.o fputs.o fread.o free.o freopen.o frexp.o fseek.o fsetpos.o ftell.o fwrite.o getenv.o gets.o gmtime.o ldexp.o llmalloc.o llmisc.o llopen.o llsig.o llstd.o log.o log10.o lotime.o malloc.o mbtowc.o memchr.o memcmp.o memcpy.o memmove.o memset.o mktime.o modf.o mods.o modu.o muls.o mulu.o phictype.o pow.o printf.o putget.o puts.o qsort.o rand.o readbuf.o realloc.o remove.o rename.o rewind.o scanf.o setbuf.o setjmp.o setvbuf.o signal.o sin.o sinh.o sprintf.o sqrt.o sscanf.o startup.o stkchk.o strpbrk.o strcat.o strchr.o strcmp.o strcpy.o strcspn.o strdup.o strerr.o strftime.o strlen.o strncat.o strncmp.o strncpy.o strrchr.o strstr.o strtok.o strtoul.o system.o tan.o tanh.o  time.o tmpfil.o ungetc.o wctomb.o writebuf.o test.o
+
+OBJECTS= abort.o abs.o acos.o argset.o asctime.o asin.o assert.o atan.o atexit.o atof.o atoi.o bsearch.o calloc.o ceil.o clearerr.o clock.o cos.o cosh.o ctime.o ctype.o difftime.o div.o divs.o divu.o envset.o exit.o exp.o fabs.o fclose.o fflush.o fget.o fgetpos.o fgets.o floor.o fmod.o fopen.o fprintf.o fputc.o fputs.o fread.o free.o freopen.o frexp.o fseek.o fsetpos.o ftell.o fwrite.o getenv.o gets.o gmtime.o ldexp.o first.o llmisc.o llopen.o llopenc.o llsig.o llstd.o llnkc.o log.o log10.o lotime.o malloc.o mbtowc.o memchr.o memcmp.o memcpy.o memmove.o memset.o mktime.o modf.o mods.o modu.o muls.o mulu.o phictype.o pow.o printf.o putget.o puts.o qsort.o rand.o readbuf.o realloc.o remove.o rename.o rewind.o scanf.o setbuf.o setjmp.o setvbuf.o signal.o sin.o sinh.o sprintf.o sqrt.o sscanf.o startup.o stkchk.o strpbrk.o strcat.o strchr.o strcmp.o strcpy.o strcspn.o strdup.o strerr.o strftime.o strlen.o strncat.o strncmp.o strncpy.o strrchr.o strstr.o strtok.o strtoul.o system.o tan.o tanh.o  time.o tmpfil.o ungetc.o wctomb.o writebuf.o test.o
+
+LIBOBJECTS= abort.o abs.o acos.o argset.o asctime.o asin.o assert.o atan.o atexit.o atof.o atoi.o bsearch.o calloc.o ceil.o clearerr.o clock.o cos.o cosh.o ctime.o ctype.o difftime.o div.o divs.o divu.o envset.o exit.o exp.o fabs.o fclose.o fflush.o fget.o fgetpos.o fgets.o floor.o fmod.o fopen.o fprintf.o fputc.o fputs.o fread.o free.o freopen.o frexp.o fseek.o fsetpos.o ftell.o fwrite.o getenv.o gets.o gmtime.o ldexp.o first.o llmisc.o llopen.o llopenc.o llsig.o llstd.o llnkc.o log.o log10.o lotime.o malloc.o mbtowc.o memchr.o memcmp.o memcpy.o memmove.o memset.o mktime.o modf.o mods.o modu.o muls.o mulu.o phictype.o pow.o printf.o putget.o puts.o qsort.o rand.o readbuf.o realloc.o remove.o rename.o rewind.o scanf.o setbuf.o setjmp.o setvbuf.o signal.o sin.o sinh.o sprintf.o sqrt.o sscanf.o stkchk.o strpbrk.o strcat.o strchr.o strcmp.o strcpy.o strcspn.o strdup.o strerr.o strftime.o strlen.o strncat.o strncmp.o strncpy.o strrchr.o strstr.o strtok.o strtoul.o system.o tan.o tanh.o  time.o tmpfil.o ungetc.o wctomb.o writebuf.o
+
+OUTFILE=test
+
+
+LOADADDR=1024
+#LOADADDR=0
+
+
+# -M		print map file	
+# -T ram.ld	use linker script "ram.ld"
+# -r 		Generate relocateable output  (compile without -r to see undefined symbols)
+# --cref	Output cross reference table
+# -o 		Set output file name
+LD = m68k-elf-ld --verbose -static --whole-archive -L$(CLIBPATH) -M -T ram.ld -r --cref  -o
+#LD = m68k-elf-ld -M -T ram.ld  -r --cref -o	
+#EF = m68k-elf-elf2flt -o
+
+	
+all: $(OBJECTS)	
+	$(LD) $(OUTFILE).elf $(OBJECTS) > $(OUTFILE).map; \
+	elf2bin -s -v -l $(LOADADDR) -o $(OUTFILE).68k $(OUTFILE).elf
+#	$(EF) $(OUTFILE).flt $(OUTFILE).elf; \
+#	flt2bin -o $(OUTFILE).68k $(OUTFILE).flt
+
+	
+# define a pattern rule to compile all *.c files to *.o files:
+%.o: %.c
+#       $< = xxx.o, $@ = xxx.c, $* = xxx
+	$(CC) $(INCLUDE) $(CCFLAGS) $(AFLAGS) -c $< > $*.lst
+
+# define a pattern rule to compile all *.S files to *.o files:
+%.o: %.S
+#       $< = xxx.o, $@ = xxx.c, $* = xxx
+	$(CC) $(CCFLAGS) $(AFLAGS) -c $< -o $@ > $*.lst
+	
+# create a static library	
+libc:
+	ar rcs libCC.a $(LIBOBJECTS)
+	
+# use the static library with our test.c program
+# and create tests.68k executable
+# m68k-elf-gcc --static -L. -lCC -o test2.68k test.c	
+testlib: test.o
+	$(LD) test.elf test.o startup.o -lCC > test.map;  \
+	elf2bin -s -v -l $(LOADADDR) -o test.68k test.elf
+
+clean:
+	rm -f $(OUTFILE).o; \
+	rm -f $(OUTFILE).lst; \
+	rm -f $(OUTFILE).68k; \
+	rm -f $(OUTFILE).map; \
+	rm -f $(OUTFILE).elf; \
+	rm -f $(OUTFILE).flt; \
+	rm -f *.o; \
+	rm -f *.lst; \
+	rm -f *.68k; \
+	rm -f *.map; \
+	rm -f .elf; \
+	rm -f *.flt
