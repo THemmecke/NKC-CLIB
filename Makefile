@@ -1,4 +1,4 @@
-# Top-Level Makefile
+# Top-Level Makefile (development)
 
 include Makefile.rules
 

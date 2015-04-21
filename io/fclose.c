@@ -27,7 +27,9 @@ void fileinit(void)
 	_ll_init_std(); // nkc/llopen.S (serup standard file streams stdin, stdout, stderr)
 	
 	#ifdef CONFIG_FS
-	_ll_init_fs();  // nkc/llopen.c (setup filesystems: file descriptors, fat, jadosfs...)
+	_ll_init_fs();  // fs/fs.c (setup filesystems: file descriptors, fat, jadosfs...)
+			//  ->> nkcfs_init_fs();
+			//  ->> fatfs_init_fs();
 	#endif
 }
 

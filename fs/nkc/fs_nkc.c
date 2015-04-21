@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include "../fs.h"
+#include <fs.h>
 #include "fs_nkc.h"
 
 #include "../../nkc/llnkc.h"

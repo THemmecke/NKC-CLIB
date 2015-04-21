@@ -2,9 +2,9 @@
 #define __DEBUG_H
 
 
-#ifdef CONFIG_DEBUG
+#ifdef CONFIG_DEBUG_FS_FAT
 
-#include "../../../nkc/llnkc.h"
+#include "../../nkc/llnkc.h"
 
 #define dbg(format,arg...) \
 	printf(format,##arg); \

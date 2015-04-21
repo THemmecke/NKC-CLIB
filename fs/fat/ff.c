@@ -113,11 +113,14 @@
 /                   Fixed creation of an entry with LFN fails on too many SFN collisions.
 /---------------------------------------------------------------------------*/
 
-#include "ff.h"			/* Declarations of FatFs API */
+#include <ff.h>			/* Declarations of FatFs API */
 #include "diskio.h"		/* Declarations of disk I/O functions */
 
 #include "debug.h"
 
+#ifdef DEBUG_FS_FAT
+#include "../nkc/llnkc.h"
+#endif
 
 /*--------------------------------------------------------------------------
 
@@ -2888,7 +2891,10 @@ FRESULT f_close (
 )
 {
 	FRESULT res;
-
+	
+   #ifdef CONFIG_DEBUG_FS_FAT
+   nkc_write("[ fclose ....\n");
+   #endif
 
 #if !_FS_READONLY
 	res = f_sync(fp);					/* Flush cached data */
@@ -2910,6 +2916,11 @@ FRESULT f_close (
 #endif
 		}
 	}
+	
+	#ifdef CONFIG_DEBUG_FS_FAT
+	nkc_write("... fclose ]\n");
+	#endif
+   
 	return res;
 }
 

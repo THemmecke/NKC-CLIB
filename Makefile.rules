@@ -20,16 +20,19 @@ CONFIG_IEEE_MATH=0
 ############## use filesystems ? ####################################################
 CONFIG_FS = 1
 CONFIG_FS_NKC = 1
-CONFIG_FS_FAT = 1
+CONFIG_FS_FAT = 0
 
 
 ############# DEBUG configuration #################################################
 CONFIG_DEBUG = 0
-CONFIG_DEBUG_DISKIO = 0
+CONFIG_DEBUG_DISKIO = 1
 CONFIG_DEBUG_GIDE_C = 0
 CONFIG_DEBUG_GIDE_S = 0
 CONFIG_DEBUG_FF = 0
-CONFIG_DEBUG_XXPRINTF = 1
+CONFIG_DEBUG_XXPRINTF = 0
+CONFIG_DEBUG_FS = 1
+CONFIG_DEBUG_FS_NKC = 0
+CONFIG_DEBUG_FS_FAT = 0
 
 ############## tell if internal math lib should be used (/math) ############################
 # 0 = no internal, use libgcc routines, 1 = use internal math, needs FPU !
@@ -98,6 +101,18 @@ ifeq ($(CONFIG_DEBUG_XXPRINTF),1)
 CCFLAGS += -DCONFIG_DEBUG_XXPRINTF
 endif
 
+ifeq ($(CONFIG_DEBUG_FS),1)
+CCFLAGS += -DCONFIG_DEBUG_FS
+endif
+
+
+ifeq ($(CONFIG_DEBUG_FS_NKC),1)
+CCFLAGS += -DCONFIG_DEBUG_FS_NKC
+endif
+
+ifeq ($(CONFIG_DEBUG_FS_FAT),1)
+CCFLAGS += -DCONFIG_DEBUG_FS_FAT
+endif
 
 endif
 
