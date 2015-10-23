@@ -1,0 +1,210 @@
+GNU ld (GNU Binutils) 2.24
+  Unterstützte Emulationen:
+   m68kelf
+Skriptdatei /home/torsten/develop/myCLib/CLIBS/TEST/../lib/ram.ld geöffnet
+using external linker script:
+==================================================
+
+MEMORY {
+	ram    : ORIGIN = 0x000000, LENGTH = 0x1FFFFF
+}
+
+
+
+SECTIONS {
+	
+	/* Code */
+        .text : {
+        	/*. = 0x400;*/ /* standard nkc start address for 68k programs */
+        	_start = . ;
+		_stext = . ;
+		
+		/* startup.S needs to be first file */		
+		*startup.o(.text)
+		
+		. = ALIGN(2) ;
+        	*(.text)
+        	. = ALIGN(2);
+		_etext = ALIGN(2) ;
+        } > ram =0x4E71 /* set the fill pattern for unspecified regions (due to alignement) to NOP (used by linker)*/
+
+	/* Data */
+	.data : {
+		. = ALIGN(2) ;
+		_sdata = . ;
+		*(.data)
+		. = ALIGN(2) ;
+		*(.rodata)
+		. = ALIGN(2) ;
+		_edata = ALIGN(2) ;
+	} > ram
+
+        /* Debugging Sections */
+        
+        
+        .comment  : { *(.comment) } > ram
+        .stab  : { *(.stab) } > ram
+
+
+	.bss : {
+		_sbss = . ;
+		*(.bss)
+		. = ALIGN(4) ;
+		
+		/* global variables .comm */
+		*(COMMON)
+		. = ALIGN(4) ;
+		_ebss = ALIGN(0x2);
+	} > ram
+        
+        
+
+}
+
+
+==================================================
+Der Versuch, /home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a zu öffnen, war erfolgreich
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)abort.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)argset.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)asctime.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)assert.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)atexit.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)atof.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)atoi.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)bsearch.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)calloc.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)clearerr.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)clock.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)ctime.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)ctype.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)difftime.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)envset.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)exit.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fclose.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fflush.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fget.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fgetpos.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fgets.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fopen.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fprintf.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fputc.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fputs.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fread.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)free.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)freopen.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fseek.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fsetpos.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)ftell.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fwrite.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)getenv.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)gets.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)gmtime.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)first.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)llmisc.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)llopen.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)llsig.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)llstd.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)llnkc.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)lotime.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)malloc.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)mbtowc.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)memchr.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)memcmp.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)memcpy.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)memmove.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)memset.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)mktime.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)phictype.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)printf.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)putget.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)puts.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)qsort.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)readbuf.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)realloc.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)remove.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)rename.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)rewind.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)scanf.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)setbuf.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)setjmp.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)setvbuf.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)signal.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)sprintf.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)sscanf.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strpbrk.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strcat.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strchr.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strcmp.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strcpy.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strcspn.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strdup.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strerr.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strftime.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strlen.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strncat.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strncmp.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strncpy.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strrchr.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strstr.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strtok.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)strtoul.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)system.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)time.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)tmpfil.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)ungetc.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)wctomb.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)writebuf.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)startup.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)divmod64.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)rand.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)abs.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fs.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fs_nkc.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fs_nkcS.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_mulsi3.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_udivsi3.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_nedf2.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_divsi3.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_umodsi3.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_modsi3.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_double.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_float.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_floatex.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_eqdf2.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_gtdf2.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_gedf2.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_ltdf2.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_ledf2.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_eqsf2.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_nesf2.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_gtsf2.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_gesf2.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_ltsf2.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)_lesf2.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fpgnulib.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)libgcc2.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)acos.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)asin.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)atan.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)ceil.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)cos.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)cosh.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)exp.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fabs.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)floor.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)fmod.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)frexp.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)ldexp.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)log.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)log10.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)modf.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)pow.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)sin.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)sinh.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)sqrt.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)tan.o
+(/home/torsten/develop/myCLib/CLIBS/TEST/../lib/libCC.a)tanh.o
+Der Versuch, test.o zu öffnen, war erfolgreich
+test.o
+Der Versuch, mem.o zu öffnen, war erfolgreich
+mem.o
