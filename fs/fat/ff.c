@@ -114,13 +114,10 @@
 /---------------------------------------------------------------------------*/
 
 #include <ff.h>			/* Declarations of FatFs API */
-#include "diskio.h"		/* Declarations of disk I/O functions */
+#include <diskio.h>		/* Declarations of disk I/O functions */
 
-#include "debug.h"
+#include <debug.h>
 
-#ifdef DEBUG_FS_FAT
-#include "../nkc/llnkc.h"
-#endif
 
 /*--------------------------------------------------------------------------
 
@@ -488,11 +485,21 @@ typedef struct {
 /  compiler or start-up routine is out of ANSI-C standard.
 */
 
-#if _VOLUMES >= 1 || _VOLUMES <= 10
+static char* FAT_DRIVE_NAMES[] =
+{  
+  "HDA","HDB","HDC","HDD"
+};
+
+#if _USE_EXTENSIONS
 static
-FATFS *FatFs[_VOLUMES];		/* Pointer to the file system objects (logical drives) */
+FATFS *FatFs[_DISKS][_VOLUMES];		/* Pointer to the file system objects (logical drives) in fs_fat.c*/
 #else
-#error Number of volumes must be 1 to 10.
+ #if _VOLUMES >= 1 || _VOLUMES <= 10
+static
+FATFS *FatFs[_VOLUMES];		/* Pointer to the file system objects (logical drives) in fs_fat.c */
+ #else
+ #error Number of volumes must be 1 to 10.
+ #endif
 #endif
 
 static
@@ -500,8 +507,10 @@ WORD Fsid;					/* File system mount ID */
 
 #if _FS_RPATH && _VOLUMES >= 2
 static
-BYTE CurrVol;				/* Current drive */
+BYTE CurrVol;				/* Current logical volume */
 #endif
+static
+BYTE CurrDisk;				/* Current physical disk, without _USE_EXTENSIONS this defaults to 0 (HDA) */
 
 #if _FS_LOCK
 static
@@ -2082,7 +2091,8 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) */
 	const TCHAR *tp, *tt;
 	UINT i;
 	int vol = -1;
-
+  
+	ff_dbg(" get_ldnumber (%s)....\n",*path);
 
 	if (*path) {	/* If the pointer is not a null */
 		for (tt = *path; (UINT)*tt >= (_USE_LFN ? ' ' : '!') && *tt != ':'; tt++) ;	/* Find ':' in the path */
@@ -2091,12 +2101,14 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) */
 			i = *tp++ - '0'; 
 			if (i < 10 && tp == tt) {	/* Is there a numeric drive id? */
 				if (i < _VOLUMES) {	/* If a drive id is found, get the value and strip it */
-					vol = (int)i;
-					*path = ++tt;
+					vol = (int)i;	/* return volume number */
+					*path = ++tt;	/* return path */
+					
+					ff_dbg(" (1)found vol %d, path %s\n", vol,*path);
 				}
 			} else {	/* No numeric drive number */
 #if _STR_VOLUME_ID		/* Find string drive id */
-				static const char* const str[] = {_VOLUME_STRS};
+				static const char* const str[] = {_VOLUME_STRS};  // "HDA0","HDA1","HDA2","HDA3"
 				const char *sp;
 				char c;
 				TCHAR tc;
@@ -2112,14 +2124,18 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) */
 				if (i < _VOLUMES) {	/* If a drive id is found, get the value and strip it */
 					vol = (int)i;
 					*path = tt;
+					
+					ff_dbg(" (2)found vol %d, path %s\n", vol,*path);
 				}
 #endif
 			}
 			return vol;
 		}
 #if _FS_RPATH && _VOLUMES >= 2
+		ff_dbg(" vol = CurrVol\n");
 		vol = CurrVol;	/* Current drive */
 #else
+		ff_dbg(" vol = 0\n");
 		vol = 0;		/* Drive 0 */
 #endif
 	}
@@ -2144,17 +2160,7 @@ BYTE check_fs (	/* 0:FAT boot sector, 1:Valid boot sector but not FAT, 2:Not a b
 
 	if (move_window(fs, sect) != FR_OK)			/* Load boot record */
 		return 3;
-		
-		/*
-	#ifdef NKC_DEBUG	
-	nkc_write("(&fs->win[BS_55AA]) = 0x"); nkc_write_hex8(fs->win[BS_55AA]); nkc_write("\n");
-    nkc_write("(&fs->win[BS_FilSysType]) = 0x"); nkc_write_hex8(fs->win[BS_FilSysType]); nkc_write("\n");
-	nkc_write("(&fs->win[BS_FilSysType32]) = 0x"); nkc_write_hex8(fs->win[BS_FilSysType32]); nkc_write("\n");
-    nkc_write("LD_WORD(&fs->win[BS_55AA]) = 0x"); nkc_write_hex8(LD_WORD(&fs->win[BS_55AA])); nkc_write("\n");
-    nkc_write("LD_DWORD(&fs->win[BS_FilSysType]) = 0x"); nkc_write_hex8(LD_DWORD(&fs->win[BS_FilSysType])); nkc_write("\n");
-	nkc_write("LD_DWORD(&fs->win[BS_FilSysType32]) = 0x"); nkc_write_hex8(LD_DWORD(&fs->win[BS_FilSysType32])); nkc_write("\n");	
-	#endif
-		*/
+				
 	if (LD_WORD(&fs->win[BS_55AA]) != 0xAA55)	/* Check boot record signature (always placed at offset 510/0x1FE even if the sector size is >512) */
 		return 2;
 		
@@ -2189,7 +2195,7 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 	WORD nrsv;
 	FATFS *fs;
 
-	ff_dbg(" find_volume....\n");
+	ff_dbg(" find_volume....\n"); 
 
 	/* Get logical drive number from the path name */
 	*rfs = 0;
@@ -2207,7 +2213,8 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 
 	 return FR_NOT_ENABLED;		/* Is the file system object available? */
 	}
-
+	ff_dbg(" fs object found in FatFS[]\n");
+	
 	ENTER_FF(fs);						/* Lock the volume */
 	*rfs = fs;							/* Return pointer to the file system object */
 
@@ -2216,13 +2223,15 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 		if (!(stat & STA_NOINIT)) {		/* and the physical drive is kept initialized */
 			if (!_FS_READONLY && wmode && (stat & STA_PROTECT))	/* Check write protection if needed */
 				return FR_WRITE_PROTECTED;
+			ff_dbg(" The file system object is valid\n");
+			CurrVol = vol; 				/* current volume was changed */
 			return FR_OK;				/* The file system object is valid */
 		}
 	}
 
 	/* The file system object is not valid. */
 	/* Following code attempts to mount the volume. (analyze BPB and initialize the fs object) */
-
+	ff_dbg(" fs object is not valid, trying to mount volume %d !\n",vol);
 	fs->fs_type = 0;					/* Clear the file system object */
 	fs->drv = LD2PD(vol);				/* Bind the logical drive and a physical drive */
 	stat = disk_initialize(fs->drv);	/* Initialize the physical drive */
@@ -2431,7 +2440,7 @@ FRESULT validate (	/* FR_OK(0): The object is valid, !=0: Invalid */
 
 FRESULT f_mount (
 	FATFS* fs,			/* Pointer to the file system object (NULL:unmount)*/
-	const TCHAR* path,	/* Logical drive number to be mounted/unmounted */
+	const TCHAR* path,		/* Logical drive number to be mounted/unmounted */
 	BYTE opt			/* 0:Do not mount (delayed mount), 1:Mount immediately */
 )
 {
@@ -2491,7 +2500,8 @@ FRESULT f_open (
 	BYTE *dir;
 	DEF_NAMEBUF;
 
-
+	ff_dbg("f_open: fp=0x%lx, path=%s, mode=%d\n",fp,path,mode);
+	
 	if (!fp) return FR_INVALID_OBJECT;
 	fp->fs = 0;			/* Clear file object */
 
@@ -2508,7 +2518,9 @@ FRESULT f_open (
 		res = follow_path(&dj, path);	/* Follow the file path */
 		dir = dj.dir;
 #if !_FS_READONLY	/* R/W configuration */
+		ff_dbg("f_open: R/W configuration\n");
 		if (res == FR_OK) {
+			ff_dbg("f_open: follow succeeded\n");
 			if (!dir)	/* Default directory itself */
 				res = FR_INVALID_NAME;
 #if _FS_LOCK
@@ -2519,10 +2531,12 @@ FRESULT f_open (
 		/* Create or Open a file */
 		if (mode & (FA_CREATE_ALWAYS | FA_OPEN_ALWAYS | FA_CREATE_NEW)) {
 			DWORD dw, cl;
-
+			ff_dbg("f_open: create/open file ...\n");
+			
 			if (res != FR_OK) {					/* No file, create new */
+				ff_dbg("f_open: No file, create new\n");
 				if (res == FR_NO_FILE)			/* There is no file to open, create a new entry */
-#if _FS_LOCK
+#if _FS_LOCK				
 					res = enq_lock() ? dir_register(&dj) : FR_TOO_MANY_OPEN_FILES;
 #else
 					res = dir_register(&dj);
@@ -2532,13 +2546,17 @@ FRESULT f_open (
 			}
 			else {								/* Any object is already existing */
 				if (dir[DIR_Attr] & (AM_RDO | AM_DIR)) {	/* Cannot overwrite it (R/O or DIR) */
+				        ff_dbg("f_open: Cannot overwrite it (R/O or DIR)\n");
 					res = FR_DENIED;
 				} else {
-					if (mode & FA_CREATE_NEW)	/* Cannot create as new file */
+					if (mode & FA_CREATE_NEW){	/* Cannot create as new file */
+					  ff_dbg("f_open: Cannot create as new file\n");
 						res = FR_EXIST;
+					}
 				}
 			}
 			if (res == FR_OK && (mode & FA_CREATE_ALWAYS)) {	/* Truncate it if overwrite mode */
+				ff_dbg("f_open: Truncate (overwrite mode)\n");
 				dw = get_fattime();				/* Created time */
 				ST_DWORD(dir+DIR_CrtTime, dw);
 				dir[DIR_Attr] = 0;				/* Reset attribute */
@@ -2557,12 +2575,16 @@ FRESULT f_open (
 			}
 		}
 		else {	/* Open an existing file */
+			ff_dbg("f_open: Open an existing file...\n");
 			if (res == FR_OK) {					/* Follow succeeded */
 				if (dir[DIR_Attr] & AM_DIR) {	/* It is a directory */
+					ff_dbg("f_open: error, it's a directory (1)\n");
 					res = FR_NO_FILE;
 				} else {
-					if ((mode & FA_WRITE) && (dir[DIR_Attr] & AM_RDO)) /* R/O violation */
+					if ((mode & FA_WRITE) && (dir[DIR_Attr] & AM_RDO)) {/* R/O violation */
+						ff_dbg("f_open: error, R/O violation\n");
 						res = FR_DENIED;
+					}
 				}
 			}
 		}
@@ -2578,19 +2600,24 @@ FRESULT f_open (
 		}
 
 #else				/* R/O configuration */
-		if (res == FR_OK) {					/* Follow succeeded */
+		ff_dbg("f_open: R/O configuration\n");
+		if (res == FR_OK) {					/* Follow succeeded */			
+			ff_dbg("f_open: follow succeeded\n");
 			dir = dj.dir;
 			if (!dir) {						/* Current directory itself */
 				res = FR_INVALID_NAME;
 			} else {
-				if (dir[DIR_Attr] & AM_DIR)	/* It is a directory */
+				if (dir[DIR_Attr] & AM_DIR){	/* It is a directory */
+					ff_dbg("f_open: error, it's a directory (2)\n");
 					res = FR_NO_FILE;
+				}
 			}
 		}
 #endif
 		FREE_BUF();
 
 		if (res == FR_OK) {
+			ff_dbg("f_open: FR_OK\n");
 			fp->flag = mode;					/* File access mode */
 			fp->err = 0;						/* Clear error flag */
 			fp->sclust = ld_clust(dj.fs, dir);	/* File start cluster */
@@ -2605,6 +2632,8 @@ FRESULT f_open (
 		}
 	}
 
+	ff_dbg("f_open ends\n");
+	
 	LEAVE_FF(dj.fs, res);
 }
 
@@ -2892,9 +2921,7 @@ FRESULT f_close (
 {
 	FRESULT res;
 	
-   #ifdef CONFIG_DEBUG_FS_FAT
-   nkc_write("[ fclose ....\n");
-   #endif
+   ff_dbg("[ fclose ....\n");
 
 #if !_FS_READONLY
 	res = f_sync(fp);					/* Flush cached data */
@@ -2917,9 +2944,7 @@ FRESULT f_close (
 		}
 	}
 	
-	#ifdef CONFIG_DEBUG_FS_FAT
-	nkc_write("... fclose ]\n");
-	#endif
+	ff_dbg("... fclose ]\n");	
    
 	return res;
 }
@@ -2941,9 +2966,13 @@ FRESULT f_chdrive (
 
 
 	vol = get_ldnumber(&path);
+	
+	ff_dbg(" f_chdrive(%s) => %d\n",path,vol);
+	
 	if (vol < 0) return FR_INVALID_DRIVE;
 
 	CurrVol = (BYTE)vol;
+	
 
 	return FR_OK;
 }
@@ -2958,14 +2987,17 @@ FRESULT f_chdir (
 	DIR dj;
 	DEF_NAMEBUF;
 
-
+	ff_dbg(" f_chdir( %s )\n",path);
+	
 	/* Get logical drive number */
-	res = find_volume(&dj.fs, &path, 0);
+	res = find_volume(&dj.fs, &path, 0);	
 	if (res == FR_OK) {
+		ff_dbg("found volume...\n");
 		INIT_BUF(dj);
 		res = follow_path(&dj, path);		/* Follow the path */
 		FREE_BUF();
 		if (res == FR_OK) {					/* Follow completed */
+			ff_dbg("Follow completed...\n");
 			if (!dj.dir) {
 				dj.fs->cdir = dj.sclust;	/* Start directory itself */
 			} else {
@@ -2978,6 +3010,7 @@ FRESULT f_chdir (
 		if (res == FR_NO_FILE) res = FR_NO_PATH;
 	}
 
+	ff_dbg("CurrVol=%d\n",CurrVol);
 	LEAVE_FF(dj.fs, res);
 }
 
@@ -2992,14 +3025,23 @@ FRESULT f_getcwd (
 	DIR dj;
 	UINT i, n;
 	DWORD ccl;
-	TCHAR *tp;
+	TCHAR *tp,*tp1;
 	FILINFO fno;
 	DEF_NAMEBUF;
 
 
-	*buff = 0;
-	/* Get logical drive number */
-	res = find_volume(&dj.fs, (const TCHAR**)&buff, 0);	/* Get current volume */
+		
+	
+	/* Get physical drive number/name */	
+	/* prepend physical drive name */
+	buff[0] = 0;
+	strcat(buff,FAT_DRIVE_NAMES[CurrDisk]);
+	tp1 = buff + strlen(buff);
+	
+	*tp1 = 0;
+	
+	/* Get logical drive number */	
+	res = find_volume(&dj.fs, (const TCHAR**)&tp1, 0);	/* Get current volume/directory path (find_path(DIR*,0,0) */
 	if (res == FR_OK) {
 		INIT_BUF(dj);
 		i = len;			/* Bottom of buffer (directory stack base) */
@@ -3020,23 +3062,24 @@ FRESULT f_getcwd (
 			} while (res == FR_OK);
 			if (res == FR_NO_FILE) res = FR_INT_ERR;/* It cannot be 'not found'. */
 			if (res != FR_OK) break;
-#if _USE_LFN
-			fno.lfname = buff;
+						
+#if _USE_LFN			
+			fno.lfname = tp1;
 			fno.lfsize = i;
 #endif
 			get_fileinfo(&dj, &fno);		/* Get the directory name and push it to the buffer */
 			tp = fno.fname;
 #if _USE_LFN
-			if (*buff) tp = buff;
+			if (*tp1) tp = tp1;
 #endif
 			for (n = 0; tp[n]; n++) ;
 			if (i < n + 3) {
 				res = FR_NOT_ENOUGH_CORE; break;
 			}
-			while (n) buff[--i] = tp[--n];
-			buff[--i] = '/';
+			while (n) tp1[--i] = tp[--n];
+			tp1[--i] = '/';
 		}
-		tp = buff;
+		tp = tp1;
 		if (res == FR_OK) {
 #if _VOLUMES >= 2
 			*tp++ = '0' + CurrVol;			/* Put drive number */
@@ -3046,7 +3089,7 @@ FRESULT f_getcwd (
 				*tp++ = '/';
 			} else {						/* Sub-directroy */
 				do		/* Add stacked path str */
-					*tp++ = buff[i++];
+					*tp++ = tp1[i++];
 				while (i < len);
 			}
 		}
@@ -4711,3 +4754,11 @@ int f_printf (
 
 #endif /* !_FS_READONLY */
 #endif /* _USE_STRFUNC */
+
+
+unsigned long endian(unsigned long val){
+
+ return ((val & 0xFF000000) >> 24) + ((val & 0x00FF0000) >> 8) + ((val & 0x0000FF00) << 8) + ((val & 0x000000FF) << 24);
+
+}
+

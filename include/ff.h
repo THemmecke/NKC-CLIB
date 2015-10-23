@@ -21,7 +21,9 @@
 extern "C" {
 #endif
 
-#include <types.h>"	/* Basic integer types */
+#include <types.h>	/* Basic integer types */
+#include <stdio.h>	/* include _F_WRIT...etc. from stdio.h */
+  
 #include "../fs/fat/ffconf.h"		/* FatFs configuration options */
 
 #if _FATFS != _FFCONF
@@ -138,7 +140,7 @@ typedef struct {
 
 
 /* Directory object structure (DIR) */
-
+// we had to move this structure to fs.h to implement upper layer function fs type independend
 typedef struct {
 	FATFS*	fs;				/* Pointer to the owner file system object (**do not change order**) */
 	WORD	id;				/* Owner file system mount ID (**do not change order**) */
@@ -197,7 +199,8 @@ typedef enum {
 	FR_LOCKED,				/* (16) The operation is rejected according to the file sharing policy */
 	FR_NOT_ENOUGH_CORE,		/* (17) LFN working buffer could not be allocated */
 	FR_TOO_MANY_OPEN_FILES,	/* (18) Number of open files > _FS_SHARE */
-	FR_INVALID_PARAMETER	/* (19) Given parameter is invalid */
+	FR_INVALID_PARAMETER,	/* (19) Given parameter is invalid */
+	FR_NO_DRIVER
 } FRESULT;
 
 
@@ -274,7 +277,7 @@ void ff_rel_grant (_SYNC_t sobj);				/* Unlock sync object */
 int ff_del_syncobj (_SYNC_t sobj);				/* Delete a sync object */
 #endif
 
-
+unsigned long endian(unsigned long val);
 
 
 /*--------------------------------------------------------------*/
@@ -283,16 +286,22 @@ int ff_del_syncobj (_SYNC_t sobj);				/* Delete a sync object */
 
 /* File access control and file status flags (FIL.flag) */
 
-#define	FA_READ				0x01
+#define	FA_READ			0x01
+#define	FA_READ			_F_READ
 #define	FA_OPEN_EXISTING	0x00
 
 #if !_FS_READONLY
-#define	FA_WRITE			0x02
+#define	FA_WRITE		0x02
+//#define	FA_WRITE		_F_WRIT
+// create as NEW file, i.e. create only if it does not exist !
 #define	FA_CREATE_NEW		0x04
+//#define	FA_CREATE_NEW		_F_CREATE
+// create as NEW no matter if it already exists (overwrite)
 #define	FA_CREATE_ALWAYS	0x08
+//
 #define	FA_OPEN_ALWAYS		0x10
-#define FA__WRITTEN			0x20
-#define FA__DIRTY			0x40
+#define FA__WRITTEN		0x20
+#define FA__DIRTY		0x40
 #endif
 
 

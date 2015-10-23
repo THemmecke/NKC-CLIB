@@ -161,6 +161,10 @@ Der Versuch, /home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a
 (/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)fs.o
 (/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)fs_nkc.o
 (/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)fs_nkcS.o
+(/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)fs_fat.o
+(/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)ff.o
+(/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)diskio.o
+(/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)gideS.o
 (/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)_mulsi3.o
 (/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)_udivsi3.o
 (/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)_nedf2.o
@@ -204,10 +208,6 @@ Der Versuch, /home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a
 (/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)sqrt.o
 (/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)tan.o
 (/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)tanh.o
-(/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)fs_fat.o
-(/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)ff.o
-(/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)diskio.o
-(/home/torsten/develop/myCLib/CLIBS/projects/shell/../../lib/libCC.a)gideS.o
 Der Versuch, main.o zu öffnen, war erfolgreich
 main.o
 Der Versuch, cmd.o zu öffnen, war erfolgreich

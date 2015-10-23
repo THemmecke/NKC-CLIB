@@ -1,10 +1,6 @@
 #ifndef __LLNKC_N
 #define __LLNKC_H
 
-#define UCHAR unsigned char
-#define USHORT unsigned short
-#define UINT unsigned int
-#define ULONG unsigned long
 
 /*    --------- AUFRUFE IN's GRUNDPROGRAMM ----------  */
 void nkc_clrscr(void); 	
@@ -23,6 +19,7 @@ unsigned char nkc_kbhit(void);
 void nkc_setflip(unsigned char flip2pages, unsigned char flip4pages);
 void nkc_setpage(unsigned char writepage, unsigned char viewpage);
 
+void nkc_read(unsigned char x, unsigned char y, char* buffer);
 /*  -------------------------- VERSCH. HILFS FUNKTIONEN ------------------------------- */ 	
 /*
  unsigned char nkc_bcd2bin(unsigned char val)

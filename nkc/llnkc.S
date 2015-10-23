@@ -52,7 +52,33 @@ nkc_write: .global nkc_write
 	movem.l (%a7)+,%a0-%a6/%d0-%d7
 	rts 	
 
+/*
+ void nkc_read(unsigned char x, unsigned char y, char* buffer)
+*/
+nkc_read: .global nkc_read
+
 	
+	movem.l %a0-%a6/%d0-%d7,-(%a7) 
+	moveq #0x11,%d0		/* Schriftgrösse */
+	moveq #25,%d3		/* max. Anzahl Zeichen */
+	move.l 67(%sp),%d1	/* *x */
+        move.l 71(%sp),%d2	/* *y */
+        movea.l 72(%sp),%a0	/* buffer */
+        moveq #_READ,%d7
+ 	trap #1
+	movem.l (%a7)+,%a0-%a6/%d0-%d7
+	rts 
+	
+/*
+MOVEQ #$22,D0 * Schriftgröße
+MOVEQ #10,D1 * X = 10
+MOVEQ #100,D2 * Y = 100
+MOVEQ #12,D3 * Maximal 12 Zeichen
+LEA BUFFER(PC),A0 * Adresse des Buffers
+MOVEQ #!READ,D7 * Text einlesen
+TRAP #1
+RTS
+*/
 /*
  void nkc_getxy(unsigned char *x, unsigned char *y)
 */

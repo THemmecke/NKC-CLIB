@@ -150,7 +150,7 @@ static 	- bei globalen Variablen -> diese kommen damit in's BSS Segment (ansonst
 C-Aufrufkonventionen:
 
 
-Parameter werden "von Rechts nach Links" auf dem Stack abgelegt.
+Parameter werden "von Rechts nach Links" auf dem Stack abgelegt. Der Stack "wächst" in Richtung kleiner werdender Adressen.
 Integer-Werte werden über %d0 zurückgegeben.
 Pointer werden über %a0 zurückgegeben !!
 

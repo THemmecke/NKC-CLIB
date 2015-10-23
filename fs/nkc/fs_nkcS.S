@@ -2,7 +2,7 @@
 #include "../../nkc/macros.h"
 
 	.text 
-	.global _nkc_remove, _nkc_rename, _nkc_get_drive, _nkc_set_drive
+	.global _nkc_remove, _nkc_rename, _nkc_get_drive, _nkc_set_drive, _nkc_directory
 	
 /*****************************************************************************
  * int _nkc_remove(char *name)
@@ -98,6 +98,51 @@ _nkc_set_drive:
 	trap #6
 	movem.l (%sp)+, %d7/%a2/%a6
 	rts 
+
+/*****************************************************************************
+ * BYTE _nkc_directory(void* pbuf, void* ppattern, BYTE attrib, BYTE columns, DWORD size);
+ *
+ * input:
+ *      pbuf		pointer output buffer
+ *	ppattern	pointer to file pattern
+ *	attrib		bitmapped file attribute: 1=file length; 2=date; 4=r/w attribute
+ *	columns		number of colums for output
+ *	size		size of output buffer pbuf (256x14 Bytes max.)
+ *	
+ * output:
+ *    	buffer filled with directory entries
+ *	return code: 0x00 = Success, 0xFF = Values unvalid
+ *  
+ * stack-frame:
+ *		0x0028   40	size		(DWORD)
+ *		0x0024	 36+3	columns 	(BYTE)
+ *		0x0020	 32+3	attrib 		(BYTE)
+ *		0x001C	 28	ppattern	(DOWRD)
+ *              0x0018	 24	pbuf		(DWORD)
+ *		0x0014	 20	return address
+ *		0x0010	 16	saved jados frame
+ *		0x000C	 12	---"---	
+ *		0x0008	 8	---"---
+ *		0x0004	 4	saved registers
+ *	sp--->	0x0000	 0	---"---
+ *****************************************************************************/
+_nkc_directory:
+        movem.l %d7/%a2/%a6,-(%sp)      /* used by jados frame-pointer */
+	movem.l %d2/%d3,-(%sp)		/* save used regs (%a0,%a1,%d0,%d1 are scratch regs) */
+
+        movea.l 24(%sp),%a0             /* pbuf */
+	movea.l 28(%sp),%a1		/* ppattern */
+	move.b  35(%sp),%d2		/* attrib */
+	move.b  39(%sp),%d3		/* columns */
+	move.l  40(%sp),%d1		/* size */
+	
+        moveq #__directory,%d7           /* call jados */
+        trap #6
+
+	movem.l (%sp)+, %d2/%d3		/* restore used regs */
+        movem.l (%sp)+, %d7/%a2/%a6	/* restore jados frame-pointer */
+        rts
+
 	
 	
 .data

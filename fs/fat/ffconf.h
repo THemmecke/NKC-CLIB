@@ -7,6 +7,23 @@
 
 
 /*---------------------------------------------------------------------------/
+/  FatFs - extensions as of Revision 29001
+/---------------------------------------------------------------------------*/
+#define _USE_EXTENSIONS 0
+/* Use extensions to original FatFs (Revision ID 29000) */
+
+#ifdef _USE_EXTENSIONS
+#define _DISKS		1
+/* Number of phsical disks to support, currently we support only 1 phsical drive */
+#define _DISK_STRS	"HDA","HDB","HDC","HDD"
+/* disk ID strings */
+#else
+
+#endif
+
+
+
+/*---------------------------------------------------------------------------/
 / Functions and Buffer Configurations
 /---------------------------------------------------------------------------*/
 
@@ -132,9 +149,8 @@
 / Drive/Volume Configurations
 /---------------------------------------------------------------------------*/
 
-#define _VOLUMES	8
+#define _VOLUMES	4
 /* Number of volumes (logical drives) to be used. */
-
 
 #define _STR_VOLUME_ID	1	/* 0:Use only 0-9 for drive ID, 1:Use strings for drive ID */
 #define _VOLUME_STRS	"HDA0","HDA1","HDA2","HDA3"
@@ -149,6 +165,8 @@
 /  and only a FAT volume found on the physical drive is mounted. When it is set to 1,
 /  each logical drive number is bound to arbitrary drive/partition listed in VolToPart[].
 */
+
+#define _MULTI_DISK		1	/* 0:Single disc, 1:Enable multiple disc */
 
 
 #define	_MIN_SS		512

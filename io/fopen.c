@@ -3,12 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libp.h>
+#include <debug.h>
 
-//#define NKC_DEBUG
-
-#ifdef NKC_DEBUG
-#include "../nkc/llnkc.h"
-#endif
 
 extern FILE *_pstreams[_NFILE_];
 extern char *_filenames[_NFILE_];
@@ -20,14 +16,12 @@ FILE *_basefopen(const char *name, const char *mode,FILE *stream)
 	FILE *file;
 	char *buf, *fname;	
 	
-	#ifdef NKC_DEBUG
-	nkc_write("_basefopen...\n");
-	#endif
+
+	clio_dbg("_basefopen...\n");
+
 	if (maxfiles == _NFILE_)
 	{
-		#ifdef NKC_DEBUG
-		nkc_write("...._basefopen(1)\n");
-		#endif
+		clio_dbg("...._basefopen(1)\n");
 		return 0;
 	}
 				
@@ -51,20 +45,17 @@ FILE *_basefopen(const char *name, const char *mode,FILE *stream)
 				break;
 			case 't':
 				flags &= ~_F_BIN;
-			default:
-				#ifdef NKC_DEBUG	
-				nkc_write("..._basefopen(2)\n");nkc_getchar();	
-				#endif
+			default:	
+				clio_lldbgwait("..._basefopen(2)\n");
 				return 0;
 		}
 	}
 	
+	clio_dbg(" mode=%s ==> flags=0x%x\n",mode,flags);
 	
 	if (!(flags & (_F_READ | _F_WRIT)))
-	{
-		#ifdef NKC_DEBUG	
-		nkc_write("..._basefopen(3)\n");nkc_getchar();	
-		#endif
+	{	
+		clio_lldbgwait("..._basefopen(3)\n");
 		return 0;
 	}
 	
@@ -72,10 +63,8 @@ FILE *_basefopen(const char *name, const char *mode,FILE *stream)
 	fname = malloc(strlen(name)+1);
 	
 	if (!fname) 
-	{
-		#ifdef NKC_DEBUG	
-		nkc_write("..._basefopen(4)\n");nkc_getchar();	
-		#endif
+	{	
+		clio_lldbgwait("..._basefopen(4)\n");
 		return 0;
 	}
 	
@@ -86,10 +75,8 @@ FILE *_basefopen(const char *name, const char *mode,FILE *stream)
 		file = stream;
 	else
 		if ((file = malloc(sizeof(FILE))) == 0) {
-			free(fname);
-			#ifdef NKC_DEBUG	
-			nkc_write("..._basefopen(5)\n");nkc_getchar();	
-			#endif
+			free(fname);	
+			clio_lldbgwait("..._basefopen(5)\n");
 			return 0;
 		}
 		else
@@ -97,16 +84,14 @@ FILE *_basefopen(const char *name, const char *mode,FILE *stream)
 			
 	file->flags = 0;
 	buf= malloc(BUFSIZ);	
-	#ifdef NKC_DEBUG	
-	nkc_write(" buf=0x"); nkc_write_hex8((int)buf); nkc_write("\n"); 	
-	#endif
+	
+	clio_dbg(" buf=0x%x\n",(int)buf);
+	
 	if (!buf) 
 	{
 		free(fname);
-		free(file);
-		#ifdef NKC_DEBUG	
-		nkc_write("..._basefopen(6)\n");nkc_getchar();	
-		#endif
+		free(file);	
+		clio_lldbgwait("..._basefopen(6)\n");
 		return 0;
 	}
 	
@@ -125,9 +110,7 @@ FILE *_basefopen(const char *name, const char *mode,FILE *stream)
 			id = _ll_creat(name,_ll_flags(flags));
 			break;
 		case _F_READ | _F_WRIT:
-			#ifdef NKC_DEBUG	
-			nkc_write("..._basefopen(7)\n");nkc_getchar();	
-			#endif
+			clio_lldbgwait("..._basefopen(7)\n");
 			return 0;
 	}
 	if (id == 0)
@@ -150,24 +133,19 @@ FILE *_basefopen(const char *name, const char *mode,FILE *stream)
 nofile:
 			free(fname);
 			free(file->buffer);
-			free(file);
-			#ifdef NKC_DEBUG	
-			nkc_write("..._basefopen(8)\n");nkc_getchar();	
-			#endif
+			free(file);	
+			clio_lldbgwait("..._basefopen(8)\n");
 			return 0;
 		}
 	}
 	_filenames[maxfiles] = fname;
 	_pstreams[maxfiles++] = file;
 	
-	#ifdef NKC_DEBUG
-	nkc_write(" fopen: fname="); nkc_write(fname); nkc_write(" flags=0x"); nkc_write_hex8(file->flags);
-	nkc_write(" token=0x"); nkc_write_hex8(file->token); nkc_write("\n"); 
-	nkc_write(" fd=0x"); nkc_write_hex8(file->fd); nkc_write("\n"); 
-	nkc_write(" buf=0x"); nkc_write_hex8((int)file->buffer); nkc_write("\n"); 
-	nkc_write(" bufsize=0x"); nkc_write_hex8((int)file->bsize); nkc_write("\n");
-	nkc_write("..._basefopen\n");	nkc_getchar();
-	#endif	
+	clio_dbg(" fopen: fname=%s flags=0x%x token=0x%x\n",fname,file->flags,file->token);
+	clio_dbg(" fd=0x%x\n",file->fd);
+	clio_dbg(" buf=0x%x\n",(int)file->buffer);
+	clio_dbg(" bufsize=0x%x\n",(int)file->bsize);
+	clio_lldbgwait("..._basefopen\n");
 	return file;
 }
 FILE *fopen(const char *name, const char *mode)

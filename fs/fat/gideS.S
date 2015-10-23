@@ -163,34 +163,34 @@ idetest_e:
 DRESULT idetifyIDE(BYTE disk, struct _deviceinfo *p)
 */
 
-idetifyIDE:
+idetifyIDE: 
 	movea.l %a7,%a1
 	movem.l %d1-%d4/%a0-%a1,-(%sp)
-	
+		
 	bsr waitRDY             	/* wait for IDE to be ready */
-	bsr waitNBSY				/* wait for IDE to be not busy */
+	bsr waitNBSY			/* wait for IDE to be not busy */
 	move.b  (7,%a1),idesdh.w	/* drivenumber */
 	bsr wawa
 	bsr waitNBSY
-	move.b  #0xEC,idecmd.w    	/* send command 			*/	
+	move.b  #0xEC,idecmd.w    	/* send command 		*/	
 	bsr waitDRQ             	/* wait for IDE data		*/
 	
 	move.b idecmd.w,%d0		/* Status */
 	move.b ideerr.w,%d1		/* Error */
 	
 	move.l  (8,%A1),%a0
-	move.l #(512/2)-1,%d0       /* read data to buffer		*/
+	move.l #(512/2)-1,%d0       	/* read data to buffer		*/
 	lea idedat.w,%a1
-L1:
+L1:     
 
 	move.b (%a1),1(%a0)		/* store with byte swap */
 	move.b (%a1),0(%a0)
 	addq #2,%a0
 	dbra %d0,L1
 	
-	bsr flushIDE			/* empty data buffer */
+	bsr flushIDE			/* empty data buffer */	
 	
-	clr.l %d0
+L2:	clr.l %d0
 	move.b %d1,%d0			/* return error code */
 	movem.l (%sp)+,%d1-%d4/%a0-%a1
 	rts
@@ -224,10 +224,10 @@ _ide:
 	clr.l %d3
 	clr.l %d4
 	
-	move.w  (6 ,%A1),%d1		/* cmd -> d1 */
-	move.l  (8 ,%A1),%d2		/* arg1 -> d2 */
-	move.l  (12,%A1),%d3		/* arg2 -> d3 */
-	move.b  (19,%A1),%d4		/* disk -> d4 */
+	move.w  (6 ,%A1),%d1		/* cmd   -> d1 */
+	move.l  (8 ,%A1),%d2		/* arg1  -> d2 */
+	move.l  (12,%A1),%d3		/* arg2  -> d3 */
+	move.b  (19,%A1),%d4		/* disk  -> d4 */
 	move.l  (20,%A1),%a0		/* pdata -> a0 */
 
 	cmp.w	#CMD_READ,%d1
@@ -571,7 +571,7 @@ waitDRQend:
  rts 
 	
 	
-waitNBSY:                 /* wait for ide to be not BUSY	*/
+waitNBSY:                 /* wait on ide while BUSY	*/
  move.l #DELAY_VAL,%d0          /*   Versuche					*/
 waitNBSY1:
  /*bsr wawa*/
@@ -615,6 +615,7 @@ ideCacheFlush:
 	
 flushIDE:					/* read any data available and flush data buffer */
 	movem.l %a0/%d0,-(%sp)
+	
 	lea idedat(%pc),%a0
 flushIDE1:	
 	btst.b #3,idecmd.w

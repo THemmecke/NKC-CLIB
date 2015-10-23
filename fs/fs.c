@@ -8,15 +8,12 @@
 #include <string.h>
 #include <errno.h>
 #include <ioctl.h>
+#include <debug.h>
 
 #include "fs.h"
 
 #ifdef CONFIG_FS_NKC
 #include "nkc/fs_nkc.h"
-#endif
-
-#ifdef DEBUG_FS
-#include "../nkc/llnkc.h"
 #endif
 
 #define NUM_FILE_HANDLES 255
@@ -25,97 +22,47 @@
 #define DRIVE_NAME_LENGTH 5
 #define PATH_NAME_LENGTH 255
 
-static struct _file *filelist[NUM_OPENFILES]; 			/* list of files files */
+static struct _file *filelist[NUM_OPENFILES]; 			/* list of open files */
 
 static unsigned char HPOOL[NUM_FILE_HANDLES];		/* handle pool, handles 0...9 are reserved !! */
 
-static struct driver *driverlist = NULL;						/* pointer to file system driver */
+static struct driver *driverlist = NULL;	/* pointer to file system driver */
 
-char	cdrive[DRIVE_NAME_LENGTH];	// current drive name, i.e. where the program was started ; A:,B:, HDA1: etc
-char 	cpath[PATH_NAME_LENGTH];	// current path name; for jados this is empty or '/'
+static char	cdrive[DRIVE_NAME_LENGTH];	// current drive name, i.e. where the program was started ; A:,B:, HDA1: etc
+static char 	cpath[PATH_NAME_LENGTH];	// current path name; for jados this is empty or '/'
+
 
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
- 
-void split_filename(char *name, char* drive, char* path, char* filename, char* ext)
-{
-        char* p;
-        char* pstr;
-        int n;
-
-		
-        drive[0] = 0;
-        path[0] = 0;
-        filename[0] = 0;
-        ext[0] = 0;
-        
-
-        pstr = name;
-
-        n= strchr(pstr,':') - pstr;
-        if(n>0){
-        strncpy(drive,pstr,n);
-        drive[n] = 0;        
-        pstr+=n+1;
-        }
-
-        n=strrchr(pstr,'/') - pstr;
-        if(n>=0){
-        n++;
-        strncpy(path,pstr,n);
-        path[n]=0;       
-        pstr+=n;
-        }
-
-        n=strchr(pstr,'.') - pstr;
-        if(n>0) {
-        strncpy(filename,pstr,n);
-        filename[n]=0;        
-        pstr+=n+1;
-        }
-
-        strncpy(ext,pstr,strlen(pstr));
-        ext[strlen(pstr)]=0;        
-
-}
 
  
 int alloc_handle(void)
 {
 	int h;
 	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: [ alloc handle...\n");
-	#endif
+	fs_lldbg("fs.c: [ alloc handle...\n");
 	
 	for(h=10; h<255; h++)
 	{
 		if( HPOOL[h] == 0)
 		{
 			HPOOL[h] = 0xff;
-			#ifdef CONFIG_DEBUG_FS
-			nkc_write("fs.c: ...alloc_handle(1) ]\n");
-			#endif
+			fs_lldbg("fs.c: ...alloc_handle(1) ]\n");
 			return h;
 		}
 		
 	}
 	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: ...alloc_handle(2) ]\n");
-	#endif
+	fs_lldbg("fs.c: ...alloc_handle(2) ]\n");
 }
 
 void free_handle(int fd)
 {	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: free handle\n");
-	#endif
+	fs_lldbg("fs.c: free handle\n");
 	HPOOL[fd] = 0;	
 }
-
 
 
 struct driver* get_driver(char *name)
@@ -123,63 +70,55 @@ struct driver* get_driver(char *name)
 {
 	struct driver *pdriver;
 	char drive_name[10],*p;
+	int i;
 	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: [ get_driver...\n"); 
-	nkc_write("fs.c:  for "); nkc_write(name); nkc_write("\n");
-	nkc_getchar();
-	#endif
+	fs_lldbg("fs.c: [ get_driver..."); 
+	fs_lldbgwait("\n"); 
 	
 	if(!name) 
 	{ 	 
 		/*
 		 * no drive specified, use the current drive
 		 */
-		#ifdef CONFIG_DEBUG_FS
-		nkc_write("fs.c:  no drive specified(1), take cdrive ...\n"); 
-		nkc_write("fs.c:  cdrive = "); nkc_write(cdrive); nkc_write("\n"); nkc_getchar();
-		#endif 
+		fs_lldbg("fs.c:  no drive specified(1), take cdrive ...\n"); 
+		fs_lldbgwait("fs.c:  cdrive = ");
 		strcpy(drive_name,cdrive);									
 	}else
 	{	
 		strcpy(drive_name,name); /* copy drive name */			
-		strcpy(cdrive,drive_name);  /* update current drive */		
+		//strcpy(cdrive,drive_name);  /* update current drive */		
 	}
 	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: drive_name = "); nkc_write(drive_name); nkc_getchar(); nkc_write("\n");
-	#endif
+	i=0;
+	while(drive_name[i]){ drive_name[i] = toupper(drive_name[i]); i++;}
+	
+	fs_dbg("fs.c: drive_name = %s",drive_name);
+	fs_lldbgwait("\n");
 	
 	
 	// initialize pdriver with driver list
 	pdriver = driverlist;
 	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: searching for driver in driverlist\n");nkc_getchar();
-	#endif
+	fs_lldbgwait("fs.c: searching for driver in driverlist\n");
+	
 	while(pdriver)
-	{
-		#ifdef CONFIG_DEBUG_FS
-		nkc_write("fs.c:  next in list = "); nkc_write(pdriver->pdrive); nkc_getchar(); nkc_write("\n");
-		#endif
+	{	
+		fs_dbg("fs.c:  next in list = %s",pdriver->pdrive);
+		fs_lldbgwait("\n");
 		
 		if(!strcmp(drive_name,pdriver->pdrive) )
 		{
-			#ifdef CONFIG_DEBUG_FS
-			nkc_write("fs.c:  name:  "); nkc_write(pdriver->pname); nkc_write("\n");
-			nkc_write("fs.c:  drive: "); nkc_write(pdriver->pdrive); nkc_write("\n");
-			nkc_write("fs.c:  foper: 0x"); nkc_write_hex8((int)pdriver->f_oper); nkc_write("\n");
-			nkc_write("fs.c:  open: 0x"); nkc_write_hex8((int)pdriver->f_oper->open); nkc_write("\n");
-			nkc_write("fs.c: ....get_driver(SUCCESS) ]\n"); nkc_getchar();
-			#endif
+			fs_dbg("fs.c:  name:  %s\n",pdriver->pname);
+			fs_dbg("fs.c:  drive: %s\n",pdriver->pdrive);
+			fs_dbg("fs.c:  foper: 0x%x\n",pdriver->f_oper);
+			fs_dbg("fs.c:  open: 0x%x\n",pdriver->f_oper->open);
+			fs_lldbgwait("fs.c: ....get_driver(SUCCESS) ]\n");
 			return pdriver;
 		}
 		pdriver = pdriver->next;
 	}
 	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: ....get_driver(FAIL) ]\n"); nkc_getchar();
-	#endif
+	fs_lldbgwait("fs.c: ....get_driver(FAIL) ]\n");
 	return NULL; /* no driver found */
 }
 
@@ -188,8 +127,112 @@ struct driver* get_driver(char *name)
  * Global Functions
  ****************************************************************************/
 
+#define DRV_LENGTH   	10
+#define PATH_LENGTH 	255
+#define FILENAME_LENGTH 100
+#define EXT_LENGTH 	10
+#define FPATH_LENGTH 	255
+#define FULLNAME_LENGTH 255
+#define FULLPATH_LENGTH 255
 
+static char drive[DRV_LENGTH], path[PATH_LENGTH],filename[FILENAME_LENGTH], ext[EXT_LENGTH], filepath[FPATH_LENGTH], fullname[FULLNAME_LENGTH],fullpath[FULLPATH_LENGTH], *pname;
 
+void split_filename(char *name, 		// IN:  D:/path/filename.ext
+		    char* drive, 		// OUT: D,HDA0 etc.
+		    char* path, 		// OUT: /dir/dir
+		    char* filename, 		// OUT: filename of filename.ext
+		    char* ext, 			// OUT: ext of filename.ext
+		    char* fullname, 		// OUT: filename.ext		    
+		    char* filepath,		// OUT: /dir/dir/filename.ext
+		    char* fullpath)		// OUT: C:/path/filename.ext
+{
+        char* p;
+        char* pstr;
+        unsigned int n;
+	
+        drive[0] = 0;
+        path[0] = 0;
+        filename[0] = 0;
+        ext[0] = 0;
+	
+        pstr = name;
+
+	// look if there is a drive information	
+	p = strchr(pstr,':');        
+        if(p){ // yes: copy drive
+	  n=(unsigned int)(p-pstr); 
+	  if(n){
+	    strncpy(drive,pstr,n);
+	    drive[n] = 0;        
+	    pstr+=n+1;
+	  }else{ // typo like ":/..."
+	    drive[0]=0;
+	    strcpy(drive,cdrive);	  
+	    pstr++; // skip ':'	
+	  }
+        }else
+	{ // no: use current drive
+	  drive[0]=0;
+	  strcpy(drive,cdrive);	  
+	}
+	n=0;
+	while(drive[n]){ drive[n] = toupper(drive[n]); n++;} // we use uppercase drive letters
+	
+        // store filepath
+        strncpy(filepath,pstr,strlen(pstr));
+        filepath[strlen(pstr)]=0; 
+	
+	// look for the last occurence of a '/' delimiter
+	p=strrchr(pstr,'/');        
+        if(p){
+	  n=(unsigned int)(p-pstr);
+	  n++;
+	  strncpy(path,pstr,n);
+	  path[n]=0;       
+	  pstr+=n;
+        }
+        
+	// store fullname
+        strncpy(fullname,pstr,strlen(pstr));
+        fullname[strlen(pstr)]=0; 
+	
+        // look for filename delimiter and try to split filename and extension
+	p=strchr(pstr,'.');
+        if(p) { 
+	  n=(unsigned int)(p-pstr);
+	  strncpy(filename,pstr,n);
+	  filename[n]=0;        
+	  pstr+=n+1;			
+	}
+	
+	// rest has to be fileextension
+	strncpy(ext,pstr,strlen(pstr));
+        ext[strlen(pstr)]=0; 
+	
+	strcpy(fullpath,drive);
+	strcat(fullpath,":");
+	strcat(fullpath,filepath);
+	
+}
+
+// initialize pdriver with driver list
+
+void list_drivers(){
+  
+  struct driver *pdriver;
+  
+  pdriver = driverlist;
+  
+  printf(" registered drives/drivers:\n\n");
+  
+  while(pdriver)
+  {		
+      printf(" name:  %s  -- ",pdriver->pname);
+      printf(" drive: %s\n",pdriver->pdrive);
+      
+      pdriver = pdriver->next;
+  }
+}
 /****************************************************************************
  * Name: ioctrl
  *
@@ -205,53 +248,217 @@ struct driver* get_driver(char *name)
  *		EZERO - success   
  *
  ****************************************************************************/
-static int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
+//static 
+int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
 {
+  FRESULT res; 
+  char tmp[255];
+  char *pc;
   struct driver *pdriver;
   
-  struct ioctl_get_cwd *parg_cwd;  
-  struct ioctl_opendir *parg_opendir;
-  struct ioctl_readdir *parg_readdir;
-  struct ioctl_getfree *parg_getfree;
+  struct ioctl_get_cwd arg_get_cwd;  
+  struct ioctl_opendir arg_opendir;
+  struct ioctl_readdir arg_readdir;
+  struct ioctl_getfree arg_getfree;
   
-  #ifdef CONFIG_DEBUG_FS
-  nkc_write("fs.c: [ ioctl ...\n"); 
-  #endif
-	
-  
+
+  fs_dbg("fs.c: [ ioctl ...\n"); 
+
+  res = EINVFNC;
   
   switch(cmd) 
   {  
-    case FS_IOCTL_GETCWD: // get currennt working directory and path: arg = pointer to struct ioctl_get_cwd arg
-      parg_cwd = (struct ioctl_get_cwd*)arg;
-      break;
-    case FAT_IOCTL_CD: // can be any filesystem, so check which driver to call ...
-      break;
-    case FAT_IOCTL_OPEN_DIR: // can be any filesystem, so check which driver to call ...
-      parg_opendir = (struct ioctl_opendir*)arg;
-      break;  
-    case FAT_IOCTL_READ_DIR: // can be any filesystem, so check which driver to call ...
-      parg_readdir = (struct ioctl_readdir*)arg;
-      break;
-    case FAT_IOCTL_CLOSE_DIR: // can be any filesystem, so check which driver to call ...      
-      break;  
-    case FAT_IOCTL_GET_FREE:
-      parg_getfree = (struct ioctl_getfree*)arg;
+    case FS_IOCTL_GETDRV: // ************************************* get current drive *************************************
+      fs_lldbgwait(" - FS_IOCTL_GETDRV - \n");
+      strcpy((char*)arg,cdrive);
+      res = FR_OK;
       break;
       
+    case FS_IOCTL_CHDRIVE: // ************************************* change current drive *************************************
+      fs_lldbgwait(" - FS_IOCTL_CHDRIVE - \n");
+      if (!arg){ res = ENODEV; break; }      
+      pdriver = get_driver((char*)arg); // check if there is a driver registered with that name....      
+      if(!pdriver){ res = EINVDRV; break;  }
       
-    default:		  			// leave it to the driver ...
-      if(name == NULL) return 1;
-      pdriver = get_driver(name);  		// is any driver registered for a device with this name ?
-      if(pdriver == NULL) return 1;
-      pdriver->f_oper->ioctl(NULL,cmd,arg);	// is ioctl valid ? -> call it
+      if(pdriver->f_oper->ioctl){	
+	fs_lldbg(" calling drivers ioctl...\n");
+	res = pdriver->f_oper->ioctl(name,cmd,arg);	// is ioctl valid ? -> call it
+	fs_dbg(" res = %d\n",res);
+	
+	// get dir/drive ...
+	fs_lldbg(" updating current drive/path information\n");
+	arg_get_cwd.cpath = &cpath;
+	arg_get_cwd.cdrv = &cdrive;
+	arg_get_cwd.size = PATH_NAME_LENGTH;
+	res = pdriver->f_oper->ioctl(name,FS_IOCTL_GETCWD,&arg_get_cwd);		
+	fs_dbg(" res = %d\n",res);
+      }else{
+	fs_lldbgwait(" ioctl not valid !\n");
+      }      
+      
+      break;
+    case FS_IOCTL_CD: // ************************************* change directory *************************************
+      fs_dbg(" - FS_IOCTL_CD - (%s)",(char*)arg);
+      fs_lldbgwait("\n");
+      if (!arg){ res = ENODEV;	break;  }    				// we need some args ...
+      
+      split_filename((char*)arg, drive, path, filename, ext,fullname, filepath, fullpath); // analyze filename
+      
+      if(drive[0]){ 					// is there any drive information in the path ?
+	pdriver = get_driver(drive); 			// try fetching the driver
+      }else{	
+	pdriver = get_driver(cdrive); 			// try current drive
+	strcpy(drive,cdrive);
+      }            
+	
+      
+      fs_dbg(" using drive %s ; path %s\n",drive,filepath);
+      
+      if(!pdriver){ 
+	fs_dbg(" no driver found for %s - giving up\n",drive);
+	res = EINVDRV; break;  }		// if no driver, exit...
+      
+       if(pdriver->f_oper->ioctl){
+	fs_lldbg(" calling drivers ioctl...\n"); 
+	res = pdriver->f_oper->ioctl(name,cmd,arg);	// is ioctl valid ? -> call it
+	fs_dbg(" res = %d\n",res);
+	
+	// get dir/drive ...
+	fs_lldbg(" updating current drive/path information\n");
+	arg_get_cwd.cpath = &cpath;
+	arg_get_cwd.cdrv = &cdrive;
+	arg_get_cwd.size = PATH_NAME_LENGTH;
+	res = pdriver->f_oper->ioctl(name,FS_IOCTL_GETCWD,&arg_get_cwd);
+	fs_dbg(" res = %d\n",res);
+      }else{
+	fs_lldbgwait(" ioctl not valid !\n");
+      }     
+          
+      break;        
+    case FS_IOCTL_GETCWD: // ************************************* get currennt working directory and path: arg = pointer to struct ioctl_get_cwd arg
+      fs_lldbgwait(" - FS_IOCTL_GETCWD - \n");
+      
+      pdriver = get_driver(cdrive); 			// try current drive
+      if(!pdriver){ 
+	fs_dbg(" no driver found for current drive (%s) - giving up\n",cdrive);
+	res = EINVDRV; break;  }		// if no driver, exit...
+	
+      // get dir/drive ...
+      fs_lldbg(" updating current drive/path information\n");
+      arg_get_cwd.cpath = &cpath;
+      arg_get_cwd.cdrv = &cdrive;
+      arg_get_cwd.size = PATH_NAME_LENGTH;
+      res = pdriver->f_oper->ioctl(name,FS_IOCTL_GETCWD,&arg_get_cwd);
+      fs_dbg(" res = %d\n",res);
+	
+      strcpy((char*)((struct ioctl_get_cwd*)(arg))->cdrv,cdrive);
+      strcpy((char*)((struct ioctl_get_cwd*)(arg))->cpath,cpath);
+      res = FR_OK;
+      break;
+      
+    case FS_IOCTL_CHMOD: // ************************************* change file mode *************************************
+       
+      fs_lldbgwait(" - FS_IOCTL_CHMOD - \n");
+      if (!arg){ res = ENODEV;	break;  }    				// we need some args ... 
+          
+      if(!drive[0]){ // there is no drive in the path name argument
+	if(!name) { // there is no drive name given in the name argument
+	  pdriver = get_driver(cdrive); 		// try current drive (3)
+	}else{
+	  pdriver = get_driver(name); 			// try given name (2)
+	}
+      }else{
+	pdriver = get_driver(drive); 			// try extracted drive (1)
+      }
+	               
+      if(!pdriver){ res = EINVDRV; break;  }		// if no driver, exit...
+      
+       if(pdriver->f_oper->ioctl){	
+	res = pdriver->f_oper->ioctl(name,cmd,arg);	// is ioctl valid ? -> call it
+      }else{
+	fs_lldbgwait(" ioctl not valid !\n");
+      }            
+      break;
+      
+    
+    case FS_IOCTL_OPEN_DIR: // ************************************* open dir *************************************
+      fs_lldbgwait(" - FS_IOCTL_OPEN_DIR - \n");
+      if (!arg){ res = ENODEV;	break;  }    				// we need some args ... 
+      
+      //look for drive: 1) in arg.fpath 2) in *name 3) take CurrDrive
+      split_filename((char*)((struct ioctl_opendir *)arg)->path, drive, path, filename, ext, fullname, filepath, fullpath); // analyze filename      
+      if(!drive[0]){ // there is no drive in the path name argument
+	if(!name) { // there is no drive name given in the name argument
+	  pdriver = get_driver(cdrive); 		// try current drive (3)
+	}else{
+	  pdriver = get_driver(name); 			// try given name (2)
+	}
+      }else{
+	pdriver = get_driver(drive); 			// try extracted drive (1)
+      }
+	               
+      if(!pdriver){ res = EINVDRV; break;  }		// if no driver, exit...
+      
+       if(pdriver->f_oper->ioctl){	
+	res = pdriver->f_oper->ioctl(name,cmd,arg);	// is ioctl valid ? -> call it
+      }else{
+	fs_lldbgwait(" ioctl not valid !\n");
+      }            
+      break;  
+    case FS_IOCTL_READ_DIR: // ************************************* read dir *************************************
+      fs_lldbgwait(" - FS_IOCTL_READ_DIR - \n");
+      //parg_readdir = (struct ioctl_readdir*)arg;
+      break;
+    case FS_IOCTL_CLOSE_DIR: // ************************************* close dir *************************************      
+      fs_lldbgwait(" - FS_IOCTL_CLOSE_DIR - \n");
+      break;  
+    case FS_IOCTL_GET_FREE:
+      fs_lldbgwait(" - FS_IOCTL_GET_FREE - \n");
+      //parg_getfree = (struct ioctl_getfree*)arg;
+      break;
+    case NKC_IOCTL_DIR: // ****************************** JADOS directory function call  ******************************
+      
+      pdriver = get_driver(name); 		
+      
+      if(!pdriver){ res = EINVDRV; break;  }		// if no driver, exit...
+      
+       if(pdriver->f_oper->ioctl){	
+	res = pdriver->f_oper->ioctl(name,cmd,arg);	// is ioctl valid ? -> call it
+      }else{
+	fs_lldbgwait(" ioctl not valid !\n");
+      }            
+      
+      break;
+      
+    // ========================== FAT ===========================
+      
+          
+      
+    default:	
+      fs_dbg("fs-ioctl default...");
+      pdriver = NULL;
+      if(name == NULL && cmd > 100){ // unspecified FAT_IOCTL
+	  fs_lldbgwait("error, unspecified FAT_IOCTL...");
+	  return FR_INVALID_PARAMETER;	  	 	
+      }	else {
+	fs_lldbgwait("look for named driver via get_driver...\n");
+	if(name == NULL) return FR_INVALID_PARAMETER;      
+	pdriver = get_driver(name);  		// is any driver registered for a device with this name ?	
+      }
+      
+      if(pdriver == NULL) return FR_NO_DRIVER;      
+      fs_dbg(" found,calling drivers ioctl at 0x%0lx  (KEY)",pdriver->f_oper->ioctl);
+      fs_lldbgwait("\n");
+      if(pdriver->f_oper->ioctl){
+	
+	res = pdriver->f_oper->ioctl(name,cmd,arg);	// is ioctl valid ? -> call it
+      }else{
+	fs_lldbgwait(" ioctl not valid !\n");
+      }
   }
   
-  #ifdef CONFIG_DEBUG_FS
-  nkc_write("fs.c: ... ioctl ]\n"); 
-  #endif
   
-  return 0;
+  return res;
 }
 
 /****************************************************************************
@@ -274,13 +481,11 @@ int register_driver(char *pdrive, char *pname, const struct file_operations  *f_
 	struct driver *pdriver, *ptail;
 	
 	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: [ register_driver...\n");
-	nkc_write(" name:  "); nkc_write(pname); nkc_write("\n");
-	nkc_write(" drive: "); nkc_write(pdrive); nkc_write("\n");
-	nkc_write(" foper: 0x"); nkc_write_hex8((int)f_oper); nkc_write("\n");
-	nkc_write(" open: 0x"); nkc_write_hex8((int)f_oper->open); nkc_write("\n");
-	#endif
+	fs_lldbg("fs.c: [ register_driver...\n");
+	fs_dbg(" name:  %s",pname);
+	fs_dbg(" drive: %s",pdrive);
+	fs_dbg(" foper: 0x%x\n",f_oper);
+	fs_dbg(" open: 0x%x\n",f_oper->open);
 	
 	/*
 		allocate all buffers
@@ -304,13 +509,11 @@ int register_driver(char *pdrive, char *pname, const struct file_operations  *f_
 		ptail->next = pdriver;
 	}			
 	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write(" name:  "); nkc_write(pdriver->pname); nkc_write("\n");
-	nkc_write(" drive: "); nkc_write(pdriver->pdrive); nkc_write("\n");
-	nkc_write(" foper: 0x"); nkc_write_hex8((int)pdriver->f_oper); nkc_write("\n");
-	nkc_write(" open: 0x"); nkc_write_hex8((int)pdriver->f_oper->open); nkc_write("\n");
-	nkc_write("....register_driver ]\n"); nkc_getchar();
-	#endif
+	fs_dbg(" name:  %s\n",pdriver->pname);
+	fs_dbg(" drive: %s\n",pdriver->pdrive);
+	fs_dbg(" foper: 0x%x\n",pdriver->f_oper);
+	fs_dbg(" open: 0x%x",pdriver->f_oper->open);
+	fs_lldbgwait("....register_driver ]\n");
 	
 	return EZERO;
 }
@@ -373,10 +576,8 @@ int un_register_driver(char *pdrive)
 void _ll_init_fs(void)  			// initialize filesystems (nkc/llopenc.c)
 {
  	int ii;	
- 
- 	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: [ _ll_init_fs...\n"); nkc_getchar();
-	#endif
+  
+	fs_lldbgwait("fs.c: [ _ll_init_fs...\n");
 	
  	for(ii=0; ii<NUM_FILE_HANDLES;ii++)
  	  HPOOL[ii] = 0;
@@ -404,10 +605,9 @@ void _ll_init_fs(void)  			// initialize filesystems (nkc/llopenc.c)
 				
 	cdrive[1] = 0;	// current drive name, i.e. where the program was started : A,B, HDA1 etc
 	cpath[0] = 0;	// current path name; for jados this is empty or '/'
- 
- 	#ifdef CONFIG_DEBUG_FS
- 	nkc_write("fs.c:  cdrive = "); nkc_write(cdrive); nkc_write("\n"); nkc_getchar();
-	#endif
+  	
+ 	fs_dbg("fs.c:  cdrive = %s",cdrive); 
+	fs_lldbgwait("\n");	
 	
  	#ifdef CONFIG_FS_NKC
  	// initialize NKC/JADOS FileSystem
@@ -419,9 +619,7 @@ void _ll_init_fs(void)  			// initialize filesystems (nkc/llopenc.c)
  	fatfs_init_fs();
  	#endif 
 
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: ..._ll_init_fs ]\n"); nkc_getchar();
-	#endif
+	fs_lldbgwait("fs.c: ..._ll_init_fs ]\n");
 }
 
 
@@ -442,80 +640,60 @@ int _ll_open(char *name, int flags)             // open a file (nkc/llopenc.c)
 /*
  * open an existing file, return handle
   name = [LW:][path]filename.ext
-  flags = 0(read), 1(write), 2(read/write) 
+  flags = 0(read), 1(write), 2(read/write) - (translated by _ll_flags)
+        + _F_CREATE (0x0800) if called through _ll_creat
  *************************************************************************/            
 {
   
   
   
 	struct _file *pfile,*pcf,*plf;	
-	struct driver *pdriver;
-	char drive[5],path[255],filename[20], ext[10], fname[30], fullname[320], *pname;
+	struct driver *pdriver;	
    	int fd,res,i;
    	UINT indx = NUM_FILE_HANDLES;
    	
-   	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: [ _ll_open...\n"); nkc_getchar();
-	#endif
+	fs_dbg("_ll_open: name=%s, flags=0x%x",name,flags); fs_lldbgwait("\n");
 	
 	/*
 		initialize string variables
-	*/
-	drive[0] = 0; path[0] = 0; filename[0] = 0; ext[0] = 0; fname[0] = 0; fullname[0] = 0;
+	*/	
 	
-	split_filename(name, drive, path, filename, ext); // analyze filename
-	
-	strcat(fname,filename); // build filename of the form filename.ext
-    strcat(fname,".");
-    strcat(fname,ext);    
+	split_filename(name, drive, path, filename, ext, fullname, filepath, fullpath); // analyze filename		   
     
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c:  name = "); nkc_write(name); nkc_write("\n");
-	nkc_write("fs.c:  path = "); nkc_write(path); nkc_write("\n");
-	nkc_write("fs.c:  filename = "); nkc_write(filename); nkc_write("\n");
-	nkc_write("fs.c:  ext = "); nkc_write(ext); nkc_write("\n");
-	nkc_write("fs.c:  fname = "); nkc_write(fname); nkc_write("\n");
-	nkc_getchar();
-	#endif
-
-	
-	if( !strcmp(drive,cdrive) )
-	{
-		strcpy(cdrive,drive);  /* update current drive */
-	}
+	fs_dbg("_ll_open:  name = %s\n",name);
+	fs_dbg("_ll_open:  path = %s\n",path);
+	fs_dbg("_ll_open:  filename = %s\n",filename);
+	fs_dbg("_ll_open:  ext = %s\n",ext);
+	fs_dbg("_ll_open:  fpath = %s",filepath);	
+	fs_lldbgwait("\n");
 	
 	if( !strlen(drive) )
 	{
 		strcpy(drive,cdrive);  /* if no drive specified use global current drive */
+		
 	}
 	
 	
-	strcat(fullname,drive); // build fullname of the form filename.ext
-    strcat(fullname,":");
-    strcat(fullname,path);
-    strcat(fullname,filename);
-    strcat(fullname,".");
-    strcat(fullname,ext);
+	fullname[0] = 0;	// rebuild fullname of the form drive:/path/filename.ext
+	strcat(fullname,drive); 
+	strcat(fullname,":");
+	strcat(fullname,filepath);
 
+	fs_dbg("_ll_open: drive is: %s\n",drive);
+	fs_dbg("_ll_open: fullname= %s",fullname);
+	fs_lldbgwait("\n");	
 
+	
    	/*
    		get driver for this drive (search for the drive used..)
    	*/
-
 	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: drive is: "); nkc_write(drive); nkc_write("\n");
-	nkc_write("fs.c: fullname= "); nkc_write(fullname); nkc_write("\n"); 
-	nkc_getchar();
-	#endif
 	
    	pdriver = get_driver(drive);
    	
    	if(pdriver == NULL) 
    	{
-   		#ifdef CONFIG_DEBUG_FS
-   		nkc_write("fs.c:  no driver found !\n fs.c: ...._ll_open ]\n"); nkc_getchar();
-   		#endif
+   		fs_lldbgwait("_ll_open:  no driver found !\n fs.c: ...._ll_open ]\n");   	
    		return 0; /* no driver registered */
    	}
    	
@@ -533,21 +711,17 @@ int _ll_open(char *name, int flags)             // open a file (nkc/llopenc.c)
 		{
 			if(flags & _F_CREATE)
 	    	{	
-	    		#ifdef CONFIG_DEBUG_FS
-	    		nkc_write("fs.c:  cannot create already open file...\n");
-	    		nkc_write("pfile->pname= "); nkc_write(pfile->pname); nkc_write("\n");
-	    		nkc_write("fullname= "); nkc_write(fullname); nkc_write(" ]\n");
-	    		nkc_getchar();
-	    		#endif
+	    		fs_dbg("_ll_open:  cannot create already open file...\n");
+	    		fs_dbg("pfile->pname= %s\n",pfile->pname);
+	    		fs_dbg("fullname= %s",fullname);
+	    		fs_lldbgwait("\n");	    		
 	    		return 0;
 	    	} 
 		
 			/* this file is already open, we can open it read only */
 			flags &= ~_F_WRIT;
 			flags |=  _F_READ;
-			#ifdef CONFIG_DEBUG_FS
-			nkc_write("fs.c: file is already open -> set WRONLY\n"); nkc_getchar();
-			#endif
+			fs_lldbgwait("_ll_open: file is already open -> set WRONLY\n");
 		}		
 	   } 
 	}
@@ -562,7 +736,7 @@ int _ll_open(char *name, int flags)             // open a file (nkc/llopenc.c)
    	
    	if(fd == 255) /* no more free handle ! */
 	{	
-		nkc_write("fs.c:  no more free file handles in _ll_open\n");
+		nkc_write("_ll_open:  no more free file handles in _ll_open\n");
 		free_handle(fd);		
 		return 0;
 	}
@@ -605,12 +779,13 @@ int _ll_open(char *name, int flags)             // open a file (nkc/llopenc.c)
 	pfile->f_oper = pdriver->f_oper;
 
 	
-	#ifdef CONFIG_DEBUG_FS		
-	nkc_write("fs.c:  foper: 0x"); nkc_write_hex8((int)pfile->f_oper); nkc_write("\n");
-	nkc_write("fs.c:  open: 0x"); nkc_write_hex8((int)pfile->f_oper->open); nkc_write("\n");
-	nkc_write("fs.c: call pfile->f_oper->open ...\n"); nkc_getchar();
-	#endif
+	fs_dbg("_ll_open:  foper: 0x%x\n",pfile->f_oper);
+	fs_dbg("_ll_open:  open: 0x%x\n",pfile->f_oper->open);
+	fs_lldbgwait("_ll_open: call pfile->f_oper->open ...\n");
+	
 	res = pfile->f_oper->open(pfile);
+	
+	fs_dbg("_ll_open:  pfile->f_oper->open(pfile) returned %d\n",res);
 	
 	if(res != EZERO)
 	{
@@ -622,10 +797,8 @@ int _ll_open(char *name, int flags)             // open a file (nkc/llopenc.c)
 
 	
 	filelist[fd] = pfile;
-		
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: ..._ll_open ]\n"); nkc_getchar();
-	#endif	
+	
+	fs_lldbgwait("fs.c: ..._ll_open ]\n");
 	
 	return fd;	
 }
@@ -649,6 +822,8 @@ int _ll_open(char *name, int flags)             // open a file (nkc/llopenc.c)
 int _ll_creat(char *name, int flags)		// create a file (nkc/llopenc.c)
 {
   
+  fs_dbg("fs.c: _ll_creat...\n");
+  //                               0x0800
  return  _ll_open(name, flags | _F_CREATE);
 			
 }
@@ -675,16 +850,12 @@ void _ll_close(int fd)				// close a file (nkc/llopenc.c)
    	int res;
    	UINT indx = NUM_FILE_HANDLES;
    	
-   	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: [ _ll_close....\n"); nkc_getchar();
-	#endif	
+	fs_lldbgwait("fs.c: [ _ll_close....\n");
 	
    	pfile = filelist[fd];
    	if(!pfile) return;
    	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: call pfile->f_oper->close\n");
-	#endif	
+	fs_lldbg("fs.c: call pfile->f_oper->close\n");
 	
 	res = pfile->f_oper->close(pfile);
 	
@@ -700,9 +871,7 @@ void _ll_close(int fd)				// close a file (nkc/llopenc.c)
    	filelist[fd] = NULL;
    	free_handle(fd);
 	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: .... _ll_close ]\n"); nkc_getchar();
-	#endif	
+	fs_lldbg("fs.c: .... _ll_close ]\n");
 }
 
 
@@ -725,9 +894,7 @@ int __ll_read(int fd, void *buf, int size)	// (nkc/llstd.S)
 	struct _file *pfile;	
    	int res;
    	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: [ _ll_read....\n"); nkc_getchar();
-	#endif	
+	fs_lldbgwait("fs.c: [ _ll_read....\n");
 	
    	if(fd<10) return; // besser wäre es, die stdio's auch in die filelist aufzunehmen ...
    					  // das wird z.Z. in llstd.S abgehandelt, die Routinen könnte man wie jedes andere FS einhängen
@@ -738,9 +905,7 @@ int __ll_read(int fd, void *buf, int size)	// (nkc/llstd.S)
    	
    	res = pfile->f_oper->read(pfile,buf,size);
 
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: ... _ll_read ]\n"); nkc_getchar();
-	#endif
+	fs_lldbgwait("fs.c: ... _ll_read ]\n");
 	
 	return res;	
 }
@@ -764,18 +929,14 @@ int __ll_write(int fd, void *buf, int size)     // (nkc/llstd.S)
 	struct _file *pfile;	
    	int res;
    	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: [ _ll_write...\n"); nkc_getchar();
-	#endif
-   	
+	fs_lldbgwait("fs.c: [ _ll_write...\n");
+	
    	pfile = filelist[fd];
    	if(!pfile) return ENOFILE;
    	
    	res = pfile->f_oper->write(pfile,buf,size);
 
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: ... _ll_write ]\n"); nkc_getchar();
-	#endif
+	fs_lldbgwait("fs.c: ... _ll_write ]\n");
 	
 	return res;	
 }
@@ -796,6 +957,7 @@ int __ll_write(int fd, void *buf, int size)     // (nkc/llstd.S)
 int _ll_flags(int flags)			// (nkc/llopen.S)
 {
 	// do nothing with the flags
+  return flags;
 }
 
 /****************************************************************************
@@ -820,18 +982,14 @@ void _ll_seek(int fd, int pos, int origin)	// seek to pos (nkc/llopenc.c)
 	struct _file *pfile;	
    	int res;
 	   	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: [ _ll_seek...\n"); nkc_getchar();
-	#endif
+	fs_lldbgwait("fs.c: [ _ll_seek...\n");
    	
    	pfile = filelist[fd];
    	if(!pfile) return;
    		
    	res = pfile->f_oper->seek(pfile,pos,origin);
 	
-	#ifdef CONFIG_DEBUG_FS
-	nkc_write("fs.c: ... _ll_seek ]\n"); nkc_getchar();
-	#endif
+	fs_lldbgwait("fs.c: ... _ll_seek ]\n");
 	
 }
 

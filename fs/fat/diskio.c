@@ -3,9 +3,9 @@
 /*-----------------------------------------------------------------------*/
 
 
-#include "diskio.h"
-#include "gide.h"
-#include "debug.h"
+#include <diskio.h>
+#include <gide.h>
+#include <debug.h>
 
 
 
@@ -52,15 +52,20 @@ void init_ff(void)
 	memset(Buffer,0,BUFSIZE);						 /* reset buffer */
 }
 
+
 DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 {
-	DSTATUS stat; //STA_NODISK
+	unsigned int stat; //STA_NODISK
 	//struct _driveinfo *pinfo;
+	
 	struct _deviceinfo di;
+	
 	
 	dio_dbg("disk_initialize...\n");
 	
-	stat = idetifyIDE(pdrv+1, &di);
+	//stat = idetifyIDE(pdrv+1, &di);
+	stat = idetifyIDE(1, &di);
+	
 	//pinfo = idetest(pdrv+1);  /* muss aufgerufen werden um GP Funktionen verwenden zu können ! */
 	stat = 0;
 		

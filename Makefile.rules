@@ -20,19 +20,24 @@ CONFIG_IEEE_MATH=0
 ############## use filesystems ? ####################################################
 CONFIG_FS = 1
 CONFIG_FS_NKC = 1
-CONFIG_FS_FAT = 0
+CONFIG_FS_FAT = 1
 
 
 ############# DEBUG configuration #################################################
 CONFIG_DEBUG = 0
-CONFIG_DEBUG_DISKIO = 1
+CONFIG_DEBUG_DISKIO = 0
 CONFIG_DEBUG_GIDE_C = 0
 CONFIG_DEBUG_GIDE_S = 0
-CONFIG_DEBUG_FF = 0
 CONFIG_DEBUG_XXPRINTF = 0
+# clib io debug
+CONFIG_DEBUG_CLIB_IO=0
+# HighLevel FileSystem
 CONFIG_DEBUG_FS = 1
+# NKC/JADOS FileSystem
 CONFIG_DEBUG_FS_NKC = 0
-CONFIG_DEBUG_FS_FAT = 0
+# FAT file system module
+CONFIG_DEBUG_FS_FAT = 1
+CONFIG_DEBUG_FF = 1
 
 ############## tell if internal math lib should be used (/math) ############################
 # 0 = no internal, use libgcc routines, 1 = use internal math, needs FPU !
@@ -62,6 +67,8 @@ CCFLAGS +=  -fno-common
 # ######### define CPU for conditional compilation (preprocessor) #####################
 CCFLAGS +=  -DM$(CPU)
 
+#CCFLAGS +=  -mshort
+
 # ######### seperate text and data (includes -fPIC/-fpic) #####################
 # not supported with elf2bin (Feb. 2014) - need to relocate <R_68K_GOT32O> entries
 #CCFLAGS += -msep-data
@@ -80,6 +87,10 @@ endif
 # DEBUG options ####################
 ifeq ($(CONFIG_DEBUG),1)
 CCFLAGS += -DCONFIG_DEBUG
+
+ifeq ($(CONFIG_DEBUG_CLIB_IO),1)
+CCFLAGS += -DCONFIG_DEBUG_CLIB_IO
+endif
 
 ifeq ($(CONFIG_DEBUG_DISKIO),1)
 CCFLAGS += -DCONFIG_DEBUG_DISKIO

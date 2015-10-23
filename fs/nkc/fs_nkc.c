@@ -2,11 +2,12 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <fs.h>
+#include <debug.h>
+#include <ioctl.h>
+#include <ff.h> // FILINFO and DIR...
 #include "fs_nkc.h"
 
 #include "../../nkc/llnkc.h"
-
-//#define NKC_DEBUG
 
 
 const struct file_operations nkc_file_operations =
@@ -16,7 +17,7 @@ const struct file_operations nkc_file_operations =
   nkcfs_read,
   nkcfs_write,
   nkcfs_seek,
-  NULL, /* ioctrl */
+  nkcfs_ioctl,
   nkcfs_remove,
   nkcfs_getpos,
 
@@ -42,15 +43,11 @@ UINT read_sector(struct jdfileinfo *pfi)
 	UCHAR *pbuffer;
 	UCHAR result;
 	
-	#ifdef NKC_DEBUG
-	nkc_write("read_sector...\n");
-	#endif
+	fsnkc_dbg("read_sector...\n");
 	
 	if(pfi->eof) 
 	{
-		#ifdef NKC_DEBUG
-		nkc_write("...read_sector(1)\n"); nkc_getchar();
-		#endif
+		fsnkc_lldbgwait("...read_sector(1)\n");
 		return 1;			// already at end of file
 	}
 	
@@ -60,14 +57,10 @@ UINT read_sector(struct jdfileinfo *pfi)
 	switch(result)
 	{
 		case 0: 
-			#ifdef NKC_DEBUG
-			nkc_write(" >>>>>>>>>>>>>>\n");
-			#endif 
+			fsnkc_dbg(" >>>>>>>>>>>>>>\n");
 			break; 	    // no error
 		case 1: pfi->eof = 1; 
-			#ifdef NKC_DEBUG
-			nkc_write("...read_sector(EOF)\n"); nkc_getchar();
-			#endif
+			fsnkc_lldbgwait("...read_sector(EOF)\n");
 			return 1; // EOF
 		case 99: break; 	    // end of user space (JADOS)
 		default: 		    // error reading device
@@ -78,9 +71,7 @@ UINT read_sector(struct jdfileinfo *pfi)
 	pfi->clsec++;			// increment current logical sector
 	pfi->crpos=0;			// reset current logical sector position
 	
-	#ifdef NKC_DEBUG
-	nkc_write("...read_sector\n"); nkc_getchar();
-	#endif
+	fsnkc_lldbgwait("...read_sector\n");
 	return result;
 }
 
@@ -94,17 +85,14 @@ UINT write_sector(struct jdfileinfo *pfi)
 {
 	UCHAR *pbuffer;
 	UCHAR result;
-	#ifdef NKC_DEBUG
-	nkc_write("write_sector...\n");
-	#endif
+	
+	fsnkc_dbg("write_sector...\n");
 	
 	
 	if(pfi->pfcb->mode != 0xE5 || (pfi->crpos == 0)) 
 	{
-		#ifdef NKC_DEBUG 
-		nkc_write("...buffer empty or file read only, no need to save\n"); 
-		nkc_write("...write_sector\n"); nkc_getchar();
-		#endif
+		fsnkc_dbg("...buffer empty or file read only, no need to save\n"); 
+		fsnkc_lldbgwait("...write_sector\n");
 	}
 		    	
 	pbuffer = pfi->pfcb->pbuffer; 		// save sector buffer address
@@ -113,24 +101,16 @@ UINT write_sector(struct jdfileinfo *pfi)
 	switch(result)
 	{
 		case 0:  
-			#ifdef NKC_DEBUG
-			nkc_write(" <<<<<<<<<<<<<<<<<\n");
-			#endif 
+			fsnkc_dbg(" <<<<<<<<<<<<<<<<<\n");			
 			break; 	// no error
 		case 5:  
-			#ifdef NKC_DEBUG 
-			nkc_write("...write_sector(disk full)\n"); nkc_getchar();
-			#endif
+			fsnkc_lldbgwait("...write_sector(disk full)\n");
 			return 0; 	// disk full
 		case 0xff: 
-			#ifdef NKC_DEBUG
-			nkc_write(" media access error\n");
-			#endif
+			fsnkc_dbg(" media access error\n");
 			break; 	// media access error	
-		default:			
-			#ifdef NKC_DEBUG 
-			nkc_write(" other error\n"); 		// general errror
-			#endif
+		default:		
+			fsnkc_dbg(" other error\n"); 		// general errror
 			break;	
 	}
 	
@@ -140,16 +120,134 @@ UINT write_sector(struct jdfileinfo *pfi)
 	pfi->crpos=0;			// reset current logical sector position
 	memset(pbuffer,0,BUFFER_SIZE);	// clear buffer
 	
-	#ifdef NKC_DEBUG 
-	nkc_write("...write_sector\n"); nkc_getchar();
-	#endif
+	fsnkc_lldbgwait("...write_sector\n");
 	return result;
 }
 
 
+/*
+ * The f_opendir() function opens an exsisting directory and creates the directory object for subsequent calls.
+ */
+FRESULT nkcfs_opendir (
+  DIR* dp,           /* [OUT] Pointer to the directory object structure */
+  const TCHAR* path  /* [IN] Directory name */
+){
+  fsnkc_lldbg("fs_nkc.c: f_opendir not yet implemented...\n");
+}
+
+/*
+ * The f_closedir() function closes an open directory object. After the function succeeded, the directory object is no longer valid and it can be discarded.
+ */
+FRESULT nkcfs_closedir (
+  DIR* dp     /* [IN] Pointer to the directory object */
+){
+  fsnkc_lldbg("fs_nkc.c: f_opendir not yet implemented...\n");
+}
+
+/*
+ * The f_readdir() function reads directory items, file and directory, in sequence. All items in the directory can be read by calling f_readdir() function repeatedly.
+ * When all directory items have been read and no item to read, a null string is returned into the fname[] without any error
+ * When a null pointer is given to the fno, the read index of the directory object is rewinded.
+ * 
+ * Available fileinformation in a JADOS environment:
+ * 
+ */
+FRESULT nkcfs_readdir (
+  DIR* dp,      /* [IN] Directory object */
+  FILINFO* fno  /* [OUT] File information structure */
+){
+  
+  fsnkc_lldbg("fs_nkc.c: f_opendir not yet implemented...\n");
+}
+
 /*******************************************************************************
  *   public functions   
  *******************************************************************************/
+static int     nkcfs_ioctl(char *name, int cmd, unsigned long arg){
+//  long p1,p2;
+//  WORD w;
+//  DWORD dw;
+  char cdrive[2];
+  FRESULT res; 
+//  char tmp[10];
+//  struct _deviceinfo di;
+  
+  fsnkc_dbg("fs_nkc.c: [ nkcfs_ioctl ...\n");  
+
+  switch(cmd){
+  
+    // ****************************** get current working directory ****************************** 
+    case FS_IOCTL_GETCWD:    
+      fsnkc_dbg("fs_nkc.c: - FS_IOCTL_GETCWD -\n"); 
+      cdrive[1] = 0;      
+      if(_DRIVE >= 0 && _DRIVE <= 4) /* is it a ramdisk(0) or floppy drive(1..4) ? */
+		{
+			cdrive[0] = _DRIVE + '0';
+		}
+		
+		if(_DRIVE >= 5 && _DRIVE <= 30) /* is it a hard disk drive (5..30) ? */
+		{
+			cdrive[0] = _DRIVE - 5 + 'A';
+		}
+		
+      strcpy((char*)((struct ioctl_get_cwd*)(arg))->cdrv,cdrive);
+      strcpy((char*)((struct ioctl_get_cwd*)(arg))->cpath,"/");     /* there is nothing like a subdirectory in JADOS/NKC FS */
+      res = FR_OK;
+      
+    // ****************************** change physical drive ****************************** 
+    case  FS_IOCTL_CHDRIVE:
+      fsnkc_dbg("fs_nkc.c: - FS_IOCTL_CHDRIVE -\n");            
+      if((*(char*)arg) >= '0' && (*(char*)arg) <= '4'){ /* is it a ramdisk(0) or floppy drive(1..4) ? */
+	_DRIVE = (*(char*)arg) - '0';
+      }      
+      if((*(char*)arg) >= 'A' && (*(char*)arg) <= 'Z'){ /* is it a hard disk drive (5..30) ? */	
+	_DRIVE = (*(char*)arg) + 5 - 'A';
+      }                  
+      res = 0;
+      break;
+    // ****************************** open directory **************************************  
+    case FS_IOCTL_OPEN_DIR:
+			      res = nkcfs_opendir(((struct ioctl_opendir*)arg)->dp,   // OUT: DIR structure
+					          ((struct ioctl_opendir*)arg)->path);// IN : Path, i.e. drive
+			      break;
+      
+     // ****************************** read directory ******************************
+    case FS_IOCTL_READ_DIR:
+			      res = nkcfs_readdir(((struct ioctl_readdir*)arg)->dp,   // IN : DIR structure
+					          ((struct ioctl_readdir*)arg)->fno); // OUT: file information structure
+			      break;
+    // ****************************** close directory ******************************
+    case FS_IOCTL_CLOSE_DIR:	
+			      res = nkcfs_closedir((DIR*)arg);			      // IN: DIR structure      
+			      break;  
+			      
+			      
+    // ****************************** directory function call to JADOS ******************************
+    //struct ioctl_nkc_dir {
+    //  BYTE  attrib;			// IN: bitmapped file attribute: 1=file length; 2=date; 4=r/w attribute
+    //  BYTE  *ppattern;	        // IN: pointer to file pattern (? and * and drive info are also allowed)
+    //  BYTE  cols;			// IN: number of colums for output
+    //  UINT  size;			// IN: size of output buffer pbuf (256x14 Bytes max.)
+    //  void* pbuf;			// OUT: output buffer
+    //};
+    //NKC_IOCTL_DIR
+    case NKC_IOCTL_DIR:  
+      fsnkc_dbg("fs_nkc.c: - NKC_IOCTL_DIR -\n"); 
+      res = _nkc_directory( ((struct ioctl_nkc_dir*)arg)->pbuf,
+			    ((struct ioctl_nkc_dir*)arg)->ppattern,
+			    ((struct ioctl_nkc_dir*)arg)->attrib,
+			    ((struct ioctl_nkc_dir*)arg)->cols,
+			    ((struct ioctl_nkc_dir*)arg)->size);
+      break;
+    default: res = 0;
+  }
+
+  
+  fsnkc_dbg("fs_nkc.c: ... nkcfs_ioctl ]\n");
+
+  return res;
+}
+
 
 static int nkcfs_open(struct _file *filp)
 {
@@ -158,16 +256,11 @@ static int nkcfs_open(struct _file *filp)
 	struct jdfileinfo *pfi;
 	UCHAR *pbuffer;
 	
+	fsnkc_lldbgwait("nkcfs_open...\n");
 	
-	#ifdef NKC_DEBUG
-	nkc_write("nkcfs_open...\n"); nkc_getchar();
-	#endif
-	
-	#ifdef NKC_DEBUG
-	nkc_write("fname= "); nkc_write(filp->pname); nkc_write("\n"); 
-	nkc_write("oflags= "); nkc_write_hex8(filp->f_oflags); nkc_write("\n"); 
-	nkc_getchar();
-	#endif
+	fsnkc_dbg("fname= %s\n",filp->pname);
+	fsnkc_dbg("oflags= 0x%x",filp->f_oflags);
+	fsnkc_lldbgwait("\n");
 	
 	
 	/*
@@ -177,12 +270,10 @@ static int nkcfs_open(struct _file *filp)
 	pfi = (struct jdfileinfo *)malloc(sizeof(struct jdfileinfo));
 	pbuffer = (unsigned char*)malloc(BUFFER_SIZE);
 	
-	#ifdef NKC_DEBUG 
-	nkc_write(" pfcb=0x"); nkc_write_hex8((int)pfcb);
-	nkc_write(" pfi=0x"); nkc_write_hex8((int)pfi);	
-	nkc_write(" pbuffer=0x"); nkc_write_hex8((int)pbuffer);
-	nkc_write("\n"); nkc_getchar();
-	#endif
+	fsnkc_dbg(" pfcb=0x%x",(int)pfcb);
+	fsnkc_dbg(" pfi=0x%x",(int)pfi);	
+	fsnkc_dbg(" pbuffer=0x%x",(int)pbuffer);
+	fsnkc_lldbgwait("\n");
 	
 		
 	result = nkc_fillfcb(pfcb,filp->pname);	
@@ -245,34 +336,22 @@ static int nkcfs_open(struct _file *filp)
 	switch(result)
 	{
 		case 0: 		// SUCCESS
-				#ifdef NKC_DEBUG
-				nkc_write("- success -\n");
-				#endif
+				fsnkc_dbg("- success -\n");
 				break;						
 		case 5:		// DISK FULL (create)
-				#ifdef NKC_DEBUG
-				nkc_write("- disk full -\n");
-				#endif
+				fsnkc_dbg("- disk full -\n");
 				break;				
 		case 6:  	// DIRECTORY FULL (create)
-				#ifdef NKC_DEBUG
-				nkc_write("- directory full -\n");
-				#endif
+				fsnkc_dbg("- directory full -\n");
 				break;						
 		case 7:		// ACCESS ERROR (create)
-				#ifdef NKC_DEBUG
-				nkc_write("- access error -\n");
-				#endif
+				fsnkc_dbg("- access error -\n");
 				break;						
 		case 0xff:	// FILE NOT FOUND
-				#ifdef NKC_DEBUG
-				nkc_write("- file not found error -\n");
-				#endif
+				fsnkc_dbg("- file not found error -\n");
 				break;				
 		default:
-				#ifdef NKC_DEBUG
-				nkc_write("- unspecified error -\n");
-				#endif
+				fsnkc_dbg("- unspecified error -\n");
 				break;				
 
 		
@@ -284,9 +363,7 @@ static int nkcfs_open(struct _file *filp)
 		free(pfcb);
 		free(pbuffer);
 				
-		#ifdef NKC_DEBUG 
-		nkc_write("...nkcfs_open(3)\n"); nkc_getchar();
-		#endif
+		fsnkc_lldbgwait("...nkcfs_open(3)\n");
 		return ENOFILE;
 	}
 	
@@ -304,10 +381,8 @@ static int nkcfs_open(struct _file *filp)
 		read_sector(pfi);
 	}
 	
-	#ifdef NKC_DEBUG 
-	nkc_write("flags=0x"); nkc_write_hex8(pfi->pfcb->mode); nkc_write("\n");
-	nkc_write("...nkcfs_open\n"); nkc_getchar();
-	#endif
+	fsnkc_dbg("flags=0x%x",pfi->pfcb->mode);
+	fsnkc_lldbgwait("...nkcfs_open\n");
 	
 	filp->private = (void*)pfi;
 	
@@ -322,28 +397,21 @@ static int nkcfs_close(struct _file *filp)
 	UCHAR result;	
 	struct jdfileinfo *pfi;
 	
-	
-	#ifdef NKC_DEBUG
-	nkc_write("nkcfs_close...\n");	
-	#endif
+	fsnkc_dbg("nkcfs_close...\n");
 	
 	pfi = (struct jdfileinfo*)filp->private;
 		    
 	/* flush current sector, if mode = write */
 	if(pfi->pfcb->mode == 0xE5 && (pfi->crpos > 0)) 
    	{
-   	  #ifdef NKC_DEBUG
-	  nkc_write(" crpos = 0x"); nkc_write_dec_dw(pfi->crpos); nkc_write("\n");
-	  #endif
+	  fsnkc_dbg(" crpos = %d\n",pfi->crpos);
    	  write_sector(pfi);
     }
 	
 	/* flush current sector, if mode = write */
 	if(pfi->pfcb->mode == 0xE5 && (pfi->crpos > 0)) 
 	{
-		#ifdef NKC_DEBUG
-		nkc_write(" crpos = 0x"); nkc_write_dec_dw(pfi->crpos); nkc_write(" !\n");
-		#endif
+		fsnkc_dbg(" crpos = %d\n",pfi->crpos);
 		write_sector(pfi);
 	}
 
@@ -356,9 +424,7 @@ static int nkcfs_close(struct _file *filp)
 	free(pfi->pfcb);
 	free(pfi);
 			    	
-	#ifdef NKC_DEBUG 
-	nkc_write("...nkcfs_close\n"); nkc_getchar();
-	#endif
+	fsnkc_lldbgwait("...nkcfs_close\n");
 	
 	return EZERO;
 }
@@ -370,32 +436,23 @@ static int nkcfs_read(struct _file *filp, char *buffer, int buflen)
 	UINT count = buflen;	// number of bytes to read
 	UINT bp;		// buffer pointer
 	UINT res;		// a result
+		
+	fsnkc_dbg("nkcfs_read...\n buflen: 0x%x\n",buflen);
 
-	#ifdef NKC_DEBUG
-	nkc_write("nkcfs_read...\n");		
-	nkc_write(" buflen: 0x"); nkc_write_hex8(buflen);
-	nkc_write("\n");
-	//nkc_write("->");
-	#endif
-	
 	
 	pfi = (struct jdfileinfo *)filp->private; 
 
 	if(pfi->eof) 
 	{
-		#ifdef NKC_DEBUG	
-		nkc_write("...nkcfs_read(1)\n"); nkc_getchar();
-		#endif
+		fsnkc_lldbgwait("...nkcfs_read(1)\n");
 		return EZERO;		    		
 	}
 
 	pbuf = pfi->pfcb->pbuffer;	// fetch buffer address
-	#ifdef NKC_DEBUG				
-	nkc_write(" pbuf = 0x"); nkc_write_hex8((int)pbuf);
-	nkc_write(" buf = 0x"); nkc_write_hex8((int)buffer);
-	nkc_write("\n");
-	//nkc_getchar();			
-	#endif
+	
+	fsnkc_dbg(" pbuf = 0x%x   ",(int)pbuf);
+	fsnkc_dbg(" buf  = 0x%x \n",(int)buffer);
+	
 	bp = 0;
 				        	
 	while(count)
@@ -405,36 +462,16 @@ static int nkcfs_read(struct _file *filp, char *buffer, int buflen)
 		for(;pfi->crpos < SECSIZE && count > 0; pfi->crpos++,pfi->pos++,count--,bp++)
 		{
 			((UCHAR*)buffer)[bp] = pbuf[pfi->crpos];
-						
-			#ifdef NKC_DEBUG	
-			//nkc_write(",");
-			//nkc_write("\n 0x");
-			//nkc_write_hex8(count); nkc_write(" = ");	
-			//nkc_putchar(pbuf[pfi->crpos]);						
-			//if(pbuf[pfi->crpos] == 0) 
-			//{
-				//nkc_write(" - read 0 - ");
-				//nkc_getchar();
-			//}
-								
-			#endif
 		}
 				
-		#ifdef NKC_DEBUG
-		nkc_write("\n");
-		#endif
+		fsnkc_dbg("\n");
 				
 		// read next sector
 		if(count)
-		{	
-			#ifdef NKC_DEBUG				
-			//nkc_write(" read next sector: ");
-			#endif
+		{				
 			if (pfi->clsec == pfi->pfcb->length) 
 			{
-				#ifdef NKC_DEBUG	
-				nkc_write("...nkcfs_read(EOF)\n"); nkc_getchar();
-				#endif
+				fsnkc_lldbgwait("...nkcfs_read(EOF)\n");
 				return EZERO;  // EOF (we just copied the last sector)
 			}
 					
@@ -443,39 +480,25 @@ static int nkcfs_read(struct _file *filp, char *buffer, int buflen)
 			switch(res)
 			{
 				case 0: 
-					#ifdef NKC_DEBUG 
-					nkc_write("ok\n");							
-					#endif
+					fsnkc_dbg("ok\n");
 					break;				// no error
 				case 1:  
-					#ifdef NKC_DEBUG
-					nkc_write("EOF\n");
-					#endif
+					fsnkc_dbg("EOF\n");
 				    return bp; 			// EOF, we return EOF = 0 on next call
 				case 99:
-					#ifdef NKC_DEBUG 
-					nkc_write("JADOS EOUS\n");
-					#endif
-					#ifdef NKC_DEBUG	
-					nkc_write("...nkcfs_read(2)\n"); nkc_getchar();
-					#endif
+					fsnkc_dbg("JADOS EOUS\n");
+					fsnkc_lldbgwait("...nkcfs_read(2)\n");
 					return 0; 			// end of user space (JADOS)
 				default: 
-					#ifdef NKC_DEBUG
-					nkc_write("unknown\n");
-					#endif
-					#ifdef NKC_DEBUG	
-					nkc_write("...jfread(3)\n"); nkc_getchar();
-					#endif
+					fsnkc_dbg("unknown\n");
+					fsnkc_lldbgwait("...jfread(3)\n");
 					return 0;			// error reading device
 			}				
 		}
 			
 	}		
-	
-	#ifdef NKC_DEBUG				
-	nkc_write("...nkcfs_read\n"); nkc_getchar();
-	#endif
+			
+	fsnkc_lldbgwait("...nkcfs_read\n");
 	return bp;
 }
 	
@@ -496,10 +519,8 @@ static int  nkcfs_write(struct _file *filp, const char *buffer, int buflen)
 	int ii;
 	
 	
-	#ifdef NKC_DEBUG
-	nkc_write("nkcfs_write...\n");
-	#endif
-	
+	fsnkc_dbg("nkcfs_write...\n");
+
 	pfi = (struct jdfileinfo *)filp->private; 	// get fileinfo
 	
 	pbuf = pfi->pfcb->pbuffer;					// fetch buffer address						
@@ -512,9 +533,8 @@ static int  nkcfs_write(struct _file *filp, const char *buffer, int buflen)
 		for(;pfi->crpos < SECSIZE && count > 0; pfi->crpos++,pfi->pos++,count--,bp++)
 		{
 			pbuf[pfi->crpos] = ((unsigned char*)buffer)[bp];		
-			#ifdef NKC_DEBUG	
-			nkc_write("- copied buffer -\n");
-			#endif								
+				
+			fsnkc_dbg("- copied buffer -\n");										
 		}				
 				
 		// write next sector
@@ -525,31 +545,19 @@ static int  nkcfs_write(struct _file *filp, const char *buffer, int buflen)
 			switch(res)
 			{
 				case 0: 
-					#ifdef NKC_DEBUG	
-					nkc_write("- sector written -\n");
-					#endif 
+					fsnkc_dbg("- sector written -\n");
 				 	break; 	// no error
 				case 5: 
-					#ifdef NKC_DEBUG	
-					nkc_write("...nkcfs_write(disk full)\n"); nkc_getchar();
-					#endif 
+					fsnkc_lldbgwait("...nkcfs_write(disk full)\n");
 					return ENOSPC; 	// No Space left on device
 				case 0xff: 
-					#ifdef NKC_DEBUG	
-					nkc_write("...nkcfs_write(media access error)\n"); nkc_getchar();
-					#endif
+					fsnkc_lldbgwait("...nkcfs_write(media access error)\n");
 					return EACCES; 	// media access error						
 				
 			}
 		}
-			
-		#ifdef NKC_DEBUG	
-		//nkc_write(" L: 0x"); nkc_write_hex8((int)pfi->pos); nkc_write("\n");	
-		#endif
-			
-		#ifdef NKC_DEBUG	
-		nkc_write("...nkcfs_write\n"); nkc_getchar();
-		#endif
+		
+		fsnkc_lldbgwait("...nkcfs_write\n");
 			
 		    
 	}  
@@ -565,16 +573,9 @@ static int  nkcfs_seek(struct _file *filp, int offset, int whence)
 	UCHAR res;
 	int newpos;
 	
-	#ifdef NKC_DEBUG
-	nkc_write("nkcfs_seek...\n");		
-	nkc_write(" offset: 0x"); nkc_write_hex8(offset);
-	nkc_write(" whence: 0x"); nkc_write_hex8(whence);
-	nkc_write("\n");	
-	#endif
-	
-	
-	
-	
+	fsnkc_dbg("nkcfs_seek...\n");		
+	fsnkc_dbg(" offset: 0x%x  ",offset);
+	fsnkc_dbg(" whence: 0x%x\n",whence);
 	
 	pfi = (struct jdfileinfo *)filp->private; 	// get fileinfo
 	
@@ -594,23 +595,14 @@ static int  nkcfs_seek(struct _file *filp, int offset, int whence)
 			break;
 	}
 			
-	divresult = div( newpos , (int)SECSIZE );	
-			
-	#ifdef NKC_DEBUG
-	//nkc_write(" divresult= 0x"); nkc_write_hex8((int)divresult.quot); nkc_write(" newpos= 0x"); nkc_write_hex8(newpos); nkc_write(" SECSIZE= 0x"); nkc_write_hex8(SECSIZE); nkc_write("\n");
-	#endif
+	divresult = div( newpos , (int)SECSIZE );		
 						
 	if(divresult.quot < 0) 
 	{
 		divresult.quot = 0;
 					
-		#ifdef NKC_DEBUG
-		nkc_write(" error in seek: negativ file offset\n");
-		#endif
-					
-		#ifdef NKC_DEBUG 
-		nkc_write("...nkcfs_seek\n"); nkc_getchar();
-		#endif
+		fsnkc_dbg(" error in seek: negativ file offset\n");
+		fsnkc_lldbgwait("...nkcfs_seek\n");
 		return;				// check for negativ fileoffset
 					
 	}
@@ -619,37 +611,20 @@ static int  nkcfs_seek(struct _file *filp, int offset, int whence)
 	{
 		divresult.quot = pfi->pfcb->length - 1;
 		pfi->eof = 1;
-		#ifdef NKC_DEBUG
-		/*
-		nkc_write(" error in seek: seek beyond EOF\n");
-		nkc_write(" File: "); nkc_write(pfi->pfcb->filename); nkc_write(" pos: 0x"); nkc_write_hex8(pos);nkc_write(" ori: 0x"); nkc_write_hex8(origin); 
-		nkc_write(" flegth: 0x"); nkc_write_hex8((int)pfi->pfcb->length); nkc_write("\n");
-		*/
-		#endif
-					
-		#ifdef NKC_DEBUG 
-		nkc_write("...nkcfs_seek(2)\n"); nkc_getchar();
-		#endif
+		
+		fsnkc_lldbgwait("...nkcfs_seek(2)\n");
 		return;		// check for seek beyond filend
 	}
 			
 	if(divresult.quot != pfi->pfcb->length) // did we seek into another sector ?
 	{
 		res = nkc_setrec(pfi->pfcb, (int)divresult.quot); // set new record ...
-		
-		#ifdef NKC_DEBUG
-		//nkc_print_fcb(pfi->pfcb);
-		#endif
-				
+			
 		switch(res)
 		{
 			case 0: // successful
 				res = read_sector(pfi);	// ... and read record to buffer
 			
-				#ifdef NKC_DEBUG
-				//nkc_print_fcb(pfi->pfcb);
-				#endif
-				
 				switch(res)
 				{
 					case 0: 							
@@ -666,17 +641,11 @@ static int  nkcfs_seek(struct _file *filp, int offset, int whence)
 				break;	
 				
 			case 0xFF: // access error
-				#ifdef NKC_DEBUG 
-				nkc_write("...nkcfs_seek(3)\n"); nkc_getchar();
-				#endif
+				fsnkc_lldbgwait("...nkcfs_seek(3)\n");
 				return;	
 									
 			default: 
-				 #ifdef NKC_DEBUG
-				 nkc_write(" should not be here (0x");
-				 nkc_write_hex8(res);					
-				 nkc_write(")!\n");
-				 #endif
+				 fsnkc_dbg(" should not be here (0x%x)!\n",res);
 				 break;
 		}	
 			
@@ -685,19 +654,8 @@ static int  nkcfs_seek(struct _file *filp, int offset, int whence)
 	pfi->pos 	= newpos;		/* file position	    		0....				*/
 	pfi->crpos 	= (int)divresult.rem;	/* current relativ position (in sector) 0...SECSIZE-1			*/
 	pfi->clsec	= (int)(divresult.quot + 1); 	/* current logical sector   		1...65536			*/
-				
-	#ifdef NKC_DEBUG	
-	/*
-	nkc_write(" pos: 0x"); nkc_write_hex8((int)pfi->pos);											
-	nkc_write(" crpos: 0x"); nkc_write_hex8((int)pfi->crpos);
-	nkc_write(" clsec: 0x"); nkc_write_hex8((int)pfi->clsec);
-	nkc_write(" length: 0x"); nkc_write_hex8((int)pfi->pfcb->length);
-	nkc_write("\n");
-	*/		
-	#endif	
-	#ifdef NKC_DEBUG 
-	nkc_write("...nkcfs_seek\n"); nkc_getchar();
-	#endif
+	
+	fsnkc_lldbgwait("...nkcfs_seek\n");
 	return;
 }
 		    	
@@ -707,10 +665,7 @@ static int  nkcfs_remove(struct _file *filp)
 {
 	int cjddrive,jddrive;
 	
-	
-	#ifdef NKC_DEBUG
-	nkc_write("nkcfs_remove...\n"); nkc_getchar();
-	#endif
+	fsnkc_lldbgwait("nkcfs_remove...\n");
 	
 	_nkc_remove(filp->pname);
 }
@@ -719,17 +674,11 @@ static int  nkcfs_getpos(struct _file *filp)
 {
 	struct jdfileinfo *pfi;
 	
-	#ifdef NKC_DEBUG
-	nkc_write("nkcfs_getpos...\n");
-	#endif
+	fsnkc_dbg("nkcfs_getpos...\n");
 	
-
 	pfi = (struct jdfileinfo *)filp->private; 	// get fileinfo
 	
-	#ifdef NKC_DEBUG 
-	nkc_write("...nkcfs_getpos\n"); nkc_getchar();
-	#endif
-	
+	fsnkc_lldbgwait("...nkcfs_getpos\n");
 	return pfi->pos;
 	
 }
@@ -743,17 +692,13 @@ static int  nkcfs_rename(struct _file *filp, const char *oldrelpath, const char 
 
 void nkcfs_init_fs(void)
 {
- 	#ifdef NKC_DEBUG
-	nkc_write("nkcfs_init_fs...\n"); 
-	#endif
+	fsnkc_dbg("nkcfs_init_fs...\n"); 
 	
 	register_driver("A","JADOSFS",&nkc_file_operations); 
 	register_driver("Q","JADOSFS",&nkc_file_operations);	// wir müssen natürlich M einhängen ...
-	
-	#ifdef NKC_DEBUG	
-	nkc_write(" Address of open: 0x"); nkc_write_hex8((int)nkcfs_open); nkc_write("\n");	
-	nkc_write(" Address of nkc_file_operations: 0x"); nkc_write_hex8((int)&nkc_file_operations); nkc_write("\n");
-	nkc_write(" Address of ...->open: 0x"); nkc_write_hex8((int)nkc_file_operations.open); nkc_write("\n");
-	nkc_write("...nkcfs_init_fs\n"); nkc_getchar();
-	#endif
+		
+	fsnkc_dbg(" Address of open: 0x%x\n",(int)nkcfs_open);
+	fsnkc_dbg(" Address of nkc_file_operations: 0x%x\n",(int)&nkc_file_operations);
+	fsnkc_dbg(" Address of ...->open: 0x%x\n",(int)nkc_file_operations.open);
+	fsnkc_lldbgwait("...nkcfs_init_fs\n");
 }

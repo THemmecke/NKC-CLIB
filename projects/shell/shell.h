@@ -2,6 +2,10 @@
 #define __SHELL_H
 
 // type definitions
+
+#define MAX_CHAR 300
+
+
 struct CMD
 {
   char *name;

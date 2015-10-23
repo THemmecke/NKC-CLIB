@@ -9,6 +9,9 @@
 #ifndef __ERRNO_H
 #define __ERRNO_H
 
+
+/* file function return codes FR_xxx need to be here, currently in ff.h */
+
 /*  Dos Error Codes */
 
 #define ERROR    -1

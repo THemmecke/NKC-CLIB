@@ -1,9 +1,7 @@
 #ifndef __JDFS_H
 #define __JDFS_H
 
-#define NULL 0
-#define UCHAR unsigned char 
-#define UINT unsigned int
+#include <types.h>
 
 #define BUFFER_SIZE 1024
 #define SECSIZE 1024
@@ -130,13 +128,30 @@ int _nkc_rename(const char *oldrelpath, const char *newrelpath);
 int _nkc_get_drive();
 void _nkc_set_drive(int drive);
 void _nkc_split_path(char *name, struct pathinfo* ppi);
-
+BYTE _nkc_directory(void* pbuf, void* ppattern, BYTE attrib, BYTE columns, DWORD size);
 
 UINT read_sector(struct jdfileinfo *pfi);
 UINT write_sector(struct jdfileinfo *pfi);
 
+
+FRESULT nkcfs_opendir (
+  DIR* dp,           /* [OUT] Pointer to the directory object structure */
+  const TCHAR* path  /* [IN] Directory name */
+);
+
+FRESULT nkcfs_closedir (
+  DIR* dp     /* [IN] Pointer to the directory object */
+);
+
+FRESULT nkcfs_readdir (
+  DIR* dp,      /* [IN] Directory object */
+  FILINFO* fno  /* [OUT] File information structure */
+);
+
+
 /* Public Prototypes */
 
+static int     nkcfs_ioctl(char *name, int cmd, unsigned long arg);
 static int     nkcfs_open(struct _file *filp);
 static int     nkcfs_close(struct _file *filp);
 static int     nkcfs_read(struct _file *filp, char *buffer, int buflen);

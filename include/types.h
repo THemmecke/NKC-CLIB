@@ -3,28 +3,27 @@
 #ifndef _TYPES
 #define _TYPES
 
-/*-------------------------------------------*/
-/* Integer type definitions for FatFs module */
-/*-------------------------------------------*/
-
+#ifndef NULL
+#define NULL 0
+#endif
 
 /* These types must be 16-bit, 32-bit or larger integer */
-typedef int				INT;
+typedef int		INT;
 typedef unsigned int	UINT;
 
 /* These types must be 8-bit integer */
-typedef char			CHAR;
+typedef char		CHAR;
 typedef unsigned char	UCHAR;
 typedef unsigned char	BYTE;
 
 /* These types must be 16-bit integer */
-typedef short			SHORT;
+typedef short		SHORT;
 typedef unsigned short	USHORT;
 typedef unsigned short	WORD;
 typedef unsigned short	WCHAR;
 
 /* These types must be 32-bit integer */
-typedef long			LONG;
+typedef long		LONG;
 typedef unsigned long	ULONG;
 typedef unsigned long	DWORD;
 
@@ -62,6 +61,18 @@ typedef union _LARGE_INTEGER {
 #endif
 
 /* other definitions */
+
+/* Status of Disk Functions */
+typedef BYTE	DSTATUS;
+
+/* Results of Disk Functions */
+typedef enum {
+	RES_OK = 0,		/* 0: Successful */
+	RES_ERROR,		/* 1: R/W Error */
+	RES_WRPRT,		/* 2: Write Protected */
+	RES_NOTRDY,		/* 3: Not Ready */
+	RES_PARERR		/* 4: Invalid Parameter */
+} DRESULT;
 
 typedef struct _PARTITION_INFORMATION {
   LARGE_INTEGER StartingOffset;

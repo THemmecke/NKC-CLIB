@@ -1,6 +1,8 @@
 #ifndef __INCLUDE_FS_H
 #define __INCLUDE_FS_H
 
+#include "../fs/fat/ffconf.h"
+
 /* flags from stdio.h should be  used  */
 /* open flag settings for open() (and related APIs) */
 
@@ -45,7 +47,6 @@ struct _file
   void         					*private;    /* file private data -> for example: pointer to jados fileinfo */
 
 };
-
 
 struct file_operations
 {
@@ -99,7 +100,8 @@ int register_driver(char *pdrive, 						/* drive name, e.g. "A" for a JADOS driv
 int un_register_driver(char *pdrive);
 
 
-void split_filename(char *name, char* drive, char* path, char* filename, char* ext);
+void split_filename(char *name, char* drive, char* path, char* filename, char* ext, char* fullname, char* filepath, char* fullpath);
+void list_drivers();
 
 /* ************************************************************************ */
 

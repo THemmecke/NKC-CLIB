@@ -17,10 +17,13 @@ struct partition
 
 
 // command prototypes
+int cmd_cls(void);
 
 int cmd_chdir(char *);
 int cmd_copy(char *);
 int cmd_dir(char *);
+int cmd_dir_fat(char *,char* pd);
+int cmd_dir_nkc(char *,char* pd);
 int cmd_mkdir(char *);
 int cmd_rmdir(char *);
 int cmd_rename(char *);
@@ -30,15 +33,14 @@ int cmd_quit(char *);
 int cmd_dinit  (char * args); 
 int cmd_ddump  (char * args); 
 int cmd_dstatus(char * args); 
-int cmd_dpart  (char * args); 
 int cmd_bdump  (char * args); 
 int cmd_bedit  (char * args); 
 int cmd_bread  (char * args); 
 int cmd_bwrite (char * args); 
 int cmd_bfill  (char * args); 
-int cmd_fmount (char * args);
-int cmd_fumount(char * args); 
-int cmd_fstatus(char * args); 
+int cmd_vmount (char * args);
+int cmd_vumount(char * args); 
+int cmd_vstatus(char * args); 
 int cmd_lstatus(char * args); 
 int cmd_fopen  (char * args); 
 int cmd_fclose (char * args); 
