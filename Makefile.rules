@@ -24,6 +24,8 @@ CONFIG_FS_FAT = 1
 
 
 ############# DEBUG configuration #################################################
+# #include <debug.h> in 
+# global switch to turn debugging on/off
 CONFIG_DEBUG = 0
 CONFIG_DEBUG_DISKIO = 0
 CONFIG_DEBUG_GIDE_C = 0
@@ -36,8 +38,8 @@ CONFIG_DEBUG_FS = 1
 # NKC/JADOS FileSystem
 CONFIG_DEBUG_FS_NKC = 0
 # FAT file system module
-CONFIG_DEBUG_FS_FAT = 1
-CONFIG_DEBUG_FF = 1
+CONFIG_DEBUG_FS_FAT = 0
+CONFIG_DEBUG_FF = 0
 
 ############## tell if internal math lib should be used (/math) ############################
 # 0 = no internal, use libgcc routines, 1 = use internal math, needs FPU !

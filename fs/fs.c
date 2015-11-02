@@ -82,7 +82,7 @@ struct driver* get_driver(char *name)
 		 */
 		fs_lldbg("fs.c:  no drive specified(1), take cdrive ...\n"); 
 		fs_lldbgwait("fs.c:  cdrive = ");
-		strcpy(drive_name,cdrive);									
+		strcpy(drive_name,cdrive);
 	}else
 	{	
 		strcpy(drive_name,name); /* copy drive name */			
@@ -135,28 +135,36 @@ struct driver* get_driver(char *name)
 #define FULLNAME_LENGTH 255
 #define FULLPATH_LENGTH 255
 
-static char drive[DRV_LENGTH], path[PATH_LENGTH],filename[FILENAME_LENGTH], ext[EXT_LENGTH], filepath[FPATH_LENGTH], fullname[FULLNAME_LENGTH],fullpath[FULLPATH_LENGTH], *pname;
+static char drive[DRV_LENGTH], path[PATH_LENGTH],filename[FILENAME_LENGTH], ext[EXT_LENGTH], filepath[FPATH_LENGTH], fullname[FULLNAME_LENGTH],fullpath[FULLPATH_LENGTH];
 
 void split_filename(char *name, 		// IN:  D:/path/filename.ext
 		    char* drive, 		// OUT: D,HDA0 etc.
-		    char* path, 		// OUT: /dir/dir
+		    char* path, 		// OUT: /dir/dir/
 		    char* filename, 		// OUT: filename of filename.ext
 		    char* ext, 			// OUT: ext of filename.ext
 		    char* fullname, 		// OUT: filename.ext		    
 		    char* filepath,		// OUT: /dir/dir/filename.ext
-		    char* fullpath)		// OUT: C:/path/filename.ext
+		    char* fullpath,		// OUT: C:/path/filename.ext
+		    
+		    char* dfdrv,		// IN: defaultdrive to use, if not specified in path
+		    char* dfpath)		// IN: default path to use, if not specified in path
 {
         char* p;
         char* pstr;
         unsigned int n;
+	char tmp[255];
 	
         drive[0] = 0;
         path[0] = 0;
         filename[0] = 0;
         ext[0] = 0;
+	fullname[0] = 0;
+	filepath[0] = 0;
+	fullpath[0] = 0;
 	
         pstr = name;
 
+	// ======================== DRIVE ====================================================================
 	// look if there is a drive information	
 	p = strchr(pstr,':');        
         if(p){ // yes: copy drive
@@ -165,23 +173,22 @@ void split_filename(char *name, 		// IN:  D:/path/filename.ext
 	    strncpy(drive,pstr,n);
 	    drive[n] = 0;        
 	    pstr+=n+1;
-	  }else{ // typo like ":/..."
+	  }else{ // typo like ":/..." => use default drive
 	    drive[0]=0;
-	    strcpy(drive,cdrive);	  
+	    strcpy(drive,dfdrv);	  
 	    pstr++; // skip ':'	
 	  }
         }else
-	{ // no: use current drive
+	{ // no: use default drive
 	  drive[0]=0;
-	  strcpy(drive,cdrive);	  
-	}
-	n=0;
-	while(drive[n]){ drive[n] = toupper(drive[n]); n++;} // we use uppercase drive letters
-	
-        // store filepath
-        strncpy(filepath,pstr,strlen(pstr));
-        filepath[strlen(pstr)]=0; 
-	
+	  strcpy(drive,dfdrv);	  
+	}		
+		
+	n=0;			// use uppercase drive letters only
+	while(drive[n]){
+	  drive[n] = toupper(drive[n]); n++;
+	}	
+	// ======================== PATH ====================================================================	
 	// look for the last occurence of a '/' delimiter
 	p=strrchr(pstr,'/');        
         if(p){
@@ -190,29 +197,62 @@ void split_filename(char *name, 		// IN:  D:/path/filename.ext
 	  strncpy(path,pstr,n);
 	  path[n]=0;       
 	  pstr+=n;
-        }
+        }          
+          
+        switch(path[0])
+	{
+	  case 0: // no path given, use current dir path if drive != dfdrv    
+	    if(!strcmp(drive,dfdrv))
+	      strcpy(path,dfpath);
+	    break;
+	  case '/': // absolute path given, use just this        
+	    break;
+	  default: // relative path given, prepend current path   if drive != dfdrv
+	    if(!strcmp(drive,dfdrv)){
+	      strcpy(tmp,path);
+	      strcpy(path,dfpath);
+	      if(path[strlen(path)-1] != '/') strcat(path,"/"); // make shure path ends with '/'
+	      strcat(path,tmp);
+	    }
+	    break;
+	}         
         
-	// store fullname
-        strncpy(fullname,pstr,strlen(pstr));
-        fullname[strlen(pstr)]=0; 
+        if(path[strlen(path)-1] != '/') strcat(path,"/"); // make shure path ends with '/'
+        
+        if(*pstr == '.')  { // special file handling ('.' and '..')	  
+	  strcat(path,"."); pstr++;	
+	  if(*pstr == '.') {
+	    strcat(path,"."); pstr++;
+	  }
+	  strcat(path,"/"); // terminate path
+	}
+        
+        // ======================== FILENAME.EXT ====================================================================
+	// store fullname (filename.ext), rest (if any) has to be a filename.ext
+        strcpy(fullname,pstr);         
+	
+	 // store filepath (filepath = path + fullname)
+	strcpy(filepath,path);	
+	strcat(filepath,fullname);
+	
 	
         // look for filename delimiter and try to split filename and extension
 	p=strchr(pstr,'.');
         if(p) { 
-	  n=(unsigned int)(p-pstr);
+	  n=(unsigned int)(p-pstr);		  
 	  strncpy(filename,pstr,n);
 	  filename[n]=0;        
-	  pstr+=n+1;			
+	  pstr+=n+1;		      
+	  // rest has to be fileextension
+	  strcpy(ext,pstr);  	  			
 	}
-	
-	// rest has to be fileextension
-	strncpy(ext,pstr,strlen(pstr));
-        ext[strlen(pstr)]=0; 
+	else{	  
+	  strcpy(filename, pstr);
+	}
 	
 	strcpy(fullpath,drive);
 	strcat(fullpath,":");
 	strcat(fullpath,filepath);
-	
 }
 
 // initialize pdriver with driver list
@@ -302,7 +342,7 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
       fs_lldbgwait("\n");
       if (!arg){ res = ENODEV;	break;  }    				// we need some args ...
       
-      split_filename((char*)arg, drive, path, filename, ext,fullname, filepath, fullpath); // analyze filename
+      split_filename((char*)arg, drive, path, filename, ext,fullname, filepath, fullpath, cdrive, cpath); // analyze filename
       
       if(drive[0]){ 					// is there any drive information in the path ?
 	pdriver = get_driver(drive); 			// try fetching the driver
@@ -386,7 +426,7 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
       if (!arg){ res = ENODEV;	break;  }    				// we need some args ... 
       
       //look for drive: 1) in arg.fpath 2) in *name 3) take CurrDrive
-      split_filename((char*)((struct ioctl_opendir *)arg)->path, drive, path, filename, ext, fullname, filepath, fullpath); // analyze filename      
+      split_filename((char*)((struct ioctl_opendir *)arg)->path, drive, path, filename, ext, fullname, filepath, fullpath, cdrive, cpath); // analyze filename      
       if(!drive[0]){ // there is no drive in the path name argument
 	if(!name) { // there is no drive name given in the name argument
 	  pdriver = get_driver(cdrive); 		// try current drive (3)
@@ -650,6 +690,7 @@ int _ll_open(char *name, int flags)             // open a file (nkc/llopenc.c)
 	struct _file *pfile,*pcf,*plf;	
 	struct driver *pdriver;	
    	int fd,res,i;
+	char* pname;
    	UINT indx = NUM_FILE_HANDLES;
    	
 	fs_dbg("_ll_open: name=%s, flags=0x%x",name,flags); fs_lldbgwait("\n");
@@ -658,29 +699,17 @@ int _ll_open(char *name, int flags)             // open a file (nkc/llopenc.c)
 		initialize string variables
 	*/	
 	
-	split_filename(name, drive, path, filename, ext, fullname, filepath, fullpath); // analyze filename		   
+	split_filename(name, drive, path, filename, ext, fullname, filepath, fullpath, cdrive, cpath); // analyze filename		   
     
 	fs_dbg("_ll_open:  name = %s\n",name);
 	fs_dbg("_ll_open:  path = %s\n",path);
 	fs_dbg("_ll_open:  filename = %s\n",filename);
 	fs_dbg("_ll_open:  ext = %s\n",ext);
-	fs_dbg("_ll_open:  fpath = %s",filepath);	
-	fs_lldbgwait("\n");
-	
-	if( !strlen(drive) )
-	{
-		strcpy(drive,cdrive);  /* if no drive specified use global current drive */
-		
-	}
-	
-	
-	fullname[0] = 0;	// rebuild fullname of the form drive:/path/filename.ext
-	strcat(fullname,drive); 
-	strcat(fullname,":");
-	strcat(fullname,filepath);
-
-	fs_dbg("_ll_open: drive is: %s\n",drive);
-	fs_dbg("_ll_open: fullname= %s",fullname);
+	fs_dbg("_ll_open:  fpath = %s\n",filepath);				
+	fs_dbg("_ll_open:  drive is: %s\n",drive);
+	fs_dbg("_ll_open:  fullname= %s\n",fullname);
+	fs_dbg("_ll_open:  filepath= %s\n",filepath);
+	fs_dbg("_ll_open:  fullpath= %s",fullpath);
 	fs_lldbgwait("\n");	
 
 	
@@ -707,13 +736,13 @@ int _ll_open(char *name, int flags)             // open a file (nkc/llopenc.c)
 	   if(pfile)
 	   {
 	   	    	    
-		if( !strcmp(pfile->pname,fullname) )
+		if( !strcmp(pfile->pname,fullpath) )
 		{
 			if(flags & _F_CREATE)
 	    	{	
 	    		fs_dbg("_ll_open:  cannot create already open file...\n");
 	    		fs_dbg("pfile->pname= %s\n",pfile->pname);
-	    		fs_dbg("fullname= %s",fullname);
+	    		fs_dbg("fullpath= %s",fullpath);
 	    		fs_lldbgwait("\n");	    		
 	    		return 0;
 	    	} 
@@ -745,7 +774,7 @@ int _ll_open(char *name, int flags)             // open a file (nkc/llopenc.c)
 		allocate all buffers
 	*/
 	pfile = (struct _file *)malloc(sizeof(struct _file));
-	pname = (char*)malloc(strlen(fullname)+1);
+	pname = (char*)malloc(strlen(fullpath)+1);
 	
 	if( !pfile || !pname)
 	{

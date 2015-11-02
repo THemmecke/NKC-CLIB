@@ -255,6 +255,7 @@ static int nkcfs_open(struct _file *filp)
 	struct jdfcb *pfcb;
 	struct jdfileinfo *pfi;
 	UCHAR *pbuffer;
+	char *pfilename,*pc1,*pc2;
 	
 	fsnkc_lldbgwait("nkcfs_open...\n");
 	
@@ -262,7 +263,18 @@ static int nkcfs_open(struct _file *filp)
 	fsnkc_dbg("oflags= 0x%x",filp->f_oflags);
 	fsnkc_lldbgwait("\n");
 	
+	// remove path information from filename...
+	pc1 = filp->pname;
+	pc2 = pfilename = (char*)malloc(strlen(pc1));
+	*pc2=0;
+	while(*pc1){
+	  if(*pc1 != '/'){*pc2++ = toupper(*pc1);}
+	  pc1++;	  
+	}
+	*pc2=0;
 	
+	
+	printf(" nkcfs_open(%s)\n",pfilename);
 	/*
 		allocate all buffers
 	*/
@@ -276,7 +288,7 @@ static int nkcfs_open(struct _file *filp)
 	fsnkc_lldbgwait("\n");
 	
 		
-	result = nkc_fillfcb(pfcb,filp->pname);	
+	result = nkc_fillfcb(pfcb,pfilename);	
 	/*
 		result	Bedeutung
 		0	FCB angelegt
@@ -288,6 +300,7 @@ static int nkcfs_open(struct _file *filp)
 		free(pfcb);
 		free(pfi);
 		free(pbuffer);
+		free(pfilename);
 		return ENOFILE;
 	}
 	
@@ -362,7 +375,7 @@ static int nkcfs_open(struct _file *filp)
 		free(pfi);
 		free(pfcb);
 		free(pbuffer);
-				
+		free(pfilename);		
 		fsnkc_lldbgwait("...nkcfs_open(3)\n");
 		return ENOFILE;
 	}
@@ -385,6 +398,8 @@ static int nkcfs_open(struct _file *filp)
 	fsnkc_lldbgwait("...nkcfs_open\n");
 	
 	filp->private = (void*)pfi;
+	
+	free(pfilename);
 	
 	return EZERO;
 }
@@ -664,10 +679,29 @@ static int  nkcfs_seek(struct _file *filp, int offset, int whence)
 static int  nkcfs_remove(struct _file *filp)
 {
 	int cjddrive,jddrive;
+	char *pfilename,*pc1,*pc2;
 	
 	fsnkc_lldbgwait("nkcfs_remove...\n");
 	
-	_nkc_remove(filp->pname);
+	// remove path information from filename...
+	pc1 = filp->pname;
+	pc2 = pfilename = (char*)malloc(strlen(pc1));
+	*pc2=0;
+	if(!pfilename){
+	  printf(" error, out of memory (nkcfs_remove)\n");
+	  return 1;
+	}
+	while(*pc1){
+	  if(*pc1 != '/'){*pc2++ = toupper(*pc1);}
+	  pc1++;	  
+	}
+	*pc2=0;
+	
+	_nkc_remove(pfilename);
+	
+	free(pfilename);
+	
+	return 0;
 }
 
 static int  nkcfs_getpos(struct _file *filp)
