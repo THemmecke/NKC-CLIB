@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ioctl.h>
 #include <errno.h>
@@ -267,7 +267,7 @@ struct CMD internalCommands[] =
 /*---------------------------------------------------------*/
 
 LONGLONG AccSize;			/* Work register for scan_fat_files() */
-char drive[5],path[255],filename[20], ext[10], fname[30], fullname[320], filepath[255], fullpath[255], *pname; /* work register for split_filename() -> */
+char drive[10],path[255],filename[20], ext[10], fname[30], fullname[320], filepath[255], fullpath[255]; /* work register for split_filename() -> fs.c */
 
 WORD AccFiles, AccDirs;
 BYTE Buff[262144];			/* Working buffer */
@@ -337,7 +337,7 @@ FRESULT scan_fat_files (	/* used in cmd_lstatus */
 	struct ioctl_opendir arg_opendir;
 	struct ioctl_readdir arg_readdir;
 	
-	split_filename(ppath, drive, path, filename, ext, fullname, filepath, fullpath); // analyze args
+	split_filename(ppath, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze args
 	
 	//printf("scan_fat_files: path[%s] drive[%s] fullpath[%s]\n",ppath,drive,fullpath);
    
@@ -505,7 +505,7 @@ int cmd_chmod(char* args) {
    if (!xatoi(&args, &p1) || !xatoi(&args, &p2)) return 0;
    while (*args == ' ') args++;
    
-   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath); // analyze args 
+   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze args 
    
    arg.value = (BYTE)p1;	/* Attribute bits */
    arg.mask  = (BYTE)p2,	/* Attribute mask to change */
@@ -553,7 +553,9 @@ int cmd_chdir(char *args)
    
    while (*args == ' ') args++;  
    
-   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath); // analyze args
+   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze args
+   
+   if(filepath[strlen(filepath)-1] == '/') filepath[strlen(filepath)-1] = 0;  // remove trailing '/' (in cd ..)
    
    printf(" cd [%s]\n",filepath);
    
@@ -578,9 +580,15 @@ int cmd_dir(char *args) // ...
   
   while (*args == ' ') args++;
   
-  split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath); // analyze args 
+  split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze args 
     
-  printf(" dir [%s] ... \n",drive);
+  if(fullpath[strlen(fullpath)-1] == '/') fullpath[strlen(fullpath)-1] = 0; // 
+  
+  printf(" dir [%s:%s] ... \n",drive,path);
+  printf(" directory of %s is:\n",fullpath);
+  
+  
+  
   if( !drive[1] ) { // one character drive name -> is it a JADOS drive ?
     if( (drive[0] >= 'A' && drive[0] <= 'Z') ||  // JADOS hard drive
 	//(drive[0] >= 'a' && drive[0] <= 'z') ||
@@ -609,16 +617,35 @@ int cmd_dir_nkc(char *args, 		// arguments
   
   FRESULT res;
   struct ioctl_nkc_dir arg;
-  char buffer[256*4+1];
-  //char pattern = "Q:*.txt"; // FIX: pattern can be overwritten by given args...
+  char buffer[256*4+1];  
+  char *pargs,*pc1,*pc2;
+  int len;
+  
+  // remove path information from filename...
+  pc1 = args;
+  len = strlen(pc1);
+  printf(" try allocating %d bytes for pargs: ",len);
+  pc2 = pargs = (char*)malloc(len);
+  
+  printf(" malloc returned 0x%x\n",pc2);
+  
+  
+  *pc2=0;
+  while(*pc1){
+    if(*pc1 != '/'){*pc2++ = *pc1;}
+    pc1++;	  
+  }
+  *pc2=0;
+  
+  printf(" src-pattern = [%s], dst-pattern = [%s]\n",args,pargs);
   
   arg.attrib = 7; // show all types of files
   arg.cols = 2;   // format output in 2 columns
   arg.size = 256*4; // maximum buffer size for full directory
   arg.pbuf = buffer;
-  arg.ppattern = args;
+  arg.ppattern = pargs;
   
-  printf(" pattern to jados [%s]\n", args);	
+  printf(" pattern to jados [%s]\n", pargs);	
   
   res = ioctl(pd,NKC_IOCTL_DIR,&arg); // fetch directory using JADOS function call
 
@@ -629,6 +656,8 @@ int cmd_dir_nkc(char *args, 		// arguments
   printf("\n\n JADOS/NKC filesystem     ");
   
   put_rc(res);
+  
+  free(pargs);
   
   return EZERO;
 }
@@ -745,8 +774,8 @@ int cmd_rename(char *args)
    *ptr2++ = 0;			// terminate 1st argumennt and increment pointer to 2nd argument
    while (*ptr2 == ' ') ptr2++; // skip whitespace
    
-   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath); // analyze 1st argument
-   split_filename(ptr2, drive, path, filename, ext, fullname, filepath, fullpath2); // analyze 2nd argument
+   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze 1st argument
+   split_filename(ptr2, drive, path, filename, ext, fullname, filepath, fullpath2, CurrDrive, CurrDirPath); // analyze 2nd argument
    
    arg_rename.path_old = fullpath;
    arg_rename.path_new = fullpath2;   
@@ -761,7 +790,7 @@ int cmd_del(char *args) {
    FRESULT res; 
    while (*args == ' ') args++;
    
-   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath); // analyze args
+   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze args
    
    res = ioctl(CurrDrive,FS_IOCTL_DEL,&fullpath);
    if(res) put_rc(res);
@@ -776,8 +805,7 @@ int cmd_copy(char *args)
 {
    FRESULT res;
    char *ptr2;
-   char drive2[10];
-   char fullpath2[255];
+   char drive2[10],path2[255],filename2[20], ext2[10], fname2[30], fullname2[255], filepath2[255], fullpath2[255]; /* work register for split_filename() */
    long p1;
    UINT s1,s2;
        
@@ -786,12 +814,66 @@ int cmd_copy(char *args)
    while (*args == ' ') args++;	// skip whitespace
    ptr2 = strchr(args, ' ');	// search 2nd parameter
    if (!ptr2) return 0;		// no 2nd par -> return
-   *ptr2++ = 0;			// terminate 1st par and increment pointer to next par
-   while (*ptr2 == ' ') ptr2++; // skip whitespace
+   *ptr2++ = 0;			// terminate 1st par and increment pointer to next char
+   while (*ptr2 == ' ') ptr2++; // skip whitespace   
+   if (!ptr2) return 0;		// no 2nd par -> return     
    
+   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); 		// analyze 1st argumennt
    
-   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath); // analyze 1st argumennt
-   split_filename(ptr2, drive2, path, filename, ext, fullname, filepath, fullpath2); // analyze 2nd argumennt
+   /*
+   printf(" split src:\n");
+   printf("  args [%s][%s]\n",args,ptr2);
+   printf("  drive [%s]\n",drive);
+   printf("  path [%s]\n",path);
+   printf("  filename [%s]\n",filename);
+   printf("  ext [%s]\n",ext);
+   printf("  fullname [%s]\n",fullname);
+   printf("  filepath [%s]\n",filepath);
+   printf("  fullpath [%s]\n",fullpath);
+   printf("  CurrDrive [%s]\n",CurrDrive);
+   printf("  CurrDirPath [%s]\n",CurrDirPath);
+   getchar();
+   */
+   
+   if(!filename[0]) {
+     printf(" error, no source file given...\n");
+     return 0;
+   }
+   
+   split_filename(ptr2, drive2, path2, filename2, ext2, fullname2, filepath2, fullpath2, CurrDrive, CurrDirPath); 	// analyze 2nd argumennt   
+
+   /*
+   printf(" split dst:\n");
+   printf("  args [%s][%s]\n",args,ptr2);
+   printf("  drive [%s]\n",drive2);
+   printf("  path [%s]\n",path2);
+   printf("  filename [%s]\n",filename2);
+   printf("  ext [%s]\n",ext2);
+   printf("  fullname [%s]\n",fullname2);
+   printf("  filepath [%s]\n",filepath2);
+   printf("  fullpath [%s]\n",fullpath2);
+   printf("  CurrDrive [%s]\n",CurrDrive);
+   printf("  CurrDirPath [%s]\n",CurrDirPath);      
+   getchar();
+   */
+   
+   if(!strcmp(fullpath,fullpath2)){ // source and destination identical ?
+     printf(" error, source and destination are the same \n");
+     return 0;
+   }
+   
+   if(!filename2[0]) {			// use source filename as destination file name
+     strcpy(filename2,filename);
+     strcpy(ext2,ext);
+     strcat(filepath2,filename2);
+     strcat(fullpath2,filename2); 
+     if(ext2[0]){
+       strcat(filepath2,".");
+       strcat(fullpath2,".");
+       strcat(filepath2,ext2);
+       strcat(fullpath2,ext2); 
+     }     
+   }
    
    printf("Opening \"%s\"\n", fullpath);
    //                                0x00		0x01
@@ -802,7 +884,7 @@ int cmd_copy(char *args)
       printf("error opening file !\n");
       return 0;
    }
-   printf("Creating \"%s\"\n", fullpath2);
+   printf("Creating \"%s\"\n", fullpath2); getchar();
    //                                  0x08		0x02
    //res = f_open(&file[1], ptr2, FA_CREATE_ALWAYS | FA_WRITE);
    file[1] = fopen(fullpath2,"wb");
@@ -812,7 +894,7 @@ int cmd_copy(char *args)
      printf("error creating file !\n");
      return 0;
    }
-   printf("Copying...");
+   printf("Start Copy...");
    p1 = 0;
    for (;;) {
      //res = f_read(&file[0], Buff, sizeof Buff, &s1);
@@ -829,8 +911,7 @@ int cmd_copy(char *args)
        break;   /* error or disk full */
      }
    }
-   printf("\n");
-   if (res) put_rc(res);
+   printf("ready\n");   
    fclose(file[0]);
    fclose(file[1]);
    printf("%lu bytes copied.\n", p1);
@@ -853,7 +934,7 @@ int cmd_fopen  (char * args){
    *mode++ = 0;
    while (*mode == ' ') mode++;
    
-   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath); // analyze 1st argumennt
+   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze 1st argumennt
    
    printf(" fopen %s %s\n",fullpath,mode);
      
@@ -1247,7 +1328,7 @@ int cmd_ptable(char * args) { // args = "HDA", "HDB" etc.
   
   
   for(p1=0; p1<_DISKS; p1++) {
-    if(strcmp(args,_FAT_VOL_STRS[p1])) break;
+    if(strcmp(args,_FAT_DISK_STRS[p1])) break;
   }
   
   if(p1 == _DISKS) {
@@ -1359,23 +1440,48 @@ int cmd_vumount (char * args){
    	      
    return 0;
 } 
-// Volumes File System Status
-int cmd_vstatus(char * args){
 
-   long p1;
-   FATFS *pfs;
-   FRESULT res;
-   struct ioctl_getfatfs arg;
+
+
+//static const char* const _FAT_DISK_STRS[] = {_DISK_STRS};  // "HDA","HDB","HDC","HDD"
+//static const char* const _FAT_VOL_STRS[] = {_VOLUME_STRS};  // "HDA0","HDA1","HDA2","HDA3"
+
+
+// Volumes File System Status
+// HDA0,HDA1,HDB1 ....
+int cmd_vstatus(char * args){
+  char *pc;
+  long p1,p2;
+  FATFS *pfs;
+  FRESULT res;
+  struct ioctl_getfatfs arg;
    
-   printf("Volumes File System Status:\n");
+   printf("Volumes File System Status...\n");
    
-   if (!xatoi(&args, &p1)) {
-    printf(" error in args\n");
-    return 0;
+   while (*args == ' ') args++;  	// skip whitespace
+  
+   pc=args;  
+   while(*pc){			// convert to uppercase
+    *pc = toupper(*pc);
+    pc++;
    }
    
-   arg.drv = 0;
-   arg.ldrv = p1;
+   for(p1=0; p1<_DISKS; p1++) {		// look for disk string ("HDA","HDB","HDC","HDD")
+    if(strncmp(args,_FAT_DISK_STRS[p1],3)) break;
+   }
+  
+   if(p1 == _DISKS || strlen(args) < 4) {
+    printf("bad argument (%s)\n",args);
+    return 0;
+   }
+  
+   pc=args+3;			 	// look for volume number
+   p2=atoi(pc);
+  
+   printf(" vstatus of disk (%s) volume (%d):\n",_FAT_DISK_STRS[p1],p2);
+   
+   arg.drv = p1;
+   arg.ldrv = p2;
    arg.ppfs = &pfs;
    res = ioctl(_FAT_DISK_STRS[0],FAT_IOCTL_GET_FATFS,&arg);
    
@@ -1404,7 +1510,7 @@ int cmd_lstatus(char *args) // ...
     
   while (*args == ' ') args++;
   
-  split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath); // analyze args 
+  split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze args 
     
   printf(" lstatus [%s] ... \n",drive);
   if( !drive[1] ) { // one character drive name -> is it a JADOS drive ?

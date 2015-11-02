@@ -43,7 +43,7 @@ struct _file
   
   int							fd;			/* file handle */
   struct _file 					*next;		/* pointer to next file in list */	
-  char							*pname;     /* filename with LW,path,name and extension  (fullname) */
+  char							*pname;     /* filename with LW,path,name and extension  (fullpath) */
   void         					*private;    /* file private data -> for example: pointer to jados fileinfo */
 
 };
@@ -100,7 +100,7 @@ int register_driver(char *pdrive, 						/* drive name, e.g. "A" for a JADOS driv
 int un_register_driver(char *pdrive);
 
 
-void split_filename(char *name, char* drive, char* path, char* filename, char* ext, char* fullname, char* filepath, char* fullpath);
+void split_filename(char *name, char* drive, char* path, char* filename, char* ext, char* fullname, char* filepath, char* fullpath, char* dfdrv,  char* dfpath);
 void list_drivers();
 
 /* ************************************************************************ */
