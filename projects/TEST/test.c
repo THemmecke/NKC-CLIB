@@ -45,8 +45,28 @@ int main(int argc, const char* argv[])
 	//MEM_TEST_II();
 	//FILEIO_TEST();
 	//FAT32_TEST();	
-	VMEM_TEST();
+	//VMEM_TEST();
+	CONIO_TEST();
 }
+
+
+
+
+
+void CONIO_TEST()
+{
+  int x,y;
+  //void drv_put_pixel(int x, int y, int p, unsigned char color);
+  drv_put_pixel(10, 10, 0,0x01);
+  nkc_getchar();
+  
+  for(y=10; y<50; y++)
+    for(x=10;x<50;x++)
+      drv_put_pixel(x,y,0,0x55);
+}
+
+
+
 
 
 
@@ -55,10 +75,7 @@ void FAT32_TEST()
    char input;
    
    printf(" ******** FAT32-Test **********\n");
-   
-   
-  
-   
+
 }
 
 
@@ -571,17 +588,17 @@ void VMEM_TEST()
    }
    */
    
-   
+   /*
    gdp_set_page(0, 0, 0);
    
    for(i=0; i<100; i++)
    {
      save_block(10+i*2, 10+i*2, 20+i*2+1, 20+i*2,mem1); 
-     fill_block(10+i*2, 10+i*2, 20+i*2+1, 20+i*2,0x2222); 
-     //getchar();
+     fill_block(10+i*2, 10+i*2, 20+i*2+1, 20+i*2,0x2222);      
      _keyci();
      restore_block(10+i*2, 10+i*2, 20+i*2+1, 20+i*2,mem1);
      
    }
+   */
    
 }
