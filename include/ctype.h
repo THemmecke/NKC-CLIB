@@ -28,6 +28,9 @@ int isupper (int __c);
 int isxdigit(int __c);
 int isascii (int __c);
 
+int isnumber(char* _s);
+
+
 /* character classes */
 
 #define _IS_SP     1           /* space */

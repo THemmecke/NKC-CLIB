@@ -4,7 +4,12 @@
 // type definitions
 
 #define MAX_CHAR 300
+#define MAX_HISTORY 10
 
+extern char HistoryBuffer[MAX_HISTORY+1][MAX_CHAR]; /* History Buffer */
+extern char histOLDEST;                         /* Oldest entry */
+extern char histNEWEST;			    /* Last/Newest entry */
+extern char histLEVEL;
 
 struct CMD
 {
@@ -32,5 +37,7 @@ void displayCmdHlp(unsigned help_id);
 void shell();
 
 int showcmds(char *);
+
+static void execute(char *first, char *rest);
 
 #endif

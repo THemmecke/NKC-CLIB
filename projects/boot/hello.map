@@ -1,0 +1,36 @@
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+ram              0x00000000         0x001fffff
+ram_rs           0x00000000         0x001fffff
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.text           0x00000000       0x20
+                0x00000000                _stext = .
+ *(.text)
+ .text          0x00000000       0x20 hello.o
+                0x00000020                _etext = ALIGN (0x2)
+
+.data           0x00000020        0x0
+                0x00000020                _sdata = .
+ *(.data)
+ .data          0x00000020        0x0 hello.o
+                0x00000020                _edata = ALIGN (0x2)
+
+.bss            0x00000020        0x0
+                0x00000020                _sbss = .
+ *(.bss)
+ .bss           0x00000020        0x0 hello.o
+ *(COMMON)
+                0x00000020                _ebss = ALIGN (0x2)
+LOAD hello.o
+OUTPUT(hello.elf elf32-m68k)
+
+Cross Reference Table
+
+Symbol                                            File
+No symbols

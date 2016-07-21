@@ -2,12 +2,10 @@
 #define __DEBUG_H
 
 
-//#ifdef CONFIG_DEBUG_FS_FAT
 #ifdef CONFIG_DEBUG
 
-static char debugbuf[255];
 
-#include "../nkc/llnkc.h"
+static char debugbuf[255];
 
 #define dbg(format,arg...) \
         sprintf(debugbuf,format,##arg); \
@@ -37,6 +35,8 @@ static char debugbuf[255];
 #define lldbgdec(x...)
 #define lldbghex(x...)
 #endif
+
+
 
 #ifdef CONFIG_DEBUG_CLIB_IO
 # define clio_dbg(format,arg...)    dbg(format,##arg)
@@ -111,6 +111,44 @@ static char debugbuf[255];
 # define ff_lldbgwait(x...)
 #endif
 
+#ifdef CONFIG_DEBUG_DRV
+# define drv_dbg(format,arg...)    dbg(format,##arg)
+# define drv_lldbg(format)	   lldbg(format) 
+# define drv_lldbgwait(format)	   lldbgwait(format) 
+#else
+# define drv_dbg(x...)
+# define drv_lldbg(x...)
+# define drv_lldbgwait(x...)
+#endif
 
+#ifdef CONFIG_DEBUG_DRV_GIDE
+# define drvgide_dbg(format,arg...)    dbg(format,##arg)
+# define drvgide_lldbg(format)	   lldbg(format) 
+# define drvgide_lldbgwait(format)	   lldbgwait(format) 
+#else
+# define drvgide_dbg(x...)
+# define drvgide_lldbg(x...)
+# define drvgide_lldbgwait(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_DRV_SD
+# define drvsd_dbg(format,arg...)    dbg(format,##arg)
+# define drvsd_lldbg(format)	   lldbg(format) 
+# define drvsd_lldbgwait(format)	   lldbgwait(format)
+#else
+# define drvsd_dbg(x...)
+# define drvsd_lldbg(x...)
+# define drvsd_lldbgwait(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_DRV_JD
+# define drvjd_dbg(format,arg...)    dbg(format,##arg)
+# define drvjd_lldbg(format)	   lldbg(format) 
+# define drvjd_lldbgwait(format)	   lldbgwait(format)
+#else
+# define drvjd_dbg(x...)
+# define drvjd_lldbg(x...)
+# define drvjd_lldbgwait(x...)
+#endif
 
 #endif

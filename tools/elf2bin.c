@@ -15,7 +15,7 @@
 
 #include "elf.h"
 
-const char versioninfo[] = "\n elf2bin version 1.0.140211    (C) 2012-2014 Torsten Hemmecke\n\n";
+const char versioninfo[] = "\n elf2bin version 1.0.160101    (C) 2012-2016 Torsten Hemmecke\n\n";
 
 /* ------------- prototypes -------------- */
 
@@ -357,86 +357,77 @@ int main(int argc, char **argv)
 	printf(" \'data\' starts at 0x%08lx\n",_data);
 	printf(" \'bss\'  starts at 0x%08lx\n",_bss);
 	
-	for(; pc < _bss ;pc++)	/* align section */
-  	{
-  		
-  			result = fwrite(&null,1,1,pbinfile);  	                /* write NULL to file                  */
-  		
-  	}
 	
-	unsigned char MAGIC0[] = {0xDE,0xAD,0xBE,0xAF}; 
-	unsigned char MAGIC1[] = {0x5A,0xA5,0x80,0x01};
-	unsigned long laddr = endian(loadaddr);	
-	result = fwrite(MAGIC0,1,4,pbinfile);  	                /* write MAGIC0 to file                  */
-	result = fwrite(MAGIC1,1,4,pbinfile);  	          	/* write MAGIC1 to file                  */		
-	result = fwrite(MAGIC0,1,4,pbinfile);  	                /* write MAGIC0 to file                  */	
-		
-	result = fwrite(&laddr,1,4,pbinfile);			/* save loadaddress 			*/
-	
-	long int npos; fgetpos(pbinfile,(fpos_t*)&npos);	/* placeholder for number of alocation entries (will be set after entries are written) */
-	unsigned long rr=0;	
-	result = fwrite(&rr,4,1,pbinfile);
-	
-		
-	// walk through relocs 
-	struct _entry *preloc = preloc_list, *plast;
-  
-  
-  /*
-  	FILE *freloc;
-  	freloc = fopen("relocs.txt","w");
-
-	if(!freloc) { 
-	   printf("error opening freloc !\n");
-	   CleanUp();
-	   return 1;
-	 }
- */
         if(addreloc) 
         {
-  	 printf("\n adding relocation info into bss segment ...\n");
-  	 while(preloc)
-	 {
-		
-		// print to file:
-		
-		
-		switch(endian(preloc->type))
-	 	{ 	  	
-	 	  	// 32-Bit Relocations:
-			case 1:  	/*R_68K_32";            Direct 32 bit  */		
-			// 16-Bit Relocations:	
-			case 2:  	/*R_68K_16";            Direct 16 bit  */			
-			// 8-bit Relocations:
-			case 3:  	/*R_68K_8";             Direct 8 bit  */									
-				//fprintf(freloc," 0x%08lx	0x%08lx		0x%08lx\n ",endian(preloc->offset),endian(preloc->type),endian(preloc->value));
-				if(vverbose) printf(" 0x%08lx	0x%08lx		0x%08lx\n ",endian(preloc->offset),endian(preloc->type),endian(preloc->value));		
-				result = fwrite(&(preloc->offset),1,4,pbinfile);
-				result = fwrite(&(preloc->type),1,4,pbinfile);  	              	
-				result = fwrite(&(preloc->value),1,4,pbinfile);  
-				rr++;	              	  	              	
-				break;
-				
-			// pc relative relocs need no further handling
-			case 4:  	/*R_68K_PC32";          PC relative 32 bit */
-				
-			case 5:  	/*R_68K_PC16";          PC relative 16 bit */				
-				
-			case 6:  	/*R_68K_PC8";           PC relative 8 bit */
-				//fprintf(freloc," 0x%08lx	0x%08lx		0x%08lx\n ",endian(preloc->offset),endian(preloc->type),endian(preloc->value));	
-				break;		
-	 	}
-		
-		plast = preloc;
-		preloc = preloc->pnext;		
+	  
+	  for(; pc < _bss ;pc++)	/* align section */
+	  {
+		  
+			  result = fwrite(&null,1,1,pbinfile);  	                /* write NULL to file                  */
+		  
 	  }
-		
-	  if(verbose) printf(" %ld relocations added ...\n",rr);	
-	  rr = endian(rr);
-	  //int nendpos = ftell(pbinfile);
-	  fseek(pbinfile,npos,SEEK_SET);
-	  result = fwrite(&rr,1,4,pbinfile);
-	  fseek(pbinfile,0,SEEK_END);
+	
+	  unsigned char MAGIC0[] = {0xDE,0xAD,0xBE,0xAF}; 
+	  unsigned char MAGIC1[] = {0x5A,0xA5,0x80,0x01};
+	  unsigned long laddr = endian(loadaddr);	
+	  result = fwrite(MAGIC0,1,4,pbinfile);  	                /* write MAGIC0 to file                  */
+	  result = fwrite(MAGIC1,1,4,pbinfile);  	          	/* write MAGIC1 to file                  */		
+	  result = fwrite(MAGIC0,1,4,pbinfile);  	                /* write MAGIC0 to file                  */	
+		  
+	  result = fwrite(&laddr,1,4,pbinfile);			/* save loadaddress 			*/
+	  
+	  long int npos; fgetpos(pbinfile,(fpos_t*)&npos);	/* placeholder for number of alocation entries (will be set after entries are written) */
+	  unsigned long rr=0;	
+	  result = fwrite(&rr,4,1,pbinfile);
+	  
+		  
+	  // walk through relocs 
+	  struct _entry *preloc = preloc_list, *plast;
+	
+	  printf("\n adding relocation info into bss segment ...\n");
+	  while(preloc)
+	  {
+		  
+		  // print to file:
+		  
+		  
+		  switch(endian(preloc->type))
+		  { 	  	
+			  // 32-Bit Relocations:
+			  case 1:  	/*R_68K_32";            Direct 32 bit  */		
+			  // 16-Bit Relocations:	
+			  case 2:  	/*R_68K_16";            Direct 16 bit  */			
+			  // 8-bit Relocations:
+			  case 3:  	/*R_68K_8";             Direct 8 bit  */									
+				  //fprintf(freloc," 0x%08lx	0x%08lx		0x%08lx\n ",endian(preloc->offset),endian(preloc->type),endian(preloc->value));
+				  if(vverbose) printf(" 0x%08lx	0x%08lx		0x%08lx\n ",endian(preloc->offset),endian(preloc->type),endian(preloc->value));		
+				  result = fwrite(&(preloc->offset),1,4,pbinfile);
+				  result = fwrite(&(preloc->type),1,4,pbinfile);  	              	
+				  result = fwrite(&(preloc->value),1,4,pbinfile);  
+				  rr++;	              	  	              	
+				  break;
+				  
+			  // pc relative relocs need no further handling
+			  case 4:  	/*R_68K_PC32";          PC relative 32 bit */
+				  
+			  case 5:  	/*R_68K_PC16";          PC relative 16 bit */				
+				  
+			  case 6:  	/*R_68K_PC8";           PC relative 8 bit */
+				  //fprintf(freloc," 0x%08lx	0x%08lx		0x%08lx\n ",endian(preloc->offset),endian(preloc->type),endian(preloc->value));	
+				  break;		
+		  }
+		  
+		  plast = preloc;
+		  preloc = preloc->pnext;		
+	    }
+		  
+	    if(verbose) printf(" %ld relocations added ...\n",rr);	
+	    rr = endian(rr);
+	    //int nendpos = ftell(pbinfile);
+	    fseek(pbinfile,npos,SEEK_SET);
+	    result = fwrite(&rr,1,4,pbinfile);
+	    fseek(pbinfile,0,SEEK_END);
 	} else printf("\n no relocation info added !\n");
 	//fclose(freloc); 
  // -------------	-----

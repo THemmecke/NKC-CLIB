@@ -5,7 +5,6 @@
 
 #include <fs.h>
 #include <ff.h>
-#include <diskio.h>
 #include <gide.h>
 
 #include "cmd.h"
@@ -38,7 +37,7 @@
 #define TEXT_CMDHELP_BR                 16
 #define TEXT_CMDHELP_BW                 17
 #define TEXT_CMDHELP_BF                 18
-#define TEXT_CMDHELP_VMOUNT             19
+#define TEXT_CMDHELP_MOUNT              19
 #define TEXT_CMDHELP_VSTATUS            20
 #define TEXT_CMDHELP_LSTATUS            21
 #define TEXT_CMDHELP_FOPEN              22
@@ -53,18 +52,39 @@
 #define TEXT_CMDHELP_PWD                31
 #define TEXT_CMDHELP_CHMOD              32
 #define TEXT_CMDHELP_MKPTABLE           33
-#define TEXT_CMDHELP_VUMOUNT            34
+#define TEXT_CMDHELP_UMOUNT             34
 #define TEXT_CMDHELP_PTABLE             35
 #define TEXT_CMDHELP_CLS             	36
+#define TEXT_CMDHELP_FSTAB		37
+#define TEXT_CMDHELP_FS    		38
+#define TEXT_CMDHELP_DEV		39
+#define TEXT_CMDHELP_FATINFO		40
+#define TEXT_CMDHELP_MEMINFO		41
+#define TEXT_CMDHELP_HISTORY		42
 
-#define TEXT_CMDHELP                    37
+#define TEXT_CMDHELP                    43
 
 // Help text ... 
 struct CMDHLP hlptxt[] =
 {
 {TEXT_CMDHELP_CLS,              
                         "CLS: clear screen\n",
-                        "cls \n"},
+                        "cls \n"},	
+{TEXT_CMDHELP_FSTAB,              
+                        "FSTAB: show file system table\n",
+                        "fstab \n"},
+{TEXT_CMDHELP_FS,              
+                        "FS: show registered file system\n",
+                        "fs \n"},
+{TEXT_CMDHELP_FATINFO,              
+                        "FATINFO: show info about FAT file system\n",
+                        "fatinfo \n"},
+{TEXT_CMDHELP_DEV,              
+                        "DEV: show registered devices\n",
+                        "dev \n"},
+{TEXT_CMDHELP_MEMINFO,              
+                        "MEMINFO: show availabe memory\n",
+                        "meminfo \n"},
 {TEXT_CMDHELP_CHMOD,
                         "ATTRIB: Change file/dir attribute\n",
                         "attrib <attr> <mask> <name>\n"\
@@ -109,17 +129,13 @@ struct CMDHLP hlptxt[] =
                         
 {TEXT_CMDHELP_DI,
 	    "DINIT <d#>: initialize a disk\n",
-            "dinit <disc number>\n"\
-            "  first disk is #0\n"},
+            "dinit <disc name>\n"\
+            "  disc name is HDA, HDB, SDA, SDB ... without':' !\n"},
 {TEXT_CMDHELP_DD,
 	    "DDUMP [<d#> <sec#>]: dump sector\n",
             "ddump [<d#> <sec#>]\n"\
             "  dump sector sec# of disc d#\n"\
             "  first disc is #0\n"},
-{TEXT_CMDHELP_DS,
-	    "DSTATUS <d#>: display disc status\n",
-            "dstatus <disc number>\n"\
-            "  first disk is #0\n"},
 {TEXT_CMDHELP_BD,
 	    "BDUMP <ofs>: dump working buffer\n",
             "bdump <buffer offset>\n"},
@@ -135,41 +151,54 @@ struct CMDHLP hlptxt[] =
 {TEXT_CMDHELP_BF,
 	    "BFILL <val>: fill working buffer\n",
             "bfill <val>\n"},
-{TEXT_CMDHELP_VMOUNT,
-	    "VMOUNT <pd#> <ld#> [<1|0>]: initialize/mount volume (1=mount immediately, 0=mount later)\n",
-            "vmount <pd#> <ld#> [<1|0>]\n"\
-            "   pd# = physical drive number 0...3\n"\
-            "   ld# = logical drive number/partition 0....9\n"\
-            "   option: 1=mount immediately, 0=mount later\n"\
-	    "   vmount only shows mounted volumes\n"},
-{TEXT_CMDHELP_VUMOUNT,
-	    "VUMOUNT <pd#> <ld#> : unmount volume\n",
-            "vumount <pd#> <ld#> \n"\
-            "   pd# = physical drive number 0...3\n"\
-            "   ld# = logical drive number/partition 0....n\n"},            
+{TEXT_CMDHELP_MOUNT,
+	    "MOUNT <vol> <fs> <opt>: initialize/mount volume \n",
+            "mount <vol> <fs> <opt>\n"\
+            "   vol = HDA0,HDA1 ...\n"\
+            "   fs = FAT32,JADOS ...\n"\
+            "   opt = r,w,rw\n"\
+	    "   mount only shows mounted volumes\n"},
+{TEXT_CMDHELP_UMOUNT,
+	    "UMOUNT <vol>: unmount volume\n",
+            "umount <vol>  \n"\
+            "   vol = HDA0,HDA1 ...\n"},            
 {TEXT_CMDHELP_VSTATUS,
-  	    "VSTATUS <d#>: show volume status\n",
-            "vstatus <disc number>\n"},
+  	    "VSTATUS <vol>: show info of volumes FATFS structure\n",
+            "vstatus <volume>\n"\
+            "   - volume must be mounted.\n"\
+            "   - info: FAT Type, FAT Start, DIR start, Data Start,\n"\
+	    "           Root DIR entries, number of clusters\n"},	    
 {TEXT_CMDHELP_LSTATUS,
-	    "LSTATUS [<path>]: show logical drive status\n",
+	    "LSTATUS [<path>]: info on FS(FAT..) structure in current directory on current media\n",
             "lstatus [<path>]\n"\
-            "  path = 0:,1:,A:,B:...for JADOS and HDA0:, HDA1: .. for FAT drives\n"},            
+            "    - info: FAT Type, Number of FATs, ClusterSize in sectors and bytes,\n"\
+            "            Volume Label and S/N, number of files/directories,\n"\
+            "            total/available disk space\n"},	  
+{TEXT_CMDHELP_DS,
+	    "DSTATUS <d#>: physical disk status (calls block driver)\n",
+            "dstatus <d#>\n"\
+            "  d# = HDA, HDB, SDA, SDB ....\n"\
+            "  info: Model, Serial-Number,cyl-sec-heads, tracks LBA-Sectors etc.\n"},	    
 {TEXT_CMDHELP_FOPEN,
 	    "FOPEN <file> <mode>: open a file\n",
             "fopen <file> <mode>\n"\
             " mode:\n"\
-            "    read           r\n"\
-            "    write          w\n"\
+            "    read           r  --> file[0]\n"\
+            "    write          w  --> file[1]\n"\
             "    append         a\n"\
             "    binary         b\n"\
             "    text/ascii     t\n"\
 	    "    update         +\n"},
 {TEXT_CMDHELP_FCLOSE,
-	    "FCLOSE : close the file\n",
-            "fclose\n"},
+	    "FCLOSE <n>: close file[n]\n",
+            "fclose <n>\n"},
 {TEXT_CMDHELP_FSEEK,
-	    "FSEEK [mode] <ofs>: move filepointer\n",
-            "fseek [mode] <ofs>\n"},
+	    "FSEEK <n> <mode> <ofs>: move filepointer of file n in mode\n",
+            "fseek <n> <mode> <ofs>\n"\
+            "      mode:\n"\
+            "      0 - SEEK_SET : Beginning of file\n"\
+            "      1 - SEEK_CUR : Current position of the file pointer\n"\
+            "      2 - SEEK_END : End of file\n"},
 {TEXT_CMDHELP_FDUMP,
 	    "FDUMP <len>: dump the file\n",
             "fdump <len>\n"},
@@ -183,17 +212,28 @@ struct CMDHLP hlptxt[] =
 	    "FTRUNK : trunkate the file at current position\n",
             "ftrunk\n"},
 {TEXT_CMDHELP_VLABEL,
-	    "VLABEL <name>: set volume label\n",
-            "vlabel <name>\n"},
+	    "VLABEL <op> <volume> <label>: read/write volume label\n",
+            "vlabel <op> <volume> <label>\n"\
+            "    example: vlabel w hda0 test - sets label of hda0 to 'test'\n"\
+            "             vlabel w hdb0      - clears label of hdb0\n"\
+            "             vlabel r hda1      - reads label of hda1\n"},
 {TEXT_CMDHELP_MKFS,
-	    "MKFS <ld#> <rule> <cluster size>: create a file system\n",
-            "mkfs <ld#> <rule> <cluster size>\n"\
+	    "MKFS <ld#> <fs> <rule> <cluster size>: create a file system\n",
+            "mkfs <ld#> <fs> <rule> <cluster size>\n"\
+            "     ld#          - volume\n"\
+            "     fs           - file system\n"\
+            "     rule         - 0=FDISK (1...4 partitions), 1=SFD (only 1 partition)\n"\
+            "     cluster size - = sector size * n (n=1..128, power of 2)\n"\
+            "                    if 0 is given, the cluster size is \n"\
+            "                    determined depending by volume size\n"\
             "  example:\n"\
-            "      mkfs 0 0 1024\n"\
-            "      mkfs 0 1 1024\n"},
+            "      mkfs HDA0 FAT 0 1024\n"\
+            "      mkfs SDA0 FAT 1 1024\n"},
 {TEXT_CMDHELP_MKPTABLE,
 	    "MKPTABLE <pd#> <size1> <size2> <size3> <size4> - Create partition table \n",
-            "mkptable <pd#> <size1> <size2> <size3> <size4>\n"},  
+            "mkptable <pd#> <size1> <size2> <size3> <size4>\n"\
+            "          pd#: HDA = 1st (G)IDE disk \n"\
+            "               SDA = 1st SD disk\n"},  
 {TEXT_CMDHELP_PTABLE,
 	    "PTABLE <pd#>  - show partition table of physical drive pd# \n",
             "ptable <pd#>\n"\
@@ -204,7 +244,10 @@ struct CMDHLP hlptxt[] =
             "pwd\n"},           
 {TEXT_CMDHELP_QUIT,             
                         "QUIT: quit/exit program\n",
-                        "quit\n"},                 
+                        "quit\n"},    
+{TEXT_CMDHELP_HISTORY,             
+                        "HISTORY: show command history\n",
+                        "history\n"},			
 {TEXT_CMDHELP,
 			"type cmd /? for more information on cmd\n",""},        
         {0,"",""}
@@ -215,6 +258,11 @@ struct CMDHLP hlptxt[] =
 struct CMD internalCommands[] =
 {
   {"CLS"        , cmd_cls       , TEXT_CMDHELP_CLS},
+  {"FSTAB"      , cmd_fstab     , TEXT_CMDHELP_FSTAB},
+  {"FS"         , cmd_fs        , TEXT_CMDHELP_FS},
+  {"FATINFO"    , cmd_fatinfo   , TEXT_CMDHELP_FATINFO},
+  {"DEV"        , cmd_dev       , TEXT_CMDHELP_DEV},
+  {"MEMINFO"    , cmd_meminfo   , TEXT_CMDHELP_MEMINFO},
   {"DINIT"      , cmd_dinit     , TEXT_CMDHELP_DI},  
   {"DDUMP"      , cmd_ddump     , TEXT_CMDHELP_DD},
   {"DSTATUS"    , cmd_dstatus   , TEXT_CMDHELP_DS},
@@ -223,8 +271,8 @@ struct CMD internalCommands[] =
   {"BREAD"      , cmd_bread     , TEXT_CMDHELP_BR},
   {"BWRITE"     , cmd_bwrite    , TEXT_CMDHELP_BW},
   {"BFILL"      , cmd_bfill     , TEXT_CMDHELP_BF}, 
-  {"VMOUNT"     , cmd_vmount    , TEXT_CMDHELP_VMOUNT},
-  {"VUMOUNT"    , cmd_vumount   , TEXT_CMDHELP_VUMOUNT},
+  {"MOUNT"      , cmd_mount     , TEXT_CMDHELP_MOUNT},
+  {"UMOUNT"     , cmd_umount    , TEXT_CMDHELP_UMOUNT},
   {"VSTATUS"    , cmd_vstatus   , TEXT_CMDHELP_VSTATUS},
   {"LSTATUS"    , cmd_lstatus   , TEXT_CMDHELP_LSTATUS},
   {"FOPEN"      , cmd_fopen     , TEXT_CMDHELP_FOPEN},
@@ -255,6 +303,8 @@ struct CMD internalCommands[] =
   {"QUIT"       , cmd_quit      , TEXT_CMDHELP_QUIT},
   {"Q"          , cmd_quit      , TEXT_CMDHELP_QUIT},  
   {"EXIT"       , cmd_quit      , TEXT_CMDHELP_QUIT},
+  {"HISTORY"    , cmd_history   , TEXT_CMDHELP_HISTORY},
+  {"HIST"       , cmd_history   , TEXT_CMDHELP_HISTORY},
   {"?"          , showcmds      , TEXT_CMDHELP_QUESTION},
   
   {0,0,0}
@@ -267,29 +317,30 @@ struct CMD internalCommands[] =
 /*---------------------------------------------------------*/
 
 LONGLONG AccSize;			/* Work register for scan_fat_files() */
-char drive[10],path[255],filename[20], ext[10], fname[30], fullname[320], filepath[255], fullpath[255]; /* work register for split_filename() -> fs.c */
+//char drive[10],path[255],filename[20], ext[10], fname[30], fullname[320], filepath[255], fullpath[255]; /* work register for split_filename() -> fs.c */
+
+extern struct fpinfo FPInfo; // shell.c :  working struct for checkfp (check file-path), also stores current drive and path
+
+// 
+struct fpinfo FPInfo1, FPInfo2; // working buffer(2) for arbitrary use with checkfp and checkargs
 
 WORD AccFiles, AccDirs;
 BYTE Buff[262144];			/* Working buffer */
 
-extern char CurrDirPath[300];		/* shell.c */
-extern char CurrDrive[MAX_CHAR];	/* shell.c */
+//extern char FPInfo.psz_cpath[300];		/* shell.c */
+//extern char FPInfo.psz_cdrive[MAX_CHAR];	/* shell.c */
 //extern BYTE CurrFATDrive;		/* shell.c */
 
 // ---
-FILE* file[2];				/* Pointer to File objects */
+FILE* file[2];				/* Pointer to File objects file[0] idt used for read and file[1] ist used for write */
 
-static const char* const _FAT_DISK_STRS[] = {_DISK_STRS};  // "HDA","HDB","HDC","HDD"
-static const char* const _FAT_VOL_STRS[] = {_VOLUME_STRS};  // "HDA0","HDA1","HDA2","HDA3"
+char tmp[_MAX_PATH];
 
 /*---------------------------------------------------------*/
 /* Helper Functions                                        */
 /*---------------------------------------------------------*/
-const char *p_rc_code =
-		"OK\0DISK_ERR\0INT_ERR\0NOT_READY\0NO_FILE\0NO_PATH\0INVALID_NAME\0"
-		"DENIED\0EXIST\0INVALID_OBJECT\0WRITE_PROTECTED\0INVALID_DRIVE\0"
-		"NOT_ENABLED\0NO_FILE_SYSTEM\0MKFS_ABORTED\0TIMEOUT\0LOCKED\0"
-		"NOT_ENOUGH_CORE\0TOO_MANY_OPEN_FILES\0INVALID_PARAMETER\0NO_DRIVER\0";
+#include "errcodes.h"	
+
 		
 const char *p_fat_types =
 		"FAT12\0FAT16\0FAT32\0";
@@ -324,6 +375,41 @@ void put_rc (FRESULT rc)
 	printf("rc=%u FR_%s\n", (UINT)rc, get_rc_string(rc));
 }
 
+void init_cmd(void) {
+   FPInfo1.psz_driveName = (char*)malloc(_MAX_DRIVE_NAME);  if(FPInfo1.psz_driveName == 0) exit(1); // exit with fatal error !!
+   FPInfo1.psz_deviceID = (char*)malloc(_MAX_DRIVE_NAME);   if(FPInfo1.psz_deviceID == 0) exit(1);
+   FPInfo1.psz_path = (char*)malloc(_MAX_PATH);       if(FPInfo1.psz_path == 0) exit(1); 
+   FPInfo1.psz_filename = (char*)malloc(_MAX_FILENAME);   if(FPInfo1.psz_filename ==0 ) exit(1);
+   FPInfo1.psz_fileext = (char*)malloc(_MAX_FILEEXT);    if(FPInfo1.psz_fileext == 0 ) exit(1);
+   FPInfo1.psz_cdrive = (char*)malloc(_MAX_DRIVE_NAME);     if(FPInfo1.psz_cdrive == 0 ) exit(1);
+   FPInfo1.psz_cpath = (char*)malloc(_MAX_PATH);      if(FPInfo1.psz_cpath == 0 ) exit(1);
+   
+   FPInfo2.psz_driveName = (char*)malloc(_MAX_DRIVE_NAME);  if(FPInfo2.psz_driveName == 0) exit(1); // exit with fatal error !!
+   FPInfo2.psz_deviceID = (char*)malloc(_MAX_DRIVE_NAME);   if(FPInfo2.psz_deviceID == 0) exit(1);
+   FPInfo2.psz_path = (char*)malloc(_MAX_PATH);       if(FPInfo2.psz_path == 0) exit(1); 
+   FPInfo2.psz_filename = (char*)malloc(_MAX_FILENAME);   if(FPInfo2.psz_filename ==0 ) exit(1);
+   FPInfo2.psz_fileext = (char*)malloc(_MAX_FILEEXT);    if(FPInfo2.psz_fileext == 0 ) exit(1);
+   FPInfo2.psz_cdrive = (char*)malloc(_MAX_DRIVE_NAME);     if(FPInfo2.psz_cdrive == 0 ) exit(1);
+   FPInfo2.psz_cpath = (char*)malloc(_MAX_PATH);      if(FPInfo2.psz_cpath == 0 ) exit(1);
+}
+
+void exit_cmd(void) {
+  free( FPInfo1.psz_driveName);
+  free( FPInfo1.psz_deviceID);
+  free( FPInfo1.psz_path);
+  free( FPInfo1.psz_filename);
+  free( FPInfo1.psz_fileext);
+  free( FPInfo1.psz_cdrive);
+  free( FPInfo1.psz_cpath);
+  
+  free( FPInfo2.psz_driveName);
+  free( FPInfo2.psz_deviceID);
+  free( FPInfo2.psz_path);
+  free( FPInfo2.psz_filename);
+  free( FPInfo2.psz_fileext);
+  free( FPInfo2.psz_cdrive);
+  free( FPInfo2.psz_cpath);
+}
 
 FRESULT scan_fat_files (	/* used in cmd_lstatus */
 	char* ppath		/* Pointer to the path name working buffer */
@@ -337,20 +423,33 @@ FRESULT scan_fat_files (	/* used in cmd_lstatus */
 	struct ioctl_opendir arg_opendir;
 	struct ioctl_readdir arg_readdir;
 	
-	split_filename(ppath, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze args
+	//split_filename(ppath, drive, path, filename, ext, fullname, filepath, fullpath, FPInfo.psz_cdrive, FPInfo.psz_cpath); // analyze args
+	res=checkfp(ppath, &FPInfo);
 	
 	//printf("scan_fat_files: path[%s] drive[%s] fullpath[%s]\n",ppath,drive,fullpath);
-   
-	arg_opendir.dp = &dir;
-	arg_opendir.path = fullpath;	
+    
+	// build fullpath
+	tmp[0]=NULL;
+	strcat(tmp,FPInfo.psz_driveName);
+	strcat(tmp,":");
+	strcat(tmp,FPInfo.psz_path);
+	strcat(tmp,FPInfo.psz_filename);
+	strncat(tmp,&FPInfo.c_separator,1);
+	strcat(tmp,FPInfo.psz_fileext);
+	
+	if( tmp[strlen(tmp)-1] == '/' ) tmp[strlen(tmp)-1] = 0;
+	
+	arg_opendir.path = tmp;
+	arg_opendir.dp = &dir;		
 	arg_readdir.dp = &dir;
 	arg_readdir.fno = &Finfo;
 	
-	//if ((res = ioctl(CurrDrive,FAT_IOCTL_OPEN_DIR,&arg_opendir)) == FR_OK) {
-	if ((res = ioctl(drive,FAT_IOCTL_OPEN_DIR,&arg_opendir)) == FR_OK) {
-		i = strlen(fullpath);
+	//printf("scan_fat_files: path[%s] drive[%s] fullpath[%s]\n",ppath,FPInfo.psz_driveName,tmp);
+	
+	if ((res = ioctl(FPInfo.psz_driveName,FAT_IOCTL_OPEN_DIR,&arg_opendir)) == FR_OK) {
+		i = strlen(tmp);
 		
-		while (((res = ioctl(drive,FAT_IOCTL_READ_DIR,&arg_readdir)) == FR_OK) && Finfo.fname[0]) {
+		while (((res = ioctl(FPInfo.psz_driveName,FAT_IOCTL_READ_DIR,&arg_readdir)) == FR_OK) && Finfo.fname[0]) {
 			if (_FS_RPATH && Finfo.fname[0] == '.') continue;
 #if _USE_LFN
 			fn = *Finfo.lfname ? Finfo.lfname : Finfo.fname;
@@ -359,9 +458,9 @@ FRESULT scan_fat_files (	/* used in cmd_lstatus */
 #endif
 			if (Finfo.fattrib & AM_DIR) {
 				AccDirs++;
-				*(fullpath+i) = '/'; strcpy(fullpath+i+1, fn);
-				res = scan_fat_files(fullpath);
-				*(fullpath+i) = '\0';
+				*(tmp+i) = '/'; strcpy(tmp+i+1, fn);
+				res = scan_fat_files(tmp);
+				*(tmp+i) = '\0';
 				if (res != FR_OK) break;
 			} else {
 //				printf("%s/%s\n", ppath, fn);
@@ -369,9 +468,11 @@ FRESULT scan_fat_files (	/* used in cmd_lstatus */
 				AccSize += Finfo.fsize;
 			}
 		}
-		res = ioctl(drive,FAT_IOCTL_CLOSE_DIR,&dir);
-	}
+		res = ioctl(FPInfo.psz_driveName,FAT_IOCTL_CLOSE_DIR,&dir);
+		//if(res) printf("error 0:%d in scan_fat_files\n",res);
+	} //else printf("error 1:%d in scan_fat_files\n",res);
 
+	//printf("scan_fat_files => %d\n",res);
 	return res;
 }
 
@@ -389,7 +490,7 @@ FRESULT scan_fat_files (	/* used in cmd_lstatus */
 
 int xatoi (			/* 0:Failed, 1:Successful */
 	char **str,	/* Pointer to pointer to the string */
-	long *res		/* Pointer to a valiable to store the value */
+	long *res		/* Pointer to a variable to store the value */
 )
 {
 	unsigned long val;
@@ -443,6 +544,45 @@ int xatoi (			/* 0:Failed, 1:Successful */
 }
 
 /*----------------------------------------------*/
+/* Get a (string)value of the string                    */
+/*----------------------------------------------*/
+/*	"HDA0   binary w "
+	    ^                       1st call returns 'HDA0' and next ptr (if len = 4)
+	        ^                   2nd call returns 'binary' and next ptr
+                       ^            3rd call returns 'w' and next ptr                          
+*/
+
+int xatos (			/* 0:Failed, 1:Successful */
+	char **str,		/* Pointer to pointer to the string */
+	char *res,		/* Pointer to a variable to store the sub-string */
+	int len			/* max length of sub-string without terminating NULL */
+)
+{	
+	char *p= res;
+	char c;
+	int n=0;
+
+	//printf(" xatos input = %s\n",*str);
+	
+	*res = 0;
+	while ((c = **str) == ' ') (*str)++;	/* Skip leading spaces */
+
+	
+	while (c > ' ' && n < len) {
+		*p++ = c;
+		c = *(++(*str));
+		n++;
+	}
+	
+	*p = 0; /* terminate string */
+	
+	
+	//if(n==len) return 0;
+	//  else return 1;
+	return 1;
+}
+
+/*----------------------------------------------*/
 /* Dump a block of byte array                   */
 
 void put_dump (
@@ -468,6 +608,161 @@ void put_dump (
 
 // implementation of commands ...
 
+int checkargs(char* args, char* fullpath1, char* fullpath2) 
+{
+  FRESULT res;
+  
+  char *arg1=0;
+  char *arg2=0;  
+  
+  
+   while (*args == ' ') args++;	// skip whitespace
+   arg1 = args;			// pointer to 1st parameter
+   
+   arg2 = strchr(args, ' ');	// search 2nd parameter
+   if (!arg2)                   // if no 2nd parameter
+     arg2 = arg1;		//   2nd parameter == 1st parameter
+   else *arg2++ = 0;		// terminate 1st par and increment pointer to next char
+   while (*arg2 == ' ') arg2++; // skip whitespace   
+   
+#ifdef CONFIG_DEBUG
+   printf(" arg1 = %s, arg2 = %s\n\n", arg1, arg2);
+#endif   
+   strcpy(FPInfo1.psz_cdrive,FPInfo.psz_cdrive);
+   strcpy(FPInfo1.psz_cpath,FPInfo.psz_cpath);
+    
+     
+   res = checkfp(arg1, &FPInfo1);
+#ifdef CONFIG_DEBUG         
+   printf("\nFPINFO1:\n");
+   printf(" psz_driveName:  [%s]\n",FPInfo1.psz_driveName );
+   printf(" psz_deviceID:   [%s]\n",FPInfo1.psz_deviceID );
+   printf(" c_deviceNO:     [%c]\n",FPInfo1.c_deviceNO );
+   printf(" n_partition:    [%d]\n",FPInfo1.n_partition );
+   printf(" psz_path:       [%s]\n",FPInfo1.psz_path );
+   printf(" psz_filename:   [%s]\n",FPInfo1.psz_filename );
+   printf(" c_separator:    [%c]\n",FPInfo1.c_separator );
+   printf(" psz_fileext:    [%s]\n",FPInfo1.psz_fileext );
+   printf(" psz_cdrive:     [%s]\n",FPInfo1.psz_cdrive );
+   printf(" psz_cpath:      [%s]\n",FPInfo1.psz_cpath );
+   printf("\nres = %d (KEY)\n",res);
+   getchar();
+#endif   
+   
+   if(fullpath2) {          
+     strcpy(FPInfo2.psz_cdrive,FPInfo.psz_cdrive);
+     strcpy(FPInfo2.psz_cpath,FPInfo.psz_cpath);
+     
+     res = checkfp(arg2, &FPInfo2); 
+     
+      if(arg1 == arg2){       // == no 2nd argument
+       FPInfo2.psz_driveName[0] = 0;
+       FPInfo2.psz_deviceID[0] = 0;
+       FPInfo2.c_deviceNO = 0;
+       FPInfo2.n_partition = 0;
+       FPInfo2.psz_path[0] = 0;
+     }
+     
+     if(!FPInfo2.psz_filename[0]) {
+       strcpy(FPInfo2.psz_filename,FPInfo1.psz_filename);
+       FPInfo2.c_separator = FPInfo1.c_separator;
+       strcpy(FPInfo2.psz_fileext,FPInfo1.psz_fileext);
+     }
+     
+#ifdef CONFIG_DEBUG     
+     printf("\nFPINFO2:\n");
+     printf(" psz_driveName:  [%s]\n",FPInfo2.psz_driveName );
+     printf(" psz_deviceID:   [%s]\n",FPInfo2.psz_deviceID );
+     printf(" c_deviceNO:     [%c]\n",FPInfo2.c_deviceNO );
+     printf(" n_partition:    [%d]\n",FPInfo2.n_partition );
+     printf(" psz_path:       [%s]\n",FPInfo2.psz_path );
+     printf(" psz_filename:   [%s]\n",FPInfo2.psz_filename );
+     printf(" c_separator:    [%c]\n",FPInfo2.c_separator );
+     printf(" psz_fileext:    [%s]\n",FPInfo2.psz_fileext );
+     printf(" psz_cdrive:     [%s]\n",FPInfo2.psz_cdrive );
+     printf(" psz_cpath:      [%s]\n",FPInfo2.psz_cpath );
+     printf("\nres = %d (KEY)\n",res);
+     getchar();
+#endif     
+   }
+   
+   // build fullpath  (1)
+   fullpath1[0]=0;
+   if( !FPInfo1.psz_driveName[0] )		// use current drive if no drive given   
+     strcat(fullpath1,FPInfo1.psz_cdrive); 
+   else
+     strcat(fullpath1,FPInfo1.psz_driveName);    
+   strcat(fullpath1,":");
+                                                  
+    if(arg1[0] == '/') { 			// absolute path given as argument -> superseds current path !
+#ifdef CONFIG_DEBUG      
+      printf(" absolute path argument '%s'\n",arg1);
+#endif      
+      strcat(fullpath1,arg1);
+    } else { // relative path, append args to current path...
+#ifdef CONFIG_DEBUG      
+     printf(" relative path argument '%s'\n",arg1); 
+#endif     
+     if(FPInfo1.psz_cpath[0] != '/') strcat(fullpath1,"/");          
+     //strcat(fullpath,FPInfo.psz_cpath);  
+     if(!FPInfo1.psz_driveName[0] || !strcmp(FPInfo1.psz_driveName,FPInfo1.psz_cdrive)) strcat(fullpath1,FPInfo1.psz_cpath);  // append current path only, if no drive given or given drive equal to current drive !
+     
+     if(fullpath1[strlen(fullpath1)-1] == '/') {
+       if(FPInfo1.psz_path[0] == '/') fullpath1[strlen(fullpath1)-1] = 0;       
+     }else{
+       if(FPInfo1.psz_path[0] != '/') strcat(fullpath1,"/");
+     }
+     strcat(fullpath1,FPInfo1.psz_path);
+
+     if(fullpath1[strlen(fullpath1)-1] != '/') strcat(fullpath1,"/");
+     strcat(fullpath1,FPInfo1.psz_filename);
+     fullpath1[strlen(fullpath1)+1] = 0;       
+     fullpath1[strlen(fullpath1)] = FPInfo1.c_separator;       
+     strcat(fullpath1,FPInfo1.psz_fileext);
+
+     if(fullpath1[strlen(fullpath1)-1] == '/') fullpath1[strlen(fullpath1)-1] = 0;      
+    }
+    
+    if(fullpath2) {
+    // build fullpath  (2)
+       fullpath2[0]=0;
+       if( !FPInfo2.psz_driveName[0] )		// use current drive if no drive given   
+         strcat(fullpath2,FPInfo2.psz_cdrive); 
+       else 
+         strcat(fullpath2,FPInfo2.psz_driveName);    
+       strcat(fullpath2,":");
+                                                      
+        if(arg2[0] == '/') { 			// absolute path given as argument -> superseds current path !
+#ifdef CONFIG_DEBUG	  
+          printf(" absolute path argument '%s'\n",arg2);
+#endif	  
+          strcat(fullpath2,FPInfo2.psz_path);
+        } else { // relative path, append args to current path...
+#ifdef CONFIG_DEBUG	  
+         printf(" relative path argument '%s'\n",arg2); 
+#endif	 
+         if(FPInfo2.psz_cpath[0] != '/') strcat(fullpath2,"/");          
+         if(!FPInfo2.psz_driveName[0] || !strcmp(FPInfo2.psz_driveName,FPInfo2.psz_cdrive)) strcat(fullpath2,FPInfo2.psz_cpath);  // append current path only, if no drive given or given drive equal to current drive !
+        }
+         if(fullpath2[strlen(fullpath2)-1] == '/') {
+           if(FPInfo2.psz_path[0] == '/') fullpath2[strlen(fullpath2)-1] = 0;       
+         }else{
+           if(FPInfo2.psz_path[0] != '/') strcat(fullpath2,"/");
+         }
+         strcat(fullpath2,FPInfo2.psz_path);
+          
+         if(fullpath2[strlen(fullpath2)-1] != '/') strcat(fullpath2,"/");
+         strcat(fullpath2,FPInfo2.psz_filename);
+         fullpath2[strlen(fullpath2)+1] = 0;       
+         fullpath2[strlen(fullpath2)] = FPInfo2.c_separator;       
+         strcat(fullpath2,FPInfo2.psz_fileext);
+      
+         if(fullpath2[strlen(fullpath2)-1] == '/') fullpath2[strlen(fullpath2)-1] = 0;                      
+          
+   }
+   
+      return 0;
+}
 
 // ****************** high level filesystem (fat) commands.... *************************************
 
@@ -481,37 +776,49 @@ int cmd_pwd    (char * args){
    FRESULT res;
    struct ioctl_get_cwd arg;
    
-   arg.cpath = CurrDirPath;
-   arg.cdrv  = CurrDrive;
+   arg.cpath = FPInfo.psz_cpath;
+   arg.cdrive  = FPInfo.psz_cdrive;
    arg.size = 256;
    res = ioctl(NULL,FS_IOCTL_GETCWD,&arg);
 
    if (res) {
 	put_rc(res);
    } else {	
-	printf("%s:%s\n",CurrDrive,CurrDirPath);	
+	printf("%s:%s\n",FPInfo.psz_cdrive,FPInfo.psz_cpath);	
    }
-          
+         
+   return 0; // sonst bricht die shell ab ....      
    return res;
 } 
 
 
 int cmd_chmod(char* args) {
-   /* fa <atrr> <mask> <name> - Change file/dir attribute */
-   long p1,p2;
+   /* fa <attrib> <mask> <name> - Change file/dir attribute */
+   long attrib,mask;
    struct ioctl_chmod arg;
    FRESULT res;
    
-   if (!xatoi(&args, &p1) || !xatoi(&args, &p2)) return 0;
+   
+   if (!xatoi(&args, &attrib) || !xatoi(&args, &mask)) return 0;
    while (*args == ' ') args++;
    
-   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze args 
+   res=checkfp(args, &FPInfo);
+   if( res != EZERO) return res;
    
-   arg.value = (BYTE)p1;	/* Attribute bits */
-   arg.mask  = (BYTE)p2,	/* Attribute mask to change */
-   arg.fpath = fullpath;	/* Pointer to the full file path */
-   
-   res = ioctl(CurrDrive,FS_IOCTL_CHMOD,&arg);
+   // build fullpath
+   tmp[0]=0;
+   strcat(tmp,FPInfo.psz_driveName);
+   strncat(tmp,':',1);
+   strcat(tmp,FPInfo.psz_path);
+   strcat(tmp,FPInfo.psz_filename);
+   strncat(tmp,&FPInfo.c_separator,1);
+   strcat(tmp,FPInfo.psz_fileext);
+
+   arg.value = (BYTE)attrib;	/* Attribute bits */
+   arg.mask  = (BYTE)mask,	/* Attribute mask to change */
+   arg.fpath = tmp;		/* Pointer to the full file path */
+    
+   res = ioctl(NULL,FS_IOCTL_CHMOD,&arg);
    
    if(res != RES_OK)   put_rc(res);
    
@@ -532,12 +839,12 @@ int cmd_chdrive(char * args){
    while (*args == ' ') args++;
   
    res = ioctl(NULL,FS_IOCTL_CHDRIVE,args); 
-   ioctl(NULL,FS_IOCTL_GETDRV,CurrDrive);
-   
-   arg.cpath = CurrDirPath;
-   arg.cdrv  = CurrDrive;
-   arg.size = 256;
+    
+   arg.cpath = FPInfo.psz_cpath;
+   arg.cdrive  = FPInfo.psz_cdrive;
+   arg.size = _MAX_PATH;
    res = ioctl(NULL,FS_IOCTL_GETCWD,&arg);
+      
    
    if(res != RES_OK) put_rc(res);
          
@@ -548,24 +855,65 @@ int cmd_chdir(char *args)
 {
    FRESULT res;
    struct ioctl_get_cwd arg;
+   char fullpath[_MAX_PATH];
    
-   
-   
+   if(!args) return 0;
+     
    while (*args == ' ') args++;  
    
-   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze args
+#ifdef CONFIG_DEBUG   
+   printf("cmd_chdir(%s)\n",args);
+#endif
    
-   if(filepath[strlen(filepath)-1] == '/') filepath[strlen(filepath)-1] = 0;  // remove trailing '/' (in cd ..)
+   res=checkfp(args, &FPInfo);
    
-   printf(" cd [%s]\n",filepath);
    
-   res = ioctl(CurrDrive,FS_IOCTL_CD,filepath);
+  // build fullpath
+   fullpath[0]=0;
+   if( !FPInfo.psz_driveName[0] )		// use current drive if no drive given   
+      strcat(FPInfo.psz_driveName,FPInfo.psz_cdrive); 
+
+    strcat(fullpath,FPInfo.psz_driveName);    
+    strcat(fullpath,":");
+                                                  
+    if(args[0] == '/') { 			// absolute path given as argument -> superseds current path !
+#ifdef CONFIG_DEBUG      
+      printf(" absolute path argument '%s'\n",args);
+#endif
+      strcat(fullpath,args);
+    } else { // relative path, append args to current path...
+#ifdef CONFIG_DEBUG      
+     printf(" relative path argument '%s'\n",args); 
+#endif
+     if(FPInfo.psz_cpath[0] != '/') strcat(fullpath,"/");          
+     strcat(fullpath,FPInfo.psz_cpath);  
+     
+     if(fullpath[strlen(fullpath)-1] == '/') {
+       if(FPInfo.psz_path[0] == '/') fullpath[strlen(fullpath)-1] = 0;       
+     }else{
+       if(FPInfo.psz_path[0] != '/') strcat(fullpath,"/");
+     }
+     strcat(fullpath,FPInfo.psz_path);
+      
+     if(strlen(FPInfo.psz_filename)) {
+       if(fullpath[strlen(fullpath)-1] != '/') strcat(fullpath,"/");
+	strcat(fullpath,FPInfo.psz_filename);
+     }
+     
+     if(fullpath[strlen(fullpath)-1] == '/') fullpath[strlen(fullpath)-1] = 0;      
+    }
+
+#ifdef CONFIG_DEBUG
+   printf(" cd [%s]\n",fullpath);
+#endif
+   
+   res = ioctl(FPInfo.psz_cdrive,FS_IOCTL_CD,fullpath);
    if(res != RES_OK) put_rc(res);   
    
-   arg.cpath = CurrDirPath;
-   arg.cdrv = CurrDrive;
+   arg.cpath = FPInfo.psz_cpath;
+   arg.cdrive = FPInfo.psz_cdrive;
    arg.size = 256;
-  res = ioctl(NULL,FS_IOCTL_GETCWD,&arg); // no device name needed
+   res = ioctl(NULL,FS_IOCTL_GETCWD,&arg); // no device name needed
    
    if(res != RES_OK) put_rc(res);
    
@@ -577,32 +925,35 @@ int cmd_dir(char *args) // ...
 {
   int i;
   FRESULT res;
+  char fullpath1[_MAX_PATH];
   
   while (*args == ' ') args++;
   
-  split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze args 
-    
-  if(fullpath[strlen(fullpath)-1] == '/') fullpath[strlen(fullpath)-1] = 0; // 
+#ifdef CONFIG_DEBUG  
+  printf("cmd_dir(%s) ...\n",args);
+#endif
+  res = checkargs(args, fullpath1, NULL);
+  res = checkfp(fullpath1, &FPInfo1);
+#ifdef CONFIG_DEBUG
+  printf(" dir [%s] ... \n",fullpath1);
+#endif
+  printf(" directory of %s is:\n",fullpath1);
+
   
-  printf(" dir [%s:%s] ... \n",drive,path);
-  printf(" directory of %s is:\n",fullpath);
-  
-  
-  
-  if( !drive[1] ) { // one character drive name -> is it a JADOS drive ?
-    if( (drive[0] >= 'A' && drive[0] <= 'Z') ||  // JADOS hard drive
-	//(drive[0] >= 'a' && drive[0] <= 'z') ||
-        (drive[0] >= '0' && drive[0] <= '3') ){  // JADOS floppy drive
-	  res = cmd_dir_nkc(fullpath,drive);
+
+  if( !FPInfo1.psz_driveName[1] ) { // one character drive name -> is it a JADOS drive ?
+    if( (FPInfo1.psz_driveName[0] >= 'A' && FPInfo1.psz_driveName[0] <= 'Z') ||  // JADOS hard drive
+        (FPInfo1.psz_driveName[0] >= '0' && FPInfo1.psz_driveName[0] <= '3') ){  // JADOS floppy drive
+	  res = cmd_dir_nkc(fullpath1,FPInfo1.psz_driveName);
 	  if(res) printf(" cmd_dir_nkc returned '%s'\n",get_rc_string(res));
 	  return 0;
     }else{  //invalid drive name
-	  printf(" invalid drive name (%s)\n",drive);
+	  printf(" invalid drive name (%s)\n",FPInfo1.psz_driveName);
 	  return 0;//EINVAL;
     }
   }else{ // give it to the fat driver
     
-    res = cmd_dir_fat(fullpath,drive);
+    res = cmd_dir_fat(fullpath1,FPInfo1.psz_driveName);
     if(res) printf(" cmd_dir_fat returned '%s'\n",get_rc_string(res));
     return 0;
   }
@@ -613,22 +964,39 @@ int cmd_dir_nkc(char *args, 		// arguments
 		char* pd		// drive 
 	       ) // NKC/JADOS dir
 {
-  //printf(" DIR command not implemented for JADOS/NKC file system yet !\n");
-  
+  printf(" JADOS/NKC dir...\n");
   FRESULT res;
   struct ioctl_nkc_dir arg;
-  char buffer[256*4+1];  
+  char *buffer;  
   char *pargs,*pc1,*pc2;
   int len;
   
   // remove path information from filename...
   pc1 = args;
   len = strlen(pc1);
+  
+#ifdef CONFIG_DEBUG  
   printf(" try allocating %d bytes for pargs: ",len);
-  pc2 = pargs = (char*)malloc(len);
-  
+#endif
+  pc2 = pargs = (char*)malloc(len);  
+#ifdef CONFIG_DEBUG
   printf(" malloc returned 0x%x\n",pc2);
+#endif  
+  if(!pc2) return EZERO;
+#ifdef CONFIG_DEBUG  
+  printf(" try allocating %d bytes for buffer: ",256*40+1);
+#endif
+  buffer = (char*)malloc(256*40+1);  
+#ifdef CONFIG_DEBUG  
+  printf(" malloc returned 0x%x\n",buffer);
+#endif
   
+  
+  if(!buffer){
+    printf(" error: not enough memory\n");
+    free(pc2);
+    return EZERO;
+  }
   
   *pc2=0;
   while(*pc1){
@@ -637,15 +1005,20 @@ int cmd_dir_nkc(char *args, 		// arguments
   }
   *pc2=0;
   
+#ifdef CONFIG_DEBUG  
   printf(" src-pattern = [%s], dst-pattern = [%s]\n",args,pargs);
+#endif
   
-  arg.attrib = 7; // show all types of files
+
+  arg.attrib = 7; // show all types of files (1=file length; 2=date; 4=r/w attribute)
   arg.cols = 2;   // format output in 2 columns
-  arg.size = 256*4; // maximum buffer size for full directory
+  arg.size = 256*40; // maximum buffer size for full directory
   arg.pbuf = buffer;
   arg.ppattern = pargs;
   
+#ifdef CONFIG_DEBUG  
   printf(" pattern to jados [%s]\n", pargs);	
+#endif
   
   res = ioctl(pd,NKC_IOCTL_DIR,&arg); // fetch directory using JADOS function call
 
@@ -653,18 +1026,19 @@ int cmd_dir_nkc(char *args, 		// arguments
   printf("File-Name     Size   Date      Flags File-Name     Size   Date      Flags\n\n");
   
   printf(buffer);
-  printf("\n\n JADOS/NKC filesystem     ");
+  printf("\n JADOS/NKC filesystem     \n");
   
   put_rc(res);
   
+  free(buffer);
   free(pargs);
   
   return EZERO;
 }
 
-int cmd_dir_fat(char *args, char* pd) // FAT dir
+int cmd_dir_fat(char *args,  // fullpath
+		char* pd)    // drivename
 {
-   /* dir [<path>] - Directory listing */
    
    DIR dir;				/* FAT Directory object */
    FILINFO Finfo;			/* File info object */
@@ -676,6 +1050,10 @@ int cmd_dir_fat(char *args, char* pd) // FAT dir
    struct ioctl_opendir arg_opendir;
    struct ioctl_readdir arg_readdir;
    struct ioctl_getfree arg_getfree;
+   
+#ifdef CONFIG_DEBUG   
+   printf(" FAT dir ...\n");
+#endif
    
    while (*args == ' ') args++;     
    
@@ -734,29 +1112,51 @@ int cmd_dir_fat(char *args, char* pd) // FAT dir
 
 
 int cmd_mkdir(char *args)
-{
+{  
+  FRESULT res;
+  char fullpath1[_MAX_PATH];
   
-   FRESULT res;
+  while (*args == ' ') args++;
   
-   while (*args == ' ') args++;
-   res = ioctl(CurrDrive,FAT_IOCTL_MKDIR,args);
-   if(res != RES_OK) put_rc(res);
+#ifdef CONFIG_DEBUG  
+  printf(" cmd_mkdir(%s)\n",args);
+#endif
+       
+  res = checkargs(args, fullpath1, NULL);
+  res = checkfp(fullpath1, &FPInfo1);
+#ifdef CONFIG_DEBUG   
+  printf(" mkdir [%s] ... \n",args);
+#endif
+      
+  res = ioctl(FPInfo1.psz_driveName,FS_IOCTL_MKDIR,fullpath1);  
+  
+  if(res != EZERO) put_rc(res);
    
-   return 0;
+  return 0;
 }
 
 int cmd_rmdir(char *args)
 {
   
    FRESULT res;    
+   char fullpath1[_MAX_PATH];
+#ifdef CONFIG_DEBUG  
+   printf(" RMDIR (%s) ...\n", args);
+#endif
    
-  
-   printf(" RMDIR called ...\n"
-          "    args: %s\n", args);
+   if(!args) {
+	printf(" usage: rmdir [dirpath]\n\n");
+	return 0;
+   }
    
-   while (*args == ' ') args++;
-   res = ioctl(CurrDrive,FAT_IOCTL_UNLINK,args);
-   if(res != RES_OK) put_rc(res);
+   while (*args == ' ') args++;   
+      
+   res = checkargs(args, fullpath1, NULL);
+   res = checkfp(fullpath1, &FPInfo1);
+   
+   res = ioctl(FPInfo1.psz_driveName,FS_IOCTL_RMDIR,fullpath1);
+   
+   if(res != EZERO) put_rc(res);
    
    return 0;
 }
@@ -764,22 +1164,22 @@ int cmd_rmdir(char *args)
 int cmd_rename(char *args)
 {
    char * ptr2;
-   char fullpath2[200];
+   
+   char fullpath1[_MAX_PATH];
+   char fullpath2[_MAX_PATH];
+   
    FRESULT res; 
    struct ioctl_rename arg_rename;
    
    while (*args == ' ') args++;	// skip whitespace
-   ptr2 = strchr(args, ' ');	// look for 2nd argument
-   if (!ptr2) return 0;		// not given -> return
-   *ptr2++ = 0;			// terminate 1st argumennt and increment pointer to 2nd argument
-   while (*ptr2 == ' ') ptr2++; // skip whitespace
    
-   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze 1st argument
-   split_filename(ptr2, drive, path, filename, ext, fullname, filepath, fullpath2, CurrDrive, CurrDirPath); // analyze 2nd argument
+   checkargs(args, fullpath1, fullpath2);     
    
-   arg_rename.path_old = fullpath;
+   printf(" rename %s --> %s\n",fullpath1,fullpath2);
+   
+   arg_rename.path_old = fullpath1;
    arg_rename.path_new = fullpath2;   
-   res = ioctl(CurrDrive,FS_IOCTL_RENAME,&arg_rename);
+   res = ioctl(FPInfo.psz_cdrive,FS_IOCTL_RENAME,&arg_rename);
    if(res != RES_OK) put_rc(res);
    
    return 0;
@@ -788,11 +1188,16 @@ int cmd_rename(char *args)
 int cmd_del(char *args) {
    /* del <name> - delete a file */
    FRESULT res; 
+   char fullpath1[_MAX_PATH];
+   
    while (*args == ' ') args++;
    
-   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze args
+   checkargs(args, fullpath1, NULL);
+#ifdef CONFIG_DEBUG   
+   printf(" cmd_del( %s )\n",fullpath1);
+#endif
    
-   res = ioctl(CurrDrive,FS_IOCTL_DEL,&fullpath);
+   res = ioctl(NULL,FS_IOCTL_DEL,&fullpath1);
    if(res) put_rc(res);
    
    return 0;
@@ -801,90 +1206,44 @@ int cmd_del(char *args) {
 
 // standard clib calls (start) -----
 
+
+
 int cmd_copy(char *args)
 {
    FRESULT res;
-   char *ptr2;
-   char drive2[10],path2[255],filename2[20], ext2[10], fname2[30], fullname2[255], filepath2[255], fullpath2[255]; /* work register for split_filename() */
+   char *ptr2;   
    long p1;
    UINT s1,s2;
-       
+   
+    char fullpath1[_MAX_PATH];
+    char fullpath2[_MAX_PATH];
+ 
+  
+  
+#ifdef CONFIG_DEBUG   
    printf("cmd_copy(%s):\n",args);
+#endif
    
-   while (*args == ' ') args++;	// skip whitespace
-   ptr2 = strchr(args, ' ');	// search 2nd parameter
-   if (!ptr2) return 0;		// no 2nd par -> return
-   *ptr2++ = 0;			// terminate 1st par and increment pointer to next char
-   while (*ptr2 == ' ') ptr2++; // skip whitespace   
-   if (!ptr2) return 0;		// no 2nd par -> return     
+   checkargs(args, fullpath1, fullpath2);
+#ifdef CONFIG_DEBUG      
+   printf(" copy [%s -> %s]\n",fullpath1,fullpath2);
+#endif
    
-   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); 		// analyze 1st argumennt
-   
-   /*
-   printf(" split src:\n");
-   printf("  args [%s][%s]\n",args,ptr2);
-   printf("  drive [%s]\n",drive);
-   printf("  path [%s]\n",path);
-   printf("  filename [%s]\n",filename);
-   printf("  ext [%s]\n",ext);
-   printf("  fullname [%s]\n",fullname);
-   printf("  filepath [%s]\n",filepath);
-   printf("  fullpath [%s]\n",fullpath);
-   printf("  CurrDrive [%s]\n",CurrDrive);
-   printf("  CurrDirPath [%s]\n",CurrDirPath);
-   getchar();
-   */
-   
-   if(!filename[0]) {
-     printf(" error, no source file given...\n");
-     return 0;
-   }
-   
-   split_filename(ptr2, drive2, path2, filename2, ext2, fullname2, filepath2, fullpath2, CurrDrive, CurrDirPath); 	// analyze 2nd argumennt   
-
-   /*
-   printf(" split dst:\n");
-   printf("  args [%s][%s]\n",args,ptr2);
-   printf("  drive [%s]\n",drive2);
-   printf("  path [%s]\n",path2);
-   printf("  filename [%s]\n",filename2);
-   printf("  ext [%s]\n",ext2);
-   printf("  fullname [%s]\n",fullname2);
-   printf("  filepath [%s]\n",filepath2);
-   printf("  fullpath [%s]\n",fullpath2);
-   printf("  CurrDrive [%s]\n",CurrDrive);
-   printf("  CurrDirPath [%s]\n",CurrDirPath);      
-   getchar();
-   */
-   
-   if(!strcmp(fullpath,fullpath2)){ // source and destination identical ?
-     printf(" error, source and destination are the same \n");
-     return 0;
-   }
-   
-   if(!filename2[0]) {			// use source filename as destination file name
-     strcpy(filename2,filename);
-     strcpy(ext2,ext);
-     strcat(filepath2,filename2);
-     strcat(fullpath2,filename2); 
-     if(ext2[0]){
-       strcat(filepath2,".");
-       strcat(fullpath2,".");
-       strcat(filepath2,ext2);
-       strcat(fullpath2,ext2); 
-     }     
-   }
-   
-   printf("Opening \"%s\"\n", fullpath);
+#ifdef CONFIG_DEBUG
+   printf("Opening \"%s\"\n", fullpath1);
+#endif
    //                                0x00		0x01
    //res = f_open(&file[0], args, FA_OPEN_EXISTING | FA_READ);
-   file[0] = fopen(fullpath,"rb");
+   file[0] = fopen(fullpath1,"rb");
    
    if (file[0]==NULL) {
       printf("error opening file !\n");
+
       return 0;
    }
+#ifdef CONFIG_DEBUG
    printf("Creating \"%s\"\n", fullpath2); getchar();
+#endif
    //                                  0x08		0x02
    //res = f_open(&file[1], ptr2, FA_CREATE_ALWAYS | FA_WRITE);
    file[1] = fopen(fullpath2,"wb");
@@ -892,9 +1251,10 @@ int cmd_copy(char *args)
    if (file[1]==NULL) {
      fclose(file[0]);
      printf("error creating file !\n");
+    
      return 0;
    }
-   printf("Start Copy...");
+   printf("Start Copy %s ==> %s ...",fullpath1,fullpath2);
    p1 = 0;
    for (;;) {
      //res = f_read(&file[0], Buff, sizeof Buff, &s1);
@@ -911,10 +1271,12 @@ int cmd_copy(char *args)
        break;   /* error or disk full */
      }
    }
-   printf("ready\n");   
+   printf("\nready\n");   
    fclose(file[0]);
    fclose(file[1]);
    printf("%lu bytes copied.\n", p1);
+   
+   
    return 0;
 }
 
@@ -922,40 +1284,79 @@ int cmd_fopen  (char * args){
   /* fopen <file> <mode> - Open a file (OK) */
    
    char *mode;
+   char fullpath[_MAX_PATH];
+   FRESULT res;
+   FILE* f;
    
-   
-   while (*args == ' ') args++;
-   mode = strchr(args, ' ');
+   while (*args == ' ') args++; /* skip whitespace */
+   mode = strchr(args, ' ');	/* find space before mode */
    if (!mode) 
    {
      printf("missing mode...\n");
      return 0;
    }
-   *mode++ = 0;
-   while (*mode == ' ') mode++;
-   
-   split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze 1st argumennt
-   
-   printf(" fopen %s %s\n",fullpath,mode);
+   *mode++ = 0;			/* terminate filename, args now points to filename */
+   while (*mode == ' ') mode++; /* skip whitespace */
+   if (!mode) 
+   {
+     printf("missing mode...\n");
+     return 0;
+   }  
+				/* mode now points to mode string */
+				
+				
+   res = checkargs(args, fullpath, NULL);			
      
-   file[0] = fopen(fullpath,mode);
-   
-   if(file[0]) printf(" file %s opened in mode %s\n",fullpath,mode);
+#ifdef CONFIG_DEBUG
+   printf(" fopen %s %s\n",fullpath,mode);
+#endif     
+   f = fopen(fullpath,mode);
+  
+   if(f) {
+     printf(" file %s opened in mode %s\n",fullpath,mode);
+     
+     if(strchr(mode,'r'))
+      file[0] = f;
+     else file[1] = f;
+	
+   }
    else printf(" error opening file %s in mode %s\n",fullpath,mode);
    
    return 0;
 } 
-int cmd_fclose (char * args){    
-   fclose(file[0]);
+
+int cmd_fclose (char * args){
+  
+   if(strchr(args,'0'))
+    fclose(file[0]);
+   else fclose(file[1]);
+   
    return 0;
-} 
+}
+
 int cmd_fseek  (char * args){
-   /* fe <ofs> - Seek file pointer */
-   long p1;
+   /* fseek <n> <mode> <ofs> */
+   /*
+    * mode:
+    * SEEK_SET (0) Beginning of file
+    * SEEK_CUR (1) Current position of the file pointer
+    * SEEK_END (2) End of file (not standad, portability not granted)
+    * 
+    */ 
+   long ofs;
+   int whence;
+   UINT n;
    FRESULT res;
    
-   if (!xatoi(&args, &p1)) return 0;
-   res = fseek(file[0],p1,SEEK_CUR); // seek p1 bytes from the current position
+   while (*args == ' ') args++; 	/* skip whitespace */
+   if (!xatoi(&args, &n)) return 0;	/* get file        */
+   if (!xatoi(&args, &whence)) return 0;/* get mode        */
+   if (!xatoi(&args, &ofs)) return 0;	/* get offset      */
+      
+   printf(" fseek: file[%d], ofs=%l, whence=%d\n",n,ofs,whence);
+   
+   
+   res = fseek(file[n],ofs,whence); // seek ofs bytes from the current position
    if(res) put_rc(res);   
    
    return 0;
@@ -963,17 +1364,17 @@ int cmd_fseek  (char * args){
 
 
 int cmd_fdump  (char * args){
-   long p1;
+   long len;
    UINT cnt;
    DWORD ofs = 0;
    FRESULT res;
    
-   if (!xatoi(&args, &p1)) p1 = 128;
+   if (!xatoi(&args, &len)) len = 128;
    //ofs = file[0].curp - file[0].buffer;
    
-   while (p1) {
-     if ((UINT)p1 >= 16) { cnt = 16; p1 -= 16; }
-     else	{ cnt = p1; p1 = 0; }
+   while (len) {
+     if ((UINT)len >= 16) { cnt = 16; len -= 16; }
+     else	{ cnt = len; len = 0; }
      //res = f_read(&file[0], Buff, cnt, &cnt);
      cnt = fread(Buff, 1, cnt, file[0]); res = RES_OK;
      if (res != FR_OK) { put_rc(res); return 0; }
@@ -988,26 +1389,24 @@ int cmd_fdump  (char * args){
    return 0;
 } 
 int cmd_fread  (char * args){
-   long p1,p2;
+  /* FREAD <len>: read the file */
+   long len,p2;
    UINT s2, cnt;
    FRESULT res;
-   struct ioctl_read_write arg;
+   struct ioctl_file_rw arg;
    
-   if (!xatoi(&args, &p1)) return 0;
+   if (!xatoi(&args, &len)) return 0;
    p2 =0;
-   while (p1) {
-    if ((UINT)p1 >= sizeof Buff) {
-	cnt = sizeof Buff; p1 -= sizeof Buff;
+   while (len) {
+    if ((UINT)len >= sizeof Buff) {
+	cnt = sizeof Buff; len -= sizeof Buff;
     } else {
-	cnt = p1; p1 = 0;
+	cnt = len; len = 0;
     }
-    //res = f_read(&file[0], Buff, cnt, &s2);
-    arg.fp = &file[0];
-    arg.pbuf = Buff;
-    arg.size = cnt;
-    arg.count = &s2;
-    res = ioctl(CurrDrive,FAT_IOCTL_READ,&arg);
-    if (res != FR_OK) { put_rc(res); return 0; }
+    s2 = fread(Buff, 1, cnt, file[0]);
+    if(s2 != 0) res = ERROR;
+    else res = EZERO;
+    if (res != EZERO) { put_rc(res); return 0; }
     p2 += s2;
     if (cnt != s2) return 0;
    }
@@ -1017,10 +1416,11 @@ int cmd_fread  (char * args){
 } 
 int cmd_fwrite (char * args){
    /* fw <len> <val> - write file */
+   // FS_IOCTL_DISK_WRITE is a low level function acting directly at sector level
    long p1,p2;
    UINT s2, cnt;
    FRESULT res;
-   struct ioctl_read_write arg;
+   struct ioctl_file_rw arg;
    
    if (!xatoi(&args, &p1) || !xatoi(&args, &p2)) return 0;
    memset(Buff, (BYTE)p2, sizeof Buff);
@@ -1028,13 +1428,10 @@ int cmd_fwrite (char * args){
    while (p1) {
 	if ((UINT)p1 >= sizeof Buff) { cnt = sizeof Buff; p1 -= sizeof Buff; }
 	else 				  { cnt = p1; p1 = 0; }
-	//res = f_write(&file[0], Buff, cnt, &s2);
-	arg.fp = &file[0];
-	arg.pbuf = Buff;
-	arg.size = cnt;
-	arg.count = &s2;
-	res = ioctl(CurrDrive,FAT_IOCTL_WRITE,&arg); 
-	if (res != FR_OK) { put_rc(res); return 0; }
+	s2 = fwrite(Buff, 1, cnt, file[1]);	          
+	if(s2 != 0) res = ERROR;
+	else res = EZERO;
+	if (res != EZERO) { put_rc(res); return 0; }
 	p2 += s2;
 	if (cnt != s2) break;
    }
@@ -1044,7 +1441,7 @@ int cmd_fwrite (char * args){
 } 
 int cmd_ftrunk (char * args){
    /* fv - Truncate file */
-   //put_rc(f_truncate(&file[0]));          
+   //put_rc(f_truncate(&file[0]));      // FIXME    
    return 0;
 } 
 
@@ -1052,42 +1449,48 @@ int cmd_ftrunk (char * args){
 
 // ***************************** low level disc commands *****************************
 int cmd_dinit  (char * args){
-// dinit <disc number/device, ie. A:, B: .... hda0: etc.>
-   long p1;
+// dinit <disc number/device, ie. A, B .... hda,sda etc.>
+   char* p1;
    WORD w;
    DWORD dw;
    FRESULT res;   
    
-   //printf("dinit ...\n"); getchar();
+#ifdef CONFIG_DEBUG   
+   printf("dinit [%s]\n",args);
+#endif
    
+   while (*args == ' ') args++;
    
-   if (!xatoi(&args, &p1)) {
-    printf(" error in args\n");
-    return 0;
-   }
+   p1=args;
    
+   while(*p1) { *p1 = toupper( *p1 );  p1++; } // convert to uppercase
+
+#ifdef CONFIG_DEBUG   
+   printf("DINIT[%s]\n",args);
+#endif      
+
+   res = ioctl(args,FS_IOCTL_DISK_INIT,NULL);  
+
+#ifdef CONFIG_DEBUG     
+   put_rc(res);
+#endif
    
-   				
-   //printf(" Initialize drive %d ....",(BYTE)p1); getchar();				
-   //res = disk_initialize((BYTE)p1);   
-   res = ioctl(CurrDrive,FAT_IOCTL_DISK_INIT,p1);  
-   put_rc(res);				
-   
-   //if (disk_ioctl((BYTE)p1, GET_SECTOR_SIZE, &w) == RES_OK)
-   //printf(" get sector size...\n"); getchar();
-   if (ioctl(CurrDrive, FAT_IOCTL_DISK_GET_SECTOR_SIZE, &w) == RES_OK)
+   cmd_dstatus(args);
+  
+   if (ioctl(args, FS_IOCTL_DISK_GET_SECTOR_SIZE, &w) == RES_OK)
 	printf(" Sector size = %u\n", w);
-   //printf(" get sector count...\n"); getchar();
-   //if (disk_ioctl((BYTE)p1, GET_SECTOR_COUNT, &dw) == RES_OK)
-   if (ioctl(CurrDrive, FAT_IOCTL_DISK_GET_SECTOR_COUNT, &dw) == RES_OK)
+   if (ioctl(args, FS_IOCTL_DISK_GET_SECTOR_COUNT, &dw) == RES_OK)
 	printf(" Number of sectors = %u\n", dw);
        
    return 0;
 }
 
-// Disk Drive Status
+/* Disk Drive Status 
+ * physical disk status (calls block driver):
+ * Model, Serial-Number,cyl-sec-heads, tracks LBA-Sectors etc.
+ */
 int cmd_dstatus(char * args){
-  
+  /* DSTATUS <d#>: display disc status, d# = HDA,HDB ....*/
    long p1;
    char *ptr;
    FRESULT res;
@@ -1096,12 +1499,12 @@ int cmd_dstatus(char * args){
    printf("Disk Drive Status:\n");
    printf("==================\n");
    
-    if (!xatoi(&args, &p1)) {
-    printf(" error in args\n");
-    return 0;
-   }
    
-   res = ioctl(CurrDrive, FAT_IOCTL_GET_DISK_DRIVE_STATUS, &di);  
+   while (*args == ' ') args++; /* skip whitespace */
+   
+   if(!args) return 0; 
+   
+   res = ioctl(args, FS_IOCTL_GET_DISK_DRIVE_STATUS, &di);  
    
    if(res != RES_OK){
      put_rc(res);
@@ -1131,33 +1534,33 @@ int cmd_dstatus(char * args){
 
 
 int cmd_ddump  (char * args){
-
+// DDUMP [<d#> <sec#>]: dump sector d# => physical drive (HDA,HDB,SDA,SDB ....), sec# => sector number (0,1....)
    long p1,p2;
    BYTE *buf;
    int res;
    WORD w;
-   struct ioctl_disk_read ioctl_args;
-   DWORD ofs = 0, sect = 0, drv = 0; 
+   struct ioctl_disk_rw ioctl_args;
+   char drive[4];
+   DWORD ofs = 0, sect = 0; 
    
-   
-   if (!xatoi(&args, &p1)) {
-	p1 = drv; p2 = sect;
-   } else {
-	if (!xatoi(&args, &p2)) return 0;
-   }
-   //res = disk_read((BYTE)p1, Buff, p2, 1);
   
-   p1 = drv;
-   ioctl_args.drv = p1;;
+   while (*args == ' ') args++; /* skip whitespace */
+     
+   if (!xatos(&args, drive,3) || !xatoi(&args, &sect)) return 0;
+   
+   // fill ioctl information struct an read the sector ....
+   ioctl_args.drv = drive;
    ioctl_args.buff = Buff;
-   ioctl_args.sector = p2;
+   ioctl_args.sector = sect;
    ioctl_args.count = 1;   
-   res = ioctl(CurrDrive, FAT_IOCTL_DISK_READ, &ioctl_args);
+   res = ioctl(drive, FS_IOCTL_DISK_READ, &ioctl_args);
+   
    if (res) { printf("rc=%d\n", (WORD)res); return 0; }
-   printf("Drive:%u Sector:%lu\n", p1, p2);
-   //if (disk_ioctl((BYTE)p1, GET_SECTOR_SIZE, &w) != RES_OK) return 0;
-   if (ioctl(CurrDrive, FAT_IOCTL_DISK_GET_SECTOR_SIZE, &w) != RES_OK) return 0;
-   sect = p2 + 1; drv = p1;
+   
+   printf("Drive:%s Sector:%lu\n", drive, sect);
+   
+   if (ioctl(drive, FS_IOCTL_DISK_GET_SECTOR_SIZE, &w) != RES_OK) return 0;
+
    for (buf = Buff, ofs = 0; ofs < w; buf += 16, ofs += 16) {
 	put_dump(buf, ofs, 16);
 	if(!(ofs % 160) && ofs != 0) {
@@ -1199,28 +1602,53 @@ Note that on very small FAT partitions, a 12-bit FAT is used instead of a 16-bit
 
 int cmd_mkfs   (char * args){
    /* 
-     mkfs <ld#> <partition rule> <cluster size> - Create file system in logical drive/partition ld#
+     mkfs <ld#> <fstype> <partition rule> <cluster size> - Create file system in logical drive/partition ld# (mount #ld first !)
+     
+     ld#            	= HDA0, HDA1, HDB0, SDA1 ....
+     fstype	    	= FAT12, FAT16, FAT32
+     partition rule 	= 0:FDISK (create an FS in a partition), 
+			  1:SFD (create only one primary partition starting at the first sector of the PHYSICAL disk
+     cluster size(au)  	= Cluster Siz in Bytes.The value must be sector size * n (n is 1 to 128 and power of 2 - 1,2,4,8,16 ...)
+     
+     au and partition size ( =>mkptable) determine if FAT-type will be FAT12,16 or 32 ... see /fs/fat/ff.c - f_mkfs()
+     fstype will be for future use....
+      =>
+	if au == 0 -> au = 1
+	if au > 128 -> au = 128
+	number of clusters = volume size (from ptable) / au
+	
+	if (n_clst <  MIN_FAT16) fmt = FS_FAT12;
+	if (n_clst >= MIN_FAT16) fmt = FS_FAT16;
+	if (n_clst >= MIN_FAT32) fmt = FS_FAT32;
    
-    Cluster Siz in Bytes.The value must be sector size * n (n is 1 to 128 and power of 2 - 1,2,4,8,16 ...)
-    Partitioning rule 0:FDISK (create an FS in a partition), 1:SFD (create only one primary partition starting at the first sector of the PHYSICAL disk 
      */   
-   long p1,p2,p3;
-   char *ptr;
-   int res;
+   char *ptr;   
    char tmp[5];
+   long sfd,au;
+   int res;
+   char part[5];
+   char type[6];
    struct ioctl_mkfs ioctl_args;
    
-   if (!xatoi(&args, &p1) || (UINT)p1 > 9 || !xatoi(&args, &p2) || !xatoi(&args, &p3)) return 0;
-   printf("The volume will be formatted. Are you sure? (Y/n)=");
-   gets(ptr = tmp);
-   //get_uni(ptr, 256);
-   if (*ptr != 'Y') return 0;
-   sprintf(ptr, "%u:", (UINT)p1);
-   //put_rc(f_mkfs(ptr, (BYTE)p2, (UINT)p3));  
-   ioctl_args.pdrv = ptr;
-   ioctl_args.au = p2;
-   ioctl_args.sfd = p3;
-   res = ioctl(CurrDrive, FAT_IOCTL_MKFS, &ioctl_args);
+   if (!xatos(&args, part,4) || !xatos(&args, type,5) || !xatoi(&args, &sfd) || !xatoi(&args, &au)) return 0;
+   
+   ptr=part; while(*ptr) { *ptr = toupper( *ptr );  ptr++; } // convert to uppercase
+   ptr=type; while(*ptr) { *ptr = toupper( *ptr );  ptr++; } // convert to uppercase
+ 
+   ioctl_args.part = part;    /* partition */
+   ioctl_args.fstype = type;  /* file system type */
+   ioctl_args.au = au;        /* allocation unit */    
+   ioctl_args.sfd = sfd;      /* partitioning rule */  // dito ?
+   
+   if( !strncmp ( "FAT", type, 3) ) {
+     printf("The volume will be formatted. Are you sure? (Y/n)=");
+     gets(ptr = tmp);
+     if (*ptr != 'Y') return 0;
+     res = ioctl(part, FAT_IOCTL_MKFS, &ioctl_args);
+   } else
+   {
+     printf(" %s file system not supported !\n");
+   }
    put_rc(res);
    return 0;
 }
@@ -1229,28 +1657,39 @@ int cmd_mkfs   (char * args){
 
 
 int cmd_mkptable (char * args) {
-   /* fp <pd#> <size1> <size2> <size3> <size4> - Create partition table */
+   /* fp <pd#> <size1> <size2> <size3> <size4> - Create partition table 
+          pd# = HDA, HDB ....
+          size 1...4 = size of pafrtitions
+    */
    DWORD pts[4];
-   long p1;
+   char drive[4];
    char *ptr;
    int res;
    char tmp[10];
    struct ioctl_mkptable ioctl_args;
+   // struct ioctl_mkptable {
+   //	char *devicename;		/* pointer to physical drive name (HDA,HDB,SDA,SDB ....) */
+   //	const unsigned int *szt;	/* Pointer to the size table for each partitions */
+   //	void* work;			/* Pointer to the working buffer  ( >= _MAX_SS ) */
+   //      };
    
    #if _MULTI_PARTITION
-   if (!xatoi(&args, &p1)) return 0;
-   xatoi(&args, &pts[0]);
-   xatoi(&args, &pts[1]);
-   xatoi(&args, &pts[2]);
-   xatoi(&args, &pts[3]);
-   printf("The physical drive %u will be re-partitioned. Are you sure? (Y/n)=", p1);
+   if (!xatos(&args, drive,3)) return 0; // get drive
+   xatoi(&args, &pts[0]);		 // size of 1st partition in ?
+   xatoi(&args, &pts[1]);		 // size of 2nd partition in ?
+   xatoi(&args, &pts[2]);		 // size of 3rd partition in ?
+   xatoi(&args, &pts[3]);		 // size of 4th partition in ?
+   printf("The physical drive %s will be re-partitioned. Are you sure? (Y/n)=", drive);
    gets(ptr = tmp);
    if (*ptr != 'Y') return 0;
    //put_rc(f_fdisk((BYTE)p1, pts, Buff));
-   ioctl_args.drv = p1;
+   ioctl_args.devicename = drive;
    ioctl_args.szt = pts;
    ioctl_args.work = Buff;
-   res = ioctl(CurrDrive, FAT_IOCTL_MKPTABLE, &ioctl_args);
+   
+   
+   res = ioctl(drive, FS_IOCTL_MKPTABLE, &ioctl_args);
+   
    put_rc(res);
    #else
    printf(" mkptable: multi partition feature not implemented\n");
@@ -1259,17 +1698,31 @@ int cmd_mkptable (char * args) {
 }
 
 
-void dump_partition(struct partition *part, int partition_number)
-{
-        printf("Partition %d\n", partition_number + 1);
-        printf("   boot_flag = %02X", part->boot_flag);
-        printf("   sys_type = %02X\n", part->sys_type);
-        
-        printf("   chs_begin: head = %d, cyl/sec = %d\n",part->chs_begin_head,part->chs_begin_cyl);                
-        printf("   chs_end: head = %d, cyl/sec = %d\n",part->chs_end_head,part->chs_end_cyl);
 
-        printf("   start_sector = %d",endian(part->start_sector));
-        printf("   nr_sector = %d\n",endian(part->nr_sector));
+static const char *
+partition_type(unsigned char type)
+{
+	int i;	
+
+	for (i = 0; fs_sys_types[i]; i++)
+		if ((unsigned char)fs_sys_types[i][0] == type)
+			return fs_sys_types[i] + 1;
+
+	return "Unknown";
+}
+
+void dump_partition(struct partition *part, int partition_number)
+{ 
+  
+  printf("Partition %d\n", partition_number + 1);
+  printf("   boot_flag = %02X", part->boot_flag);
+  printf("   sys_type = %02X (%s)\n", part->sys_type, partition_type(part->sys_type) );
+  
+  printf("   chs_begin: head = %d, cyl/sec = %d\n",part->chs_begin_head,part->chs_begin_cyl);                
+  printf("   chs_end: head = %d, cyl/sec = %d\n",part->chs_end_head,part->chs_end_cyl);
+
+  printf("   start_sector = %d",endian(part->start_sector));
+  printf("   nr_sector = %d\n",endian(part->nr_sector));
 
 }
 
@@ -1310,36 +1763,26 @@ nr_sector = 9e 0f 3d 00         => 4001694 (+66-1= 1001759, End)
 
 
 int cmd_ptable(char * args) { // args = "HDA", "HDB" etc.
-  BYTE *p;
-  long p1;
-  UINT i;
-  struct ioctl_disk_read ioctl_args;
-  FRESULT res;
-  char* pc;
+   BYTE *p;
+   char *p1;
+   UINT i;
+   struct ioctl_disk_rw ioctl_args;
+   FRESULT res;
+   char drive[4];
+   
   
-  while (*args == ' ') args++;  
+   while (*args == ' ') args++;  
   
-  pc=args;
+   if (!xatos(&args, drive,3)) return 0;
   
-  while(*pc){			// convert to uppercase
-    *pc = toupper(*pc);
-    pc++;
-  }
+   p1=drive; while(*p1) { *p1 = toupper( *p1 );  p1++; } // convert to uppercase
   
-  
-  for(p1=0; p1<_DISKS; p1++) {
-    if(strcmp(args,_FAT_DISK_STRS[p1])) break;
-  }
-  
-  if(p1 == _DISKS) {
-    printf("bad argument\n");
-    return 0;
-  }
-  		   
+   ioctl_args.drv = drive;  
    ioctl_args.buff = Buff;
    ioctl_args.sector = 0;
-   ioctl_args.count = 1;   
-   res = ioctl(p1, FAT_IOCTL_DISK_READ, &ioctl_args);
+   ioctl_args.count = 1; 
+  
+   res = ioctl(drive, FS_IOCTL_DISK_READ, &ioctl_args);
    
    if(res) {
          printf(" disc error\n");
@@ -1348,7 +1791,7 @@ int cmd_ptable(char * args) { // args = "HDA", "HDB" etc.
 
         p = Buff + MBR_Table;
         
-        printf(" The 4 Main Partinions: \n\n");
+        printf(" The 4 Main Partitions: \n\n");
         
         for (i = 0; i < 4; i++, p += SZ_PTE) {
                 dump_partition(p, i);
@@ -1357,142 +1800,164 @@ int cmd_ptable(char * args) { // args = "HDA", "HDB" etc.
         return 0;
 }
 
-int cmd_vmount (char * args){
-   /* fmount <#pd> <ld#> [<0|1>] - Force initialized the logical drive (1=mount now, 0=mount later)*/
-   long p1,p2,p3;
+int _cmd_ptable(char * args) { // args = "HDA", "HDB" etc.
+   BYTE *p;
+   char *p1;
+   UINT i;
+   struct ioctl_disk_rw ioctl_args;
    FRESULT res;
-   char *tmp[10];
-   FATFS *pfs;
-   struct ioctl_mount_fatfs mount_args;
-   struct ioctl_get_cwd get_cwd_args;
-   struct ioctl_getfatfs get_fatfs_args;
+   char drive[4];
    
+  
+   while (*args == ' ') args++;  
+  
+   if (!xatos(&args, drive,3)) return 0;
+  
+   p1=drive; while(*p1) { *p1 = toupper( *p1 );  p1++; } // convert to uppercase
+  
+   ioctl_args.drv = drive;  
+   ioctl_args.buff = Buff;
+   ioctl_args.sector = 0;
+   ioctl_args.count = 1; 
+  
+   res = ioctl(drive, FS_IOCTL_DISK_READ, &ioctl_args);
+   
+   if(res) {
+         printf(" disc error\n");
+         return 0;
+        }
+
+        p = Buff + MBR_Table;
+        
+        printf(" The 4 Main Partitions: \n\n");
+	
+	printf("Disk %s: 2048 MB, 2048901120 bytes\n",drive);
+	printf("64 heads, 63 sectors/track, 992 cylinders, total 4001760 sectors\n");
+	printf("Units = sectors of 1 * 512 = 512 bytes\n");
+	printf("Sector size (logical/physical): 512 bytes / 512 bytes\n");
+	printf("I/O size (minimum/optimal): 512 bytes / 512 bytes\n");
+	printf("Disk identifier: 0x00000000\n");
+
+	printf("Device Boot      Start         End      Blocks   Id  System\n");
+	
+
+        
+        for (i = 0; i < 4; i++, p += SZ_PTE) {
+                printf("sdb1              63        8063        4000+   4  FAT16 <32M\n");
+        }
+        
+        return 0;
+}
+
+int cmd_mount (char * args){
+   /* args = <vol> <fs> <opt>*/
+   FRESULT res;
+   char vol[6];
+   char fs[10];
+   char opt[6];
+   char* pc;
+   
+   struct ioctl_mount_fs mnt_args;
+	//   struct ioctl_mount_fs {
+	//     char *devicename;   		/* devicename (HDA0, SDB1, A, B, 1, 2, ... */
+	//     char* fsname;			/* file system name (FAT32, JADOS ...)    */
+	//     unsigned char options;        /* mount options (FS_READ, FS_RW, ....)   */  
+	//   };
    
    if(args[0] == 0)  // list mounted partitions ....
    {
-     list_drivers();
-     
-     for(p1=0; p1<4; p1++)
-     {
-	get_fatfs_args.drv = 0;
-	get_fatfs_args.ldrv = p1;
-	get_fatfs_args.ppfs = &pfs;
-	res = ioctl(_FAT_DISK_STRS[0],FAT_IOCTL_GET_FATFS,&get_fatfs_args);
-	
-	if(res== RES_OK)
-	{
-	   printf(" volume s% mounted (%s)\n",_FAT_VOL_STRS[p1],(pfs->fs_type));
-	}			
-	
-     }
+     cmd_fstab(NULL);
      
      return 0;
    }
    
-   
-   // physical drive -> p1
-   if (!xatoi(&args, &p1) || (UINT)p1 > 4){
-     printf(" error in args.\n");
-     return 0;
+   //retreive arguments...   
+  
+   pc=args;
+   while(*pc){			// convert args to uppercase
+    *pc = toupper(*pc);
+    pc++;
    }   
    
-   // locical drive/partition -> p2
-   if (!xatoi(&args, &p2) || (UINT)p2 > 9){
-     printf(" error in args.\n");
-     return 0;
-   }   
+   if ( !xatos(&args, vol,5) || !xatos(&args, fs,9) || !xatos(&args,opt,5) ) return 0; 
    
-   // option -> p3
-   if (!xatoi(&args, &p3)) p3 = 0;
+   printf(" try mounting filesystem %s on volume %s with option %s ... \n",fs,vol,opt);
    
-   mount_args.drv = p1;
-   mount_args.ldrv = p2;
-   mount_args.opt = p3;
-   res = ioctl(_FAT_DISK_STRS[p1], FAT_IOCTL_MOUNT, &mount_args); // use driver for first fat drive "hda"
+   mnt_args.devicename = vol;
+   mnt_args.fsname = fs;
+   mnt_args.options = opt;
+      
+   res = ioctl(NULL, FS_IOCTL_MOUNT, &mnt_args); 
+   
    put_rc(res);
    
    return 0;
 } 
 
-int cmd_vumount (char * args){
-   /* fmount <ld#>  - unmount drive ld#*/
-   long p1;
+
+
+int cmd_umount (char * args){
+   /* fmount <ld#>  - unmount drive ld#; arg = HDA1.....*/
    FRESULT res;
-   char tmp[10];
-   struct ioctl_get_cwd arg;
    
-   if (!xatoi(&args, &p1) || (UINT)p1 > 9){
+ 
+   if (!args){
      printf(" error in args.\n");
      return 0;
-   }
-   //sprintf(tmp, "%d:", p1);
-   //put_rc(f_mount(NULL, tmp, 0));
+   }   
    
-   res = ioctl(CurrDrive, FAT_IOCTL_UMOUNT, p1);
+   while (*args == ' ') args++;
+         
+   res = ioctl(args, FS_IOCTL_UMOUNT, 0);
    put_rc(res);
-   
-   //res = f_getcwd(CurrDirPath, 256); /* update current drive,path */
-   
-   arg.cpath = CurrDirPath;
-   arg.cdrv = CurrDrive;
-   arg.size = 256;
-   res = ioctl(CurrDrive,FAT_IOCTL_GETCWD,&arg); // no device name needed
-   	      
+      
    return 0;
 } 
 
 
-
-//static const char* const _FAT_DISK_STRS[] = {_DISK_STRS};  // "HDA","HDB","HDC","HDD"
-//static const char* const _FAT_VOL_STRS[] = {_VOLUME_STRS};  // "HDA0","HDA1","HDA2","HDA3"
-
-
-// Volumes File System Status
-// HDA0,HDA1,HDB1 ....
+/* Volumes File System Status
+ * info of FATFS structure:
+ * FAT Type, FAT Start, DIR start, Data Start, Root DIR entries, number of clusters
+ */
 int cmd_vstatus(char * args){
   char *pc;
-  long p1,p2;
+  long vol;
   FATFS *pfs;
   FRESULT res;
   struct ioctl_getfatfs arg;
+  static const BYTE ft[] = {0, 12, 16, 32};
    
    printf("Volumes File System Status...\n");
    
+   if (!args){
+     printf(" error in args.\n");
+     return 0;
+   }   
+   
    while (*args == ' ') args++;  	// skip whitespace
   
-   pc=args;  
-   while(*pc){			// convert to uppercase
-    *pc = toupper(*pc);
-    pc++;
-   }
+   res=checkfp(args, &FPInfo);		// analyze argumennt
    
-   for(p1=0; p1<_DISKS; p1++) {		// look for disk string ("HDA","HDB","HDC","HDD")
-    if(strncmp(args,_FAT_DISK_STRS[p1],3)) break;
-   }
+   //pc=args;  
+   //while(*pc){			// convert to uppercase
+   // *pc = toupper(*pc);
+   // pc++;
+   //}
   
-   if(p1 == _DISKS || strlen(args) < 4) {
-    printf("bad argument (%s)\n",args);
-    return 0;
-   }
-  
-   pc=args+3;			 	// look for volume number
-   p2=atoi(pc);
-  
-   printf(" vstatus of disk (%s) volume (%d):\n",_FAT_DISK_STRS[p1],p2);
-   
-   arg.drv = p1;
-   arg.ldrv = p2;
+   arg.vol = dn2vol(FPInfo.psz_driveName);
+   printf("disk (%s) (volume %u):\n\n",FPInfo.psz_driveName,arg.vol);
+
    arg.ppfs = &pfs;
-   res = ioctl(_FAT_DISK_STRS[0],FAT_IOCTL_GET_FATFS,&arg);
+   res = ioctl(FPInfo.psz_driveName,FAT_IOCTL_GET_FATFS,&arg);
    
    if( res != RES_OK) { printf("drive not ready.\n"); return 0; }
    
    if (!pfs->fs_type) { printf("Not mounted.\n"); return 0; }
    
-   printf("FAT type = %u\nBytes/Cluster = %lu\n"
-	  "Root DIR entries = %u\nNumber of clusters = %lu\n"
-	  "FAT start (lba) = %lu\nDIR start (lba,clustor) = %lu\nData start (lba) = %lu\n\n",
-		 (BYTE)(pfs->fs_type),
+   printf(" FAT type = %u (FAT%u)\n Bytes/Cluster = %lu\n"
+	  " Root DIR entries = %u\n Number of clusters = %lu\n"
+	  " FAT start (lba) = %lu\n DIR start (lba,cluster) = %lu\n Data start (lba) = %lu\n\n",
+		 (BYTE)(pfs->fs_type),ft[pfs->fs_type & 3],
 		 (DWORD)(pfs->csize) * 512,
 		 pfs->n_rootdir, (DWORD)(pfs->n_fatent) - 2,
 		 pfs->fatbase, pfs->dirbase, pfs->database );
@@ -1501,34 +1966,49 @@ int cmd_vstatus(char * args){
 }
 
 
-// Logical Drive Status
-// lstatus hda0: hda1: etc.
+/* Logical Drive Status
+ * info on FS(FAT) structure in current directory on actual media:
+ * FAT Type, Number of FATs, ClusterSize in sectors and bytes, Volume Label and S/N,
+ * number of files/directories, total/available disk space
+ */
 int cmd_lstatus(char *args) // ...
-{
+{  
   int i;
   FRESULT res;
     
   while (*args == ' ') args++;
   
-  split_filename(args, drive, path, filename, ext, fullname, filepath, fullpath, CurrDrive, CurrDirPath); // analyze args 
-    
-  printf(" lstatus [%s] ... \n",drive);
-  if( !drive[1] ) { // one character drive name -> is it a JADOS drive ?
-    if( (drive[0] >= 'A' && drive[0] <= 'Z') ||  // JADOS hard drive
-	//(drive[0] >= 'a' && drive[0] <= 'z') ||
-        (drive[0] >= '0' && drive[0] <= '3') ){  // JADOS floppy drive
-	  res = cmd_lstatus_nkc(drive);	  
+  res=checkfp(args, &FPInfo);		// analyze argumennt
+  if( res == EINVDRV ) 
+  {
+    printf(" error in args ...\n");
+    return 0;
+  }
+  
+   
+  printf(" lstatus [%s] ... \n",FPInfo.psz_driveName);
+#ifdef USE_JADOS  
+  if( !FPInfo.psz_driveName[1] ) { // one character drive name -> is it a JADOS drive ?
+    if( (FPInfo.psz_driveName[0] >= 'A' && FPInfo.psz_driveName[0] <= 'Z') ||  // JADOS hard drive
+        (FPInfo.psz_driveName[0] >= '0' && FPInfo.psz_driveName[0] <= '3') ){  // JADOS floppy drive
+	  res = cmd_lstatus_nkc(FPInfo.psz_driveName);	  
 	  return 0;
     }else{  //invalid drive name
-	  printf(" invalid drive name (%s)\n",drive);
+	  printf(" invalid drive name (%s)\n",FPInfo.psz_driveName);
 	  return 0;//EINVAL;
     }
   }else{ // give it to the fat driver
     
-    res = cmd_lstatus_fat(drive);
+    res = cmd_lstatus_fat(FPInfo.psz_driveName);
     if(res) printf(" cmd_lstatus_fat returned '%s'\n",get_rc_string(res));
     return 0;
   }
+#else
+  // give it to the fat driver
+  res = cmd_lstatus_fat(FPInfo.psz_driveName);
+  if(res) printf(" cmd_lstatus_fat returned '%s'\n",get_rc_string(res));
+  return 0;
+#endif
       
 }
 
@@ -1595,7 +2075,7 @@ int cmd_lstatus_fat(char * args){
   printf("Sectors/FAT = %lu\nNumber of clusters = %lu\nVolume start sector = %lu\nFAT start sector = %lu\nRoot DIR start %s = %lu\nData start sector = %lu\n\n",
 	fs->fsize, fs->n_fatent - 2, fs->volbase, fs->fatbase, fs->fs_type == FS_FAT32 ? "cluster" : "sector", fs->dirbase, fs->database);
 #if _USE_LABEL
-  arg_getlabel.pldrv = ptr2;
+  arg_getlabel.volume = ptr2;
   arg_getlabel.plabel = pool;
   arg_getlabel.psn = &dw;
   res = ioctl(args,FAT_IOCTL_GET_VLABEL,&arg_getlabel);
@@ -1606,8 +2086,8 @@ int cmd_lstatus_fat(char * args){
   printf(pool[0] ? "Volume name is %s\n" : "No volume label\n", arg_getlabel.plabel);
   printf("Volume S/N is %04X-%04X\n", dw >> 16, dw & 0xFFFF);
 #endif
-  printf("...");
   AccSize = AccFiles = AccDirs = 0;
+    
   res = scan_fat_files(tmp);
   if (res) { 
     printf(" Error ScanFatFiles: %d (%s)\n", res, get_rc_string(res));
@@ -1630,12 +2110,57 @@ int cmd_lstatus_fat(char * args){
   return 0;
 }
 
+
 int cmd_vlabel (char * args){
-   /* flabel <name> - Set volume label */
+   /* flabel <op> <volume> <label> - Set/get volume label */
    FRESULT res;
+   char op[2];
+   char volume[6];
+   char label[10];
+   char tmp[20];
+   char *p1;
+   DWORD sn;
+   struct ioctl_getlabel getlbl;
+   
    while (*args == ' ') args++;
-   //put_rc(f_setlabel(args));         
-   res = ioctl(CurrDrive,FAT_IOCTL_SET_VLABEL,args);
+   
+   if ( !xatos(&args,op,1) || !xatos(&args, volume,5) ) { // fetch op and volum 
+     printf(" bad arguments.\n");
+     return 0;   
+   }
+   
+   xatos(&args, label,9); // fetch labe (emtpty => clear label if op = w(rite)
+   
+   p1=volume; while(*p1) { *p1 = toupper( *p1 );  p1++; } // convert to uppercase   
+   
+#ifdef CONFIG_DEBUG
+   printf(" vlabel %s %s %s\n",op,volume,label);
+#endif
+   
+   
+   if(op[0] == 'w' || op[0] == 'W') { // write label to volume        
+      strcat(tmp,volume);
+      strcat(tmp,":");
+      strcat(tmp,label);
+      res = ioctl(volume,FAT_IOCTL_SET_VLABEL,tmp); 		// we send this directly to the FAT fs driver ...
+      return 0;
+   }
+   
+   if(op[0] == 'r' || op[0] == 'R') { // read label from volume  
+     
+     getlbl.volume = volume; // pointer will be changed by ioctl !
+     getlbl.plabel = label;
+     getlbl.psn = &sn;
+     
+     res = ioctl(volume,FAT_IOCTL_GET_VLABEL,&getlbl);
+     
+     printf(" Volume Label: %s\n",label);
+     printf(" Volume S/N  : %04X-%04X\n", sn >> 16, sn & 0xFFFF);
+     
+     return 0;
+   }
+   
+   printf(" operation '%s' unknown ...\n",op);
    return 0;
 } 
 
@@ -1692,7 +2217,7 @@ int cmd_bread  (char * args){
    long p1,p2,p3;
    
    if (!xatoi(&args, &p1) || !xatoi(&args, &p2) || !xatoi(&args, &p3)) return 0;
-   printf("rc=%u\n", disk_read((BYTE)p1, Buff, p2, (BYTE)p3));          
+  // printf("rc=%u\n", disk_read((BYTE)p1, Buff, p2, (BYTE)p3));          
    return 0;
 } 
 int cmd_bwrite (char * args){
@@ -1700,7 +2225,7 @@ int cmd_bwrite (char * args){
    long p1,p2,p3;
    
    if (!xatoi(&args, &p1) || !xatoi(&args, &p2) || !xatoi(&args, &p3)) return 0;
-   printf("rc=%u\n", disk_write((BYTE)p1, Buff, p2, (BYTE)p3));          
+  // printf("rc=%u\n", disk_write((BYTE)p1, Buff, p2, (BYTE)p3));          
    return 0;
 } 
 int cmd_bfill  (char * args){
@@ -1726,3 +2251,131 @@ int cmd_quit(char *args)
    return 1;
 }
 
+int cmd_fstab(char* args)  // wird auch durch mount ohne argumente aufgerufen (= eingehängte file systems)
+{
+    //  struct fs_driver
+    //{
+    //	char 				*pname;		/* name of filesystem (FAT,FAT32,NKC...) */
+    //	struct file_operations 		*f_oper;	/* file operations */
+    //	struct fs_driver			*next;		/* pointer to next driver in driverlist */
+    //};
+  
+    //  struct blk_driver
+    //{
+    //	char				*pdrive;	/* name of drive, i.e. A, B... ,HD, SD... */
+    //	struct block_operations 	*blk_oper;	/* block operations */
+    //	struct blk_driver		*next;		/* pointer to next driver in driverlist */
+    //};
+  
+    //  struct fstabentry
+    //{
+    //  char* devicename;				/* devicename A, B ,HDA0 , HDB1... */
+    //  char* fsname;					/* file system name FAT32, JADOS ... */
+    //  struct fs_driver	*pfsdrv;			/* pointer to file system driver */
+    //  struct blk_driver *pblkdrv;			/* pointer to block device driver */
+    //  unsigned char options;			/* mount options */
+    //  struct fstabentry* next;			/* pointer to next fstab entry */
+    //};
+  int res, line; 
+  struct fstabentry *fstab;
+  
+  res = ioctl(NULL,FS_IOCTL_GETFSTAB,&fstab);
+  line = 0;
+  
+  printf(" FS       VOL     PHYS      FSOPER         BLKOPER        OPT\n\n");
+  
+  while(fstab)
+  {		
+      printf(" %-8s %-7s %-9d 0x%011x  0x%011x  %d\n",fstab->pfsdrv->pname, fstab->devname, fstab->pdrv, fstab->pfsdrv->f_oper, fstab->pblkdrv->blk_oper, fstab->options);      
+      if(!(++line % 10)) getchar(); 
+      
+      fstab = fstab->next;
+  }
+  
+  return 0;
+}
+
+int cmd_fs(char* args)
+{
+  int res, line; 
+  struct fs_driver *p_fs_driver;
+  
+  res = ioctl(NULL,FS_IOCTL_GETFSDRIVER,&p_fs_driver);
+  line = 0;
+  
+  printf(" FS          FSOPER\n\n");
+  
+  while(p_fs_driver)
+  {		
+      printf(" %-10s  0x%x\n",p_fs_driver->pname, p_fs_driver->f_oper );      
+      if(!(++line % 10)) getchar(); 
+      
+      p_fs_driver = p_fs_driver->next;
+  }
+  
+  return 0;
+}
+
+int cmd_fatinfo(char* args)
+{
+  int res;
+  
+  res = ioctl(NULL,FAT_IOCTL_INFO,"FAT");
+
+  return 0;
+}
+
+int cmd_dev(char* args)
+{
+  int res, line; 
+  struct blk_driver *driver;
+  
+  res = ioctl(NULL,FS_IOCTL_GETBLKDEV,&driver);
+  line = 0;
+  
+  printf(" DRIVE    BLKLDRV    BLKOPER\n\n");
+  
+  while(driver)
+  {		
+      printf(" %-7s  0x%x      0x%x\n",driver->pdrive, driver, driver->blk_oper);      
+      if(!(++line % 10)) getchar(); 
+      
+      driver = driver->next;
+  }
+  
+  return 0;
+}
+
+int cmd_meminfo(char* args)
+{
+  int res, line; 
+ 
+  walk_heap();  // /nkc/first
+  
+#ifdef USE_JADOS
+  printf(" JADOS User-Start : 0x%x\n",_nkc_get_laddr() );  
+  printf(" JADOS RAMTOP     : 0x%x\n",_nkc_get_ramtop() );
+  printf(" JADOS GP-Start   : 0x%x\n",_nkc_get_gp() );
+#endif
+    
+  return 0;
+}
+
+int cmd_history(char* args)
+{
+  // shell.c: char HistoryBuffer[MAX_HISTORY+1][MAX_CHAR]; /* History Buffer */
+  char line = 0;
+  char level = histOLDEST;
+  
+  printf("command history:\n");
+  
+  while(level != histNEWEST) {
+    printf("%s\n",HistoryBuffer[level++]);    
+    
+    if(level > MAX_HISTORY) level = 0; 
+    
+    if(!(++line % 10)) getchar();     
+  }
+  
+  return 0;
+}

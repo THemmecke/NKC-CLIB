@@ -1,6 +1,9 @@
 
 MEMORY {
 	ram    : ORIGIN = 0x000000, LENGTH = 0x1FFFFF
+	                  /*  GP starts at   0x3C0000  (68020) */
+	stack  : ORIGIN = 0x100000, LENGTH = 0
+			  /* define where the program stack starts */
 }
 
 
@@ -20,6 +23,9 @@ SECTIONS {
         	*(.text)
         	. = ALIGN(2);
 		_etext = ALIGN(2) ;
+		
+		/*_ramtop = ABSOLUTE(0x100000) ; */ /* define absolute address relative to section start -> stack */
+						    /* a 'cleaner' solution is: define section and memory location for stack */
         } > ram =0x4E71 /* set the fill pattern for unspecified regions (due to alignement) to NOP (used by linker)*/
 
 	/* Data */
@@ -48,10 +54,12 @@ SECTIONS {
 		/* global variables .comm */
 		*(COMMON)
 		. = ALIGN(4) ;
-		_ebss = ALIGN(0x2);
+		_ebss = ALIGN(0x2);		
 	} > ram
         
         
-
+	.stack 0x100000 (NOLOAD):  {
+	 _ramtop = . ;  /* top of ram for program stack -> start*.S , if JADOS is not used (this address will be relocated ! FIX! - currently an EQU is used inside of start*.S) */
+	} 
 }
 

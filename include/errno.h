@@ -10,13 +10,11 @@
 #define __ERRNO_H
 
 
-/* file function return codes FR_xxx need to be here, currently in ff.h */
-
 /*  Dos Error Codes */
 
 #define ERROR    -1
 
-#define EZERO    0      /* Error 0                  */
+#define EZERO    0      /* Error 0   (no error)     */
 #define EINVFNC  1      /* Invalid function number  */
 #define ENOFILE  2      /* File not found           */
 #define ENOPATH  3      /* Path not found           */
@@ -67,11 +65,14 @@
 #define ENOTDIR 45      /* UNIX - not MSDOS         */
 #define EISDIR  46      /* UNIX - not MSDOS         */
 #define EUCLEAN 47      /* UNIX - not MSDOS         */
+
+/* extensions ... */
 #define ENAMETOOLONG 48 /* Filename too long        */
+#define ENODRV 49	/* no driver 		    */
 
-#define ENOMEM 49		/* out of memeory			*/
-#define ENODRV 50		/* no driver 				*/
 
+#define FRESULT_OFFSET 100
+#define DRESULT_OFFSET 200
 
 int * __getErrno(void);
 extern  char *  __get_sys_errlist(void);

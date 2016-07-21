@@ -7,7 +7,7 @@ BASEDIR=$(shell  pwd)/../..
 include $(BASEDIR)/Makefile.rules
 # ############### m68k-tools ###################################
 
-OBJECTS= fs_fat.o ff.o diskio.o gideS.o
+OBJECTS= fs_fat.o ff.o diskio.o
 
 all: 	$(OBJECTS)
 		

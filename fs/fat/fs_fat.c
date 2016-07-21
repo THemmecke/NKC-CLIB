@@ -5,16 +5,12 @@
 #include <errno.h>
 #include <time.h>
 #include <ioctl.h>
-#include <diskio.h>
 #include <fs.h>
 #include <ff.h>
 #include <debug.h>
 #include <gide.h>
 
 #include "fs_fat.h"
-
-
-
 
 const struct file_operations fat_file_operations =
 {
@@ -42,25 +38,51 @@ const struct file_operations fat_file_operations =
 /*******************************************************************************
  *   private variables   
  *******************************************************************************/
-
-#if _MULTI_PARTITION  /* Volume - partition resolution table (Example) */
-PARTITION VolToPart[] = {
-  {0, 1}, /* "0:" <== Disk# 0, 1st partition */
-  {0, 2}, /* "1:" <== Disk# 0, 2nd partition */
-  {0, 3}, /* "2:" <== Disk# 0, 3rd partition */
-  {0, 4}  /* "3:" <== Disk# 0, 4th partition */
+ 
+ /*
+  * volume 0-3 => gide drive A partition 0-3
+  * volume 4-7 => sdcard A partition 0-3
+  * (see ffconf.h) 
+  * 
+  */ 
+ 
+ #if _MULTI_PARTITION  
+ /* 
+  * Volume - partition resolution table. 
+  * Here all possible system volumes are listed, which are the possible FAT partitions supported by the FAT file sub-system.
+  * We could make this table dynamic (build by mount/umount), but this would require major changes to the imported FAT fs module from (C)ChaN,
+  * making FAT fs module updates cumbersome.
+  * 
+  * The folowing system has one IDE and one SD interface, each with one physical drive numbered '0'.
+  * This must match the FAT module configuration in /fs/fat/ffconf.h -> 'Drive/Volume Configurations'
+  * 
+  * current definitions in ffconf.h:
+  *	#define _VOLUMES	8 
+  * 	#define _STR_VOLUME_ID	1
+  * 	#define _VOLUME_STRS	"HDA0","HDA1","HDA2","HDA3","SDA0","SDA1","SDA2","SDA3"
+  * 	#define	_MULTI_PARTITION	1
+  * 	#define _MULTI_DISK		1
+  */
+ 
+ PARTITION VolToPart[] = {
+  /* Physical disk, partition -> Volume */
+  {0, 1}, /* "0:" <== Disk# HDA, 1st partition (HDA0:) -- physical IDE drive 0, logical drive / volume 0 */
+  {0, 2}, /* "1:" <== Disk# HDA, 2nd partition (HDA1:) -- physical IDE drive 0, logical drive / volume 1 */
+  {0, 3}, /* "2:" <== Disk# HDA, 3rd partition (HDA2:) -- physical IDE drive 0, logical drive / volume 2 */
+  {0, 4}, /* "3:" <== Disk# HDA, 4th partition (HDA3:) -- physical IDE drive 0, logical drive / volume 3 */
+  {0, 1}, /* "4:" <== Disk# SDA, 1st partition (SDA0:) -- physical SD  drive 0, logical drive / volume 4 */
+  {0, 2}, /* "5:" <== Disk# SDA, 2nd partition (SDA1:) -- physical SD  drive 0, logical drive / volume 5 */
+  {0, 3}, /* "6:" <== Disk# SDA, 3rd partition (SDA2:) -- physical SD  drive 0, logical drive / volume 6 */
+  {0, 4}  /* "7:" <== Disk# SDA, 4th partition (SDA3:) -- physical SD  drive 0, logical drive / volume 7 */
 };
-#endif
 
-/* current physical drive is held in FIL.fs (FATFS) structure and given in every file related command */
-/* i.e. physical/locical drive information off current drive must be held current by upper layer      */
-#if _USE_EXTENSIONS
-static FATFS FatFs[_DISKS][_VOLUMES];    /* File system object for logical drive (multi disk support)*/
-#else
-static FATFS FatFs[_VOLUMES];    /* File system object for logical drive (single disk support)*/
-#endif
+char* const drvstr[] = {"HD","HD","HD","HD","SD","SD","SD","SD"}; // volume -> driver mapping
+ 
+#endif  
 
-static BYTE CurrentDisk;	/* Current physical disk */
+// Note: dn2vol (DiskName-To-Volume) maps devicename (HDA0...) to a FatFs index 
+static FATFS FatFs[_VOLUMES];		/* Pointer to the fat file system objects  -> ff.c */
+
 
 static BYTE Buff[262144];      /* Working buffer */
 
@@ -76,6 +98,7 @@ static char LFName[256];
 /*******************************************************************************
  *   private functions   
  *******************************************************************************/
+
 
 /*---------------------------------------------------------*/
 /* User Provided RTC Function for FatFs module             */
@@ -125,9 +148,7 @@ static int     fatfs_open(struct _file *filp){
     return ENOFILE;
   }
 
-   /* translate stdio.h mode flag ... */
-
-   
+   /* translate stdio.h mode flag ... */   
    mode = 0;
    if(filp->f_oflags & _F_READ) mode |= FA_READ;
    if(filp->f_oflags & _F_WRIT) mode |= FA_WRITE;
@@ -138,17 +159,22 @@ static int     fatfs_open(struct _file *filp){
    pfil = (FIL *)malloc(sizeof(FIL));
    if(pfil == NULL) {
     fsfat_dbg("fs_fat.c: ... fatfs_open ENOFILE (2) ]\n");
-    return ENOFILE;
+    return ENOMEM;
    }
 
    //res = f_open(pfil, filp->pname, filp->f_oflags);
    res = f_open(pfil, filp->pname, mode);
    fsfat_dbg(" f_open(pfil, filp->pname, mode) retured %d\n",res);
    
-   if(res != FR_OK) {
-    free(pfil);
-    return ENOFILE;
+   switch(res){
+     case FR_OK: break; // continue
+     case FR_NO_FILE: return ENOFILE;
+     case FR_NO_PATH: return ENOPATH;
+     case FR_INVALID_DRIVE: return ENXIO;
+     default:
+       return ENOFILE;
    }
+   
 
    filp->private = (void*)pfil;
 
@@ -285,7 +311,7 @@ static int     fatfs_seek(struct _file *filp, int offset, int whence){
 static int     fatfs_remove(struct _file *filp){
   FRESULT res;
 
-  fsfat_dbg("fs_fat.c: [ fatfs_remove ...\n");
+  fsfat_dbg("fs_fat.c: [ fatfs_remove (%s) ...\n",filp->pname);
   
   if(filp == NULL) return ENOFILE;
   
@@ -330,35 +356,40 @@ static int     fatfs_rename(struct _file *filp, const char *oldrelpath, const ch
 }
 
 
-static int     fatfs_ioctl(char *name, int cmd, unsigned long arg){
+static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
   FIL *pfil;
   long p1,p2;
   WORD w;
   DWORD dw;
   FRESULT res; 
-  int n;
+  int n,result;
   char *pcp;
   char *pcd;
   char tmp[10];
   struct _deviceinfo di;
-  
-  fsfat_dbg("fs_fat.c: [ fatfs_ioctl ...\n");  
+  struct geometry geo;
+  struct _dev dev;
 
+  
+  FATFS *pFatFs;
+  
+  fsfat_dbg("fs_fat.c|fatfs_ioctl: ...\n");  
+
+  SWITCH:
   switch(cmd){
-    
-   
-    
+
     case FS_IOCTL_GETCWD:
     case FAT_IOCTL_GETCWD:	
 			      fsfat_dbg(" - FAT_IOCTL_GETCWD -\n");
+			
 			      res = f_getcwd(((struct ioctl_get_cwd*)arg)->cpath, 
 					     ((struct ioctl_get_cwd*)arg)->size);
 			      
-			      fsfat_dbg(" cpath(1) = %s\n", (char*)((struct ioctl_get_cwd*)arg)->cpath);
+			      fsfat_dbg(" fs_fat.c|ioctl: cpath(1) = %s\n", (char*)((struct ioctl_get_cwd*)arg)->cpath);
 			      
 			      // extract drive information from path ...			      
 			      pcp = ((struct ioctl_get_cwd*)arg)->cpath;
-			      pcd = ((struct ioctl_get_cwd*)arg)->cdrv;
+			      pcd = ((struct ioctl_get_cwd*)arg)->cdrive;
 			      n= strchr(pcp,':') - pcp;
 			      if(n>0){
 				  pcd[0] = 0; // clear drive string
@@ -367,13 +398,13 @@ static int     fatfs_ioctl(char *name, int cmd, unsigned long arg){
 				  pcd[n] = 0;        
 				  pcp+=n+1;
 				  // remove drive info from path
-				  strncpy(((struct ioctl_get_cwd*)arg)->cpath,pcp,strlen(pcp));
+				  strncpy(((struct ioctl_get_cwd*)arg)->cpath,pcp,strlen(pcp));				  
 				  ((char*)(((struct ioctl_get_cwd*)arg)->cpath))[strlen(pcp)] = 0;
 			      }
-			      
-			      fsfat_dbg(" cpath(2) = %s\n", (char*)((struct ioctl_get_cwd*)arg)->cpath);
-			      fsfat_dbg(" drive    = %s\n", (char*)((struct ioctl_get_cwd*)arg)->cdrv);
-			      
+			     
+			      fsfat_dbg(" fs_fat.c|ioctl: cpath(2) = %s\n", (char*)((struct ioctl_get_cwd*)arg)->cpath);
+			      fsfat_dbg(" fs_fat.c|ioctl: drive    = %s", (char*)((struct ioctl_get_cwd*)arg)->cdrive);
+			      fsfat_lldbgwait("   (KEY)...\n");			      
 			      break;   
     // rename a file/direcctory
     case FS_IOCTL_RENAME:
@@ -387,64 +418,144 @@ static int     fatfs_ioctl(char *name, int cmd, unsigned long arg){
 			      fsfat_dbg(" FAT_IOCTL_CD: %s", (char*)arg);
 			      fsfat_lldbgwait("\n");
     			      res = f_chdir((char*)arg);
+			      //res = f_chdir("0:foo");
     			      break;
     // change physical drive
     case  FS_IOCTL_CHDRIVE:
-    case FAT_IOCTL_CHDRIVE:
-			      fsfat_dbg(" FAT_IOCTL_CHDRIVE: %s", (char*)arg);
-			      fsfat_lldbgwait("\n");
-			      tmp[0] = 0; strcat(tmp,(char*)arg); strcat(tmp,":");
+    case FAT_IOCTL_CHDRIVE:   // *filp=NULL, cmd=FS_IOCTL_CHDRIVE, arg = (struct fstabentry*)pfstab 
+			      fsfat_dbg(" FAT_IOCTL_CHDRIVE: %s", ((struct fstabentry*)arg)->devname);
+			      fsfat_lldbgwait("(KEY)\n");
+			      strcpy(tmp,((struct fstabentry*)arg)->devname); strcat(tmp,":");
     			      res = f_chdrive((char*)tmp); // changes volume given in arg ...
 			      fsfat_dbg("res = %d\n",res);			      
 			      break;
     // FAT change file mode
     case FS_IOCTL_CHMOD:			      
     case FAT_IOCTL_CHMOD:
+      // (NULL,FS_IOCTL_CHMOD,arg* = struct ioctl_chmod)
+      
+      //struct ioctl_chmod {
+      //      void* fpath;		/* pointer to file path */
+      //      unsigned char value;
+      //      unsigned char mask;
+      //};
 			      res = f_chmod(((struct ioctl_chmod*)arg)->fpath, 
 					    ((struct ioctl_chmod*)arg)->value, 
 					    ((struct ioctl_chmod*)arg)->mask);
 			      break;
-    // low level disk read
+    // file level disk read
     case FAT_IOCTL_READ:	
-			      res = f_read(((struct ioctl_read_write*)arg)->fp,
-					   ((struct ioctl_read_write*)arg)->pbuf,
-					   ((struct ioctl_read_write*)arg)->size,
-					   ((struct ioctl_read_write*)arg)->count);
+			      res = f_read(((struct ioctl_file_rw*)arg)->fp,
+					   ((struct ioctl_file_rw*)arg)->pbuf,
+					   ((struct ioctl_file_rw*)arg)->size,
+					   ((struct ioctl_file_rw*)arg)->count);
 			      break;
-    // low level disk write
+    // file level disk write
     case FAT_IOCTL_WRITE:
-			      res = f_write(((struct ioctl_read_write*)arg)->fp,
-					   ((struct ioctl_read_write*)arg)->pbuf,
-					   ((struct ioctl_read_write*)arg)->size,
-					   ((struct ioctl_read_write*)arg)->count);
+			      res = f_write(((struct ioctl_file_rw*)arg)->fp,
+					    ((struct ioctl_file_rw*)arg)->pbuf,
+					    ((struct ioctl_file_rw*)arg)->size,
+					    ((struct ioctl_file_rw*)arg)->count);
 			      break;
+
     // mount file system
-    case FAT_IOCTL_MOUNT:     
-	                      sprintf(tmp, "%d:", ((struct ioctl_mount_fatfs*)arg)->ldrv);
-			      fsfat_dbg("try mount logical drive %d\n", ((struct ioctl_mount_fatfs*)arg)->ldrv);
-			      res = f_mount(&FatFs[((struct ioctl_mount_fatfs*)arg)->ldrv], 
-					    tmp, 
-					    ((struct ioctl_mount_fatfs*)arg)->opt);			      
-			      //((struct ioctl_mount_fatfs*)arg)->disk === not used yet, we have only one physical drive 0
-			      // same information is in name => hda, hdb....
+    case FS_IOCTL_MOUNT:		      
+    case FAT_IOCTL_MOUNT:   
+			      fsfat_dbg("fs_fat|FS_IOCTL_MOUNT\n");
+      // args: NULL,FS_IOCTL_MOUNT,struct fstabentry*  
+      
+//		       struct fstabentry
+//		       {
+//			        char* devname;			/* devicename A, B ,HDA0 , HDB1... */   
+//			        BYTE pdrv;			/* physical drive number */  
+//			        struct fs_driver	*pfsdrv;	/* pointer to file system driver */
+//			        struct blk_driver *pblkdrv;	/* pointer to block device driver */
+//			        unsigned char options;		/* mount options */
+//			        struct fstabentry* next;	/* pointer to next fstab entry */
+//		       };
+	                      sprintf(tmp, "%s:", ((struct fstabentry*)arg)->devname);
+			      
+			      fsfat_dbg("try mount logical drive/volume %s/%d:\n", ((struct fstabentry*)arg)->devname, dn2vol(((struct fstabentry*)arg)->devname));			      
+			      fsfat_dbg("  phydrv  = %d\n",((struct fstabentry*)arg)->pdrv);
+			      fsfat_dbg("  fsdrv   = 0x%x\n",((struct fstabentry*)arg)->pfsdrv);
+			      fsfat_dbg("  blkdrv  = 0x%x\n",((struct fstabentry*)arg)->pblkdrv);
+			      fsfat_dbg("  options = %d",((struct fstabentry*)arg)->options); 
+			      fsfat_lldbgwait("\n");
+			      			      
+			      pFatFs = &FatFs[dn2vol(((struct fstabentry*)arg)->devname)];
+			      pFatFs->pfstab = (struct fstabentry*)arg;				// add corresponding fstabentry to FatFs struct
+			      
+			      res = f_mount(pFatFs,  tmp, 1); // Mount immediately     
+			      
+			      fsfat_dbg("fs_fat.c| f_mount retured with code %d",res);
+			      fsfat_lldbgwait("\n");
+			      
+#ifdef CONFIG_DEBUG_FS_FAT
+			    
+//typedef struct {
+//	BYTE	fs_type;		/* FAT sub-type (0:Not mounted) */
+//	BYTE	drv;			/* Physical drive number */
+//	//char    volume[10];		/* physical drive/volume where the filesystem resides, i.e. FD0,FD1,HDA0,HDB2,SDA17.... */
+//	BYTE	csize;			/* Sectors per cluster (1,2,4...128) */
+//	BYTE	n_fats;			/* Number of FAT copies (1 or 2) */
+//	BYTE	wflag;			/* win[] flag (b0:dirty) */
+//	BYTE	fsi_flag;		/* FSINFO flags (b7:disabled, b0:dirty) */
+//	WORD	id;				/* File system mount ID */
+//	WORD	n_rootdir;		/* Number of root directory entries (FAT12/16) */
+//#if _MAX_SS != _MIN_SS
+//	WORD	ssize;			/* Bytes per sector (512, 1024, 2048 or 4096) */
+//#endif
+//#if _FS_REENTRANT
+//	_SYNC_t	sobj;			/* Identifier of sync object */
+//#endif
+//#if !_FS_READONLY
+//	DWORD	last_clust;		/* Last allocated cluster */
+//	DWORD	free_clust;		/* Number of free clusters */
+//#endif
+//#if _FS_RPATH
+//	DWORD	cdir;			/* Current directory start cluster (0:root) */
+//#endif
+//	DWORD	n_fatent;		/* Number of FAT entries (= number of clusters + 2) */
+//	DWORD	fsize;			/* Sectors per FAT */
+//	DWORD	volbase;		/* Volume start sector */
+//	DWORD	fatbase;		/* FAT start sector */
+//	DWORD	dirbase;		/* Root directory start sector (FAT32:Cluster#) */
+//	DWORD	database;		/* Data start sector */
+//	DWORD	winsect;		/* Current sector appearing in the win[] */
+//	BYTE	win[_MAX_SS];		/* Disk access window for Directory, FAT (and file data at tiny cfg) */
+//	//struct  blk_driver *blk_drv; 	/* Pointer to the block device driver */
+//} FATFS;
+
+			      for (n=0; n< _VOLUMES; n++){
+				printf("fs_fat.c| FatFs[%d]:\n",n);
+				printf("     drv:      %d\n",FatFs[n].drv);
+				printf("     fatbase:  0x%x\n",FatFs[n].fatbase);
+				printf("     database: 0x%x\n",FatFs[n].database);
+				fsfat_lldbgwait(" ....(KEY)\n");
+			      }
+			      
+#endif
 			      break;
     // un-mount file system
-    case FAT_IOCTL_UMOUNT:
-			      sprintf(tmp, "%d:", (BYTE)arg);
+    case FS_IOCTL_UMOUNT:
+    case FAT_IOCTL_UMOUNT:  // args: NULL,FS_IOCTL_UMOUNT,arg = char* drivename 
+			      fsfat_dbg("fs_fat.c|FAT_IOCTL_UMOUNT (%s)\n",(char*)arg);
+			      sprintf(tmp, "%s:", (char*)arg);
 			      res = f_mount(NULL, tmp, 0);			      
 			      //((struct ioctl_mount_fatfs*)arg)->drv === not used yet, we have only one physical drive 0
 			      // same information is in name => hda, hdb....
 			      // we implicitly assume there is no other drive than drive 0 => FIX !
 			      break;
     // set volume label
-    case FAT_IOCTL_SET_VLABEL: // FIX: set label of "current active" logical volume....we have to select disk and lvolume !
+    case FAT_IOCTL_SET_VLABEL: 
+			      fsfat_dbg(" FAT_IOCTL_SET_VLABEL: arg = %s\n",arg);
 			      res = f_setlabel((char*)arg);
 			      break;    		
     // get volume label
     case FAT_IOCTL_GET_VLABEL:
-      
+			      fsfat_dbg(" FAT_IOCTL_GET_VLABEL:\n");
 			      // ((struct ioctl_getlabel)arg)->drv  === not used yet, we have only one physical drive 0
-			      res = f_getlabel( ((struct ioctl_getlabel*)arg)->pldrv,
+			      res = f_getlabel( ((struct ioctl_getlabel*)arg)->volume,
 						((struct ioctl_getlabel*)arg)->plabel,
 						((struct ioctl_getlabel*)arg)->psn);
 			      break;
@@ -463,15 +574,20 @@ static int     fatfs_ioctl(char *name, int cmd, unsigned long arg){
     // close directory
     case FS_IOCTL_CLOSE_DIR:			      		      
     case FAT_IOCTL_CLOSE_DIR:
+			      fsfat_dbg(" fs_fat.c| _IOCTL_CLOSE_DIR: (%s)\n",(char*)arg);
 			      res = f_closedir((DIR*)arg);			      
 			      break;
     // make directory
+    case FS_IOCTL_MKDIR:
     case FAT_IOCTL_MKDIR:
+			      fsfat_dbg(" fs_fat.c| _IOCTL_MKDIR: (%s)\n",(char*)arg);
 			      res = f_mkdir((char*)arg);
 			      break;
     // unlink/delete a file/dir
+    case FS_IOCTL_RMDIR:
     case FS_IOCTL_DEL:
     case FAT_IOCTL_UNLINK:
+			      fsfat_dbg(" fs_fat.c| _IOCTL_RMDIR/DEL/UNLINK: (%s)\n",(char*)arg);
     			      res = f_unlink((char*)arg);
     			      break;
     // Get Number of Free Clusters
@@ -483,83 +599,66 @@ static int     fatfs_ioctl(char *name, int cmd, unsigned long arg){
 			      break;
     // create FAT file system
     case FAT_IOCTL_MKFS:
-			      res = f_mkfs(((struct ioctl_mkfs*)arg)->pdrv, 
-					   ((struct ioctl_mkfs*)arg)->au, 
-					   ((struct ioctl_mkfs*)arg)->sfd);			      
+			      fsfat_dbg(" fs_fat.c| FAT_IOCTL_MKFS - \n");
+			      res = f_mkfs(((struct ioctl_mkfs*)arg)->part, 
+					   ((struct ioctl_mkfs*)arg)->sfd, 
+					   ((struct ioctl_mkfs*)arg)->au);			      
 			      break;    
     // get FatFs structure
     case FAT_IOCTL_GET_FATFS: 
-			      //((struct ioctl_getfatfs*)arg)->drv === not used yet, we have only one physical drive 0
-			      p1 = ((struct ioctl_getfatfs*)arg)->ldrv;
-			      if (!FatFs[p1].fs_type) { res = RES_NOTRDY; break; }
+			      fsfat_dbg(" fs_fat.c| FAT_IOCTL_GET_FATFS - \n");
+			      p1 = ((struct ioctl_getfatfs*)arg)->vol;          
+			      if (! FatFs[p1].fs_type) { res = RES_NOTRDY; break; } 
 			      *(((struct ioctl_getfatfs*)arg)->ppfs) = (FatFs+p1);
 			      res = RES_OK;
 			      
-			      
-			      //printf("FAT_IOCTL_GET_FATFS[%d]->[0x%x]->[0x%x]:\n",p1,FatFs,FatFs+p1);
-			      /*
-			      if (!FatFs[p1].fs_type) { printf("Not mounted.\n"); return 0; }
-			      printf("FAT type = %u\nBytes/Cluster = %lu\n"
-				    "Root DIR entries = %u\nNumber of clusters = %lu\n"
-				    "FAT start (lba) = %lu\nDIR start (lba,clustor) = %lu\nData start (lba) = %lu\n\n",
-					  (BYTE)FatFs[p1].fs_type,
-					  (DWORD)FatFs[p1].csize * 512,
-					  FatFs[p1].n_rootdir, (DWORD)FatFs[p1].n_fatent - 2,
-					  FatFs[p1].fatbase, FatFs[p1].dirbase, FatFs[p1].database );
-				*/
 			      break;
       
-      
-    // Low Level FileSystem Services 200+ ==============================  (MUST BE MOVED TO LOW LEVEL MODULE !)
-    // initialize disc drive
+    case FAT_IOCTL_INFO:	
+			      printf("FatFs module (%s, CP:%u/%s) version %s , revision %d\n\n",
+					_USE_LFN ? "LFN" : "SFN",
+					_CODE_PAGE,
+					_LFN_UNICODE ? "Unicode" : "ANSI",
+					_FAT_FS_VERSION,_FFCONF
+				    );
+			      
+			      #if _MULTI_PARTITION	
+			        UINT cnt;
+			      printf("Multiple partition feature is enabled.\nEach logical drive is tied to the partition as follows:\n");
+			      for (cnt = 0; cnt < sizeof(VolToPart) / sizeof(PARTITION); cnt++) {
+				const char *pn[] = {"auto detect", "1st partition", "2nd partition", "3rd partition", "4th partition"};
+				printf("\"%u:\" <== %s Disk# %u, %s\n", cnt, drvstr[cnt],VolToPart[cnt].pd, pn[VolToPart[cnt].pt]);
+			      }
+			      printf("\n"); 
+			      #else
+			      printf("\nMultiple partition feature is disabled.\nEach logical drive is tied to the same physical drive number.\n\n");
+			      #endif
+	
+			      break;   
+			      
+    // Low Level FileSystem Services 200+ ==============================  
    
-      
-    case FAT_IOCTL_DISK_INIT:
-			      fsfat_lldbgwait("FAT_IOCTL_DISK_INIT\n");
-			      // arg contains physical drive number (0,1,... for FAT Drives)
-			      // FIX: name contains physical drive name (i.e. 1:,2:,3: for JADOS and HDA0,HDB1,HDC0 for IDE Drives) =>
-			      //      move to low level and parse which driver to use ! decide which drive to initialize (HDA->0, HDB->1 ...)
-			      res = disk_initialize((BYTE)arg); // take 'arg' drive 
-			      
-			      break;
-    case FAT_IOCTL_GET_DISK_DRIVE_STATUS:
-			      fsfat_lldbgwait("FAT_IOCTL_GET_DISK_DRIVE_STATUS\n");
-			      // FIX: name contains drive (i.e. 1:,2:,3: for JADOS and HDA,HDB,HDC for IDE Drives) =>
-			      //      move to low level and parse which driver to use ! decide which drive to identify (HDA->1, HDB->2 ...)
-			      //      arg contains pointer to _deviceinfo 
-			      res = idetifyIDE((int)name+1, (struct _deviceinfo*)arg); // take 1st drive (this is the only IDE, the CFCARD)   
-			      break;
-    // low level disk read (sector based)
-    case FAT_IOCTL_DISK_READ:
-				// FIX: check if drive exists !? This should be done in ioctl of fs.c
-				res = disk_read( ((struct ioctl_disk_read*)arg)->drv, 	// [IN] Physical drive number
-						 ((struct ioctl_disk_read*)arg)->buff, 	// [OUT] Pointer to the read data buffer
-						 ((struct ioctl_disk_read*)arg)->sector,// [IN] Start sector number
-						 ((struct ioctl_disk_read*)arg)->count);// [IN] Number of sectros to read 
-				break;
-    // create partition table
+        
+    case FS_IOCTL_MKPTABLE:		      // this should be handled in the block driver itself for it is a filesystem independent function ... see hd_block_drv -> ioctl function
     case FAT_IOCTL_MKPTABLE:
-				res = f_fdisk(((struct ioctl_mkptable*)arg)->drv, 
-					      ((struct ioctl_mkptable*)arg)->szt, 
-					      ((struct ioctl_mkptable*)arg)->work);
+      // write disk partition table (this function is FAT FileSystem independent and should be moved...)
+      // args: char *name<=NULL, int cmd<=FS_IOCTL_MKPTABLE, unsigned long arg <=pointer to struct ioctl_mkptable
+      printf(" Uuups: FS_IOCTL_MKPTABLE should not be called in fs_fat.c but in a lower level driver ... !\n");
+      break;
+		      res = f_fdisk(dn2pdrv(((struct ioctl_mkptable*)arg)->devicename), /* physical drive number mapped via dn2pdrv(HDA...) */  
+					    ((struct ioctl_mkptable*)arg)->szt, 	/* Pointer to the size table for each partition */
+					    ((struct ioctl_mkptable*)arg)->work);	/* Pointer to the working buffer */
+			      
+				 
+			              
 				break;
     
-    case FAT_IOCTL_DISK_GET_SECTOR_COUNT:
-				// FIX: arg contains drive (i.e. 1:,2:,3: for JADOS and HDA0,HDB1,HDC0 for IDE Drives) =>
-			        //      examine arg in fs.c and parse which driver to use !
-				p1=0;    // take 1st drive (this is the only IDE, the CFCARD)
-				res = disk_ioctl((BYTE)p1, GET_SECTOR_COUNT, (DWORD*)arg);
-				break;
-    case FAT_IOCTL_DISK_GET_SECTOR_SIZE:
-                                // FIX: arg contains drive (i.e. 1:,2:,3: for JADOS and HDA0,HDB1,HDC0 for IDE Drives) =>
-			        //      move to low level and parse which driver to use !
-				p1=0;    // take 1st drive (this is the only IDE, the CFCARD)
-				res = disk_ioctl((BYTE)p1, GET_SECTOR_SIZE, (WORD*)arg);
-				break;
+
     default: res = 0;
   }
+  
 
-  fsfat_dbg("fs_fat.c: ... fatfs_ioctl ]\n");
+  fsfat_lldbgwait("fs_fat.c: ... fatfs_ioctl ] (KEY)\n");
 
   return res;
 }
@@ -626,51 +725,71 @@ void    fatfs_init_fs(void){
         FRESULT res;
         WORD w;
         DWORD dw;
-        long p1;              
+        long p1; 
+	//struct _dev dev;
+	
+	//struct blk_driver* pblk_drv;
 
+	/*
         printf("FatFs module (%s, CP:%u/%s)\n\n",
             _USE_LFN ? "LFN" : "SFN",
             _CODE_PAGE,
             _LFN_UNICODE ? "Unicode" : "ANSI");
-
-        #if _MULTI_PARTITION
-        UINT cnt;
-        printf("\nMultiple partition feature is enabled.\nEach logical drive is tied to the patition as follows:\n");
-        for (cnt = 0; cnt < sizeof VolToPart / sizeof (PARTITION); cnt++) {
-          const char *pn[] = {"auto detect", "1st partition", "2nd partition", "3rd partition", "4th partition"};
-          printf("\"%u:\" <== Disk# %u, %s\n", cnt, VolToPart[cnt].pd, pn[VolToPart[cnt].pt]);
-        }
-        printf("\n"); 
-        #else
-        printf("\nMultiple partition feature is disabled.\nEach logical drive is tied to the same physical drive number.\n\n");
-        #endif
+	*/
+        
 
         #if _USE_LFN
         Finfo.lfname = LFName;
         Finfo.lfsize = sizeof LFName;
         #endif
 
-        init_ff(); /* initialize diskio.h */
-
-        /* mount 1st partition of disk #0 */  
-        p1=0;      
-        printf(" disk_initialize(%d) => (rc=%d)\n", (BYTE)p1, disk_initialize((BYTE)p1));       
-
-        #if 1
-        if (disk_ioctl((BYTE)p1, GET_SECTOR_SIZE, &w) == RES_OK)
-        printf(" Sector size = %u\n", w);
-        if (disk_ioctl((BYTE)p1, GET_SECTOR_COUNT, &dw) == RES_OK)
-        printf(" Number of sectors = %u\n", dw);
-        #endif
-
-        // DEBUG!! res = f_mount(&FatFs[0], "0:", 1);
+      
            
         /* register driver within lib */
-	fsfat_dbg(" filoperations at:\n");
+	fsfat_dbg(" fileoperations at:\n");
 	fsfat_dbg("    fatfs_ioctl: 0x%0x\n",fatfs_ioctl);
-	register_driver("HDA","FAT",&fat_file_operations); 	// general driver for gide disk a
-        register_driver("HDA0","FAT",&fat_file_operations); 	// driver for disk 0 partition 0
-	register_driver("HDA1","FAT",&fat_file_operations); 	// driver for disk 0 partition 1
+	
+	// register a FAT file system on GIDE drive -> später mit mount in fstab !!
+	//pblk_drv = get_blk_driver("HD");
+	//if(pblk_drv)
+	//{
+	  register_driver("FAT",&fat_file_operations); 	// general driver for gide disk a
+	  //register_driver("HDA0","FAT",&fat_file_operations, pblk_drv); 	// driver for disk 0 partition 0
+	  //register_driver("HDA1","FAT",&fat_file_operations, pblk_drv); 	// driver for disk 0 partition 1
+	//} else {
+	//   fsfat_dbg(" could not retreive block driver for HD !\n");
+	//}
+	
+	/*
+	// register a FAT file system on SD drive
+	pblk_drv = get_blk_driver("SD");
+	if(pblk_drv)
+	{
+	  register_driver("SDA","FAT",&fat_file_operations, pblk_drv); 		// general driver for sd disk a
+	  register_driver("SDA0","FAT",&fat_file_operations, pblk_drv); 	// driver for sd disk 0 partition 0
+	} else {
+	   fsfat_dbg(" could not retreive block driver for SD !\n");
+	}
+	*/
+	
+	// hat schon in hd_block_drv.c ==> hd_initialize() stattgefunden 
+	// init_ff(); /* initialize diskio.h */
+	// p1=0;      
+        // printf(" disk_initialize(%d) => (rc=%d)\n", (BYTE)p1, disk_initialize((BYTE)p1));    
+	
+	
+        /* mount 1st partition of disk #0 */  
+	// rewrite to pblk_drv->ioctl((BYTE)p1, GET_SECTOR_SIZE, &w) ...
+	// DEBUG!! res = f_mount(&FatFs[0], "0:", 1);
+	
+	// rewrite to pblk_drv->ioctl
+	#if 0
+        dev.pdrv = 1;
+        if (pblk_drv->blk_oper->ioctl(&dev, GET_SECTOR_SIZE, &w) == RES_OK)
+        printf(" Sector size = %u\n", w);
+	if (pblk_drv->blk_oper->ioctl(&dev, GET_SECTOR_COUNT, &dw) == RES_OK)
+        printf(" Number of sectors = %u\n", dw);
+        #endif
 	
 }
 

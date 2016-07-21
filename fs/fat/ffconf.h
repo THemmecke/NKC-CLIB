@@ -5,22 +5,7 @@
 #ifndef _FFCONF
 #define _FFCONF 29000	/* Revision ID */
 
-
-/*---------------------------------------------------------------------------/
-/  FatFs - extensions as of Revision 29001
-/---------------------------------------------------------------------------*/
-#define _USE_EXTENSIONS 0
-/* Use extensions to original FatFs (Revision ID 29000) */
-
-#ifdef _USE_EXTENSIONS
-#define _DISKS		1
-/* Number of phsical disks to support, currently we support only 1 phsical drive */
-#define _DISK_STRS	"HDA","HDB","HDC","HDD"
-/* disk ID strings */
-#else
-
-#endif
-
+#define _FAT_FS_VERSION "R0.10a"
 
 
 /*---------------------------------------------------------------------------/
@@ -106,7 +91,7 @@
 /   1    - ASCII (Valid for only non-LFN cfg.) */
 
 
-#define	_USE_LFN	0		/* 0 to 3 */
+#define	_USE_LFN	0		/* 0 to 3 (0=no Long-File-Name support) */
 #define	_MAX_LFN	255		/* Maximum LFN length to handle (12 to 255) */
 /* The _USE_LFN option switches the LFN feature.
 /
@@ -149,11 +134,18 @@
 / Drive/Volume Configurations
 /---------------------------------------------------------------------------*/
 
-#define _VOLUMES	4
+/*
+ * volume 0-3 => gide drive A partition 0-3
+ * volume 4-7 => sdcard A partition 0-3
+ * 
+ */ 
+
+#define _VOLUMES	8
 /* Number of volumes (logical drives) to be used. */
 
 #define _STR_VOLUME_ID	1	/* 0:Use only 0-9 for drive ID, 1:Use strings for drive ID */
-#define _VOLUME_STRS	"HDA0","HDA1","HDA2","HDA3"
+#define _VOLUME_STRS	"HDA0","HDA1","HDA2","HDA3","SDA0","SDA1","SDA2","SDA3"
+
 /* When _STR_VOLUME_ID is set to 1, also pre-defined string can be used as drive number
 /  in the path name. _VOLUME_STRS defines the drive ID strings for each logical drives.
 /  Number of items must be equal to _VOLUMES. Valid characters for the drive ID strings

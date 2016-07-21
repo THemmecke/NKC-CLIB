@@ -1,0 +1,38 @@
+
+↵
+Speichereinrichtung
+↵
+
+Name             Ursprung           Länge             Eigenschaften
+ram              0x00000000         0x001fffff
+ram_rs           0x00000000         0x001fffff
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.text           0x00000000      0x100
+                0x00000000                _stext = .
+ *(.text)
+ .text          0x00000000      0x100 move20.o
+                0x00000100                _etext = ALIGN (0x2)
+
+.data           0x00000100        0x0
+                0x00000100                _sdata = .
+ *(.data)
+ .data          0x00000100        0x0 move20.o
+                0x00000100                _edata = ALIGN (0x2)
+
+.bss            0x00000100        0x0
+                0x00000100                _sbss = .
+ *(.bss)
+ .bss           0x00000100        0x0 move20.o
+ *(COMMON)
+                0x00000100                _ebss = ALIGN (0x2)
+LOAD move20.o
+OUTPUT(move20.elf elf32-m68k)
+
+Kreuzreferenz-Tabelle
+
+Symbol                                            Datei
+Keine Symbole

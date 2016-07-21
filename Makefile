@@ -2,7 +2,7 @@
 
 include Makefile.rules
 
-MODULES=alloc complib ctype data io math procont sort string time startup nkc fdlibm conio
+MODULES=alloc complib ctype data io math procont sort string time startup nkc fdlibm drivers conio
 
 ifeq ($(CONFIG_FS),1)
 MODULES += fs
