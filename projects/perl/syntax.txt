@@ -1,0 +1,182 @@
+	NKC-Assembler 			Bedeutung			GNU Assembler
+
+rs.<size>			entspricht ds mit eigenem Zähler	.space <Bytes> im Segment bss
+
+rs 0				Align 16-Bit			.align 2 or .even
+
+rsset                           rs Zähler setzen                ?
+rsreset				rs Zähler zurücksetzen		?
+
+*				Programmzähler			.
+
+  * ...				Comment				/* ... */
+  ; ...				Comment				/* ... */
+
+org <address>							.org <address>
+offset			       Stellt Ablageadresse ein	        ? kein Aequivalent 
+
+symbol EQU value						.equ symbol, value/expression
+								.set symbol, value/expression
+
+				assigns string !!		#define string label
+
+dc.l Wert,Wert			define constant long		.long Wert,Wert
+dc.w Wert,Wert			define const word		.word Wert,Wert
+dc.b Wert,Wert...		define constant byte		.byte Wert,Wert
+								.float
+								.double
+								.extend
+								.ldouble
+
+dc.b 'string'			define ascii string		.ascii "string"
+dc.b 'string',0			define zero term. ascii string  .asciz "string"
+
+df.<size> Anzahl,Wert		define and fill			.space <Bytes>,fill
+ds.<size> Anzahl		reserve space			.space <Bytes>
+								.skip can be used instead of .space
+
+ds 0				Align 16-Bit			.align 2 or .even
+
+
+
+
+d0..d7				Data-Registers			%d0..%d7
+a0..a5				Address-Register		%a0..%a5
+a6				Frame-Pointer			%a6 or %fp
+a7				Stack-Pointer			%a7 or %sp
+
+(a0)				Addr-Reg indirect		%a0@  or (%a0)
+(a0)+				Addr-Reg ind. Postincrement	%a0@+ or (%a0)+
+-(a0)				Addr-Reg ind. Predecrement	%a0@- or -(%a0)
+
+
+$ff				Hex-Value			0xff
+120				Decimal-Value			120
+%1001101001			Binary-Value			1001101001b
+
+
+
+
+
+Scrips:
+-------
+
+./nkc2gnu.pl ASSTEXTE.ANT       -> Dateien aus ASSTEXTE.ANT nach GNU-AS Syntax übersetzen
+./concat.pl ASSTEXTE.ANT        -> Alle übersetzten Dateien in gp.S zusammenpacken
+                                   - ist z.Z. notwendig, da Differenzen aus Labes in anderen Modulen nicht möglich sind
+                                   - includes werden zurückgenommen
+                                   - das '.text' am Anfang (in VAREQU) muss zu '.bss' werden
+                                   - ftentox.x #1e999,%fp0 - geht so nicht -> Workaround:
+                                     ftentox.x #0x4CF50000C2D7C194B0FE2337,%fp0
+                                   
+Übersetzen mit 'make gp'                                   
+
+
+
+Nützliche Tools:
+
+objdump
+nm
+
+
+
+-------------
+
+GP:
+===
+
+
+
+in ass3.asm:
+------------
+
+* lea ausbuf+insst(a5),a0 --->
+ lea insst(a5),a0
+ adda.l ausbuf,a0
+ 
+* lea einbuf+1-insst(a5),a1     ---->
+  lea einbuf,a1
+  addq.l #1,a1
+  sub.l insst(a5),a1 
+  
+in basbef.asm:
+--------------
+
+bei .long definitions funktionieren Additionen nicht ...
+Daher alle Zeile mit ....+ram bearbeiten, das muss später durch das Linker-Script definiert werden !
+
+* df.l 192-maxtraps,tnotimp      * Auffüllen, dadurch weiter mit Adresse $400
+  df.b 100,0     
+  
+* dc.l (ende-basis)/2            * Länge des Grundprogramms in Worten für Check
+ dc.l 0x10000                    * 128KB
+ 
+in ende.asm:
+------------
+
+wie in basbef.asm: /* .space funktioniert nur mit absoluten Werten ! */
+
+
+in fpuwert.S:
+-------------
+
+/*ftentox.x #1e999,%fp0 */           /* Deshalb Überlauf in FP0 erzeugen */
+ ftentox.x #0x7ff0000000000000,%fp0
+ ftentox.x #0x4CF50000C2D7C194B0FE2337,%fp0
+ 
+ 
+ 
+ 
+undefined signals:
+------------------
+
+gp.o: In function `traceeb1':
+(.text+0x34d2): undefined reference to `trac1ausw'
+
+=> es gibt eine definierte Konstante trac1aus aber keine trac1ausw.
+   es werden beide (trac1ausw und trac1aus) referenziert. Aufgrund 
+   der auf 8 Zeichen beschr. Symbolverwaltung im GP fällt das nicht auf.
+   ==> Check !
+   
+   Es gibt in varequ.asm aber auch noch tracausw, evtl. ist trac1ausw ein Typo !?
+   
+   WORKAROUND zum Kompilieren: definiere trac1ausw
+
+KEINE UNTERSCHEIDUNG zw. KLEIN- und GROSSBUCHSTABEN:
+----------------------------------------------------
+gp.o: In function `sdcsize':
+(.text+0xb396): undefined reference to `sdsize'
+gp.o: In function `sdcsize':
+(.text+0xb3a4): undefined reference to `sdbpblk'
+gp.o: In function `sdhcsize':
+(.text+0xb3ca): undefined reference to `sdsize'
+gp.o: In function `sdhcsize':
+(.text+0xb3d6): undefined reference to `sdbpblk'
+gp.o: In function `sdbef22':
+(.text+0xb702): undefined reference to `sdbpblk'
+
+==> in Kleinbuchstaben wandeln.
+
+
+Relokationsgrössen:
+-------------------
+gp.o: In function `befehle':
+(.text+0x12e70): relocation truncated to fit: R_68K_16 against `.bss'
+gp.o: In function `befehle':
+(.text+0x12e7e): relocation truncated to fit: R_68K_16 against `.bss'
+gp.o: In function `befehle':
+(.text+0x12e8c): relocation truncated to fit: R_68K_16 against `.bss'
+
+00005b14  00000102 R_68K_16          00000000   .text + fc
+00005b2a  00000102 R_68K_16          00000000   .text + fc
+
+00012e40  00000302 R_68K_16          00000000   .bss + b29 fpuxbuf
+00012e4e  00000302 R_68K_16          00000000   .bss + b39 fpuybuf
+00012e5c  00000302 R_68K_16          00000000   .bss + b49 fpuzbuf
+
+=> in ass3.asm sind diese Adressen als 32bit Werte vorgesehen ,aber nur 16 Bit werden verwendet.
+   GNU AS möchte hier gerne 32bit Refernezen einsetzen. 
+   WORKAROUND: ersetze die beiden 16Bit Referenze pro Wert durch eine 32Bit Referenz.
+  
+
+

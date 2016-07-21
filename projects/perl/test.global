@@ -1,0 +1,9 @@
+.global allgm
+.global parsdat
+.global hddat
+.global fatbuff
+.global dirbuff
+.global buffer
+.global jfcb
+.global jdirbuf
+.global filebuff

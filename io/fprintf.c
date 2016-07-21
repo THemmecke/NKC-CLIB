@@ -27,7 +27,7 @@ int vfprintf(FILE *stream, const char *format, void *list)
 	nkc_write(" pbuffer      = 0x"); nkc_write_hex8(buffer);  nkc_write("\n");
 	nkc_getchar();
 	#endif
-	rv = vsprintf(&buffer,format,list);
+	rv = vsprintf(&buffer,format,list); /* buffer allocation is done here (-> sprintf.c: _printchar() ) ... */
 	#else
 	rv = vsprintf(buffer,format,list);
 	#endif
@@ -39,6 +39,8 @@ int vfprintf(FILE *stream, const char *format, void *list)
 	if (fputs(buffer,stream) == EOF)
 		//return 0;
 		rv = 0;
+	
+	fflush(stream); /* flush the buffer before freeing it ... ! */
 		
 	#ifdef CONFIG_DEBUG_XXPRINTF
 	nkc_write(" pbuffer-addr = 0x"); nkc_write_hex8(&buffer); nkc_write("\n");

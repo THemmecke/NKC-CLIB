@@ -43,5 +43,17 @@ Step by step build on XUbuntu 14.04.03 LTS:
 - build 
 
   
-  
+- build in chroot on an arbitrary system (here Trusty Tahr 64Bit)
+
+
+setup basic chroot:
+change to chroot:
+
+install:
+sudo apt-get install patch
+sudo apt-get install make
+sudo apt-get install zlib1g-dev
+sudo apt-get install libgmp-dev
+sudo apt-get install libmpfr-dev
+sudo apt-get install libmpc-dev  
 

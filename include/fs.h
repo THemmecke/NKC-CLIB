@@ -1,7 +1,9 @@
 #ifndef __INCLUDE_FS_H
 #define __INCLUDE_FS_H
 
+#include <types.h>
 #include "../fs/fat/ffconf.h"
+#include <drivers.h>
 
 /* flags from stdio.h should be  used  */
 /* open flag settings for open() (and related APIs) */
@@ -37,14 +39,14 @@
 */
 struct _file
 {
-  int               			f_oflags; 	/* Open mode flags */
-  int             				f_pos;    	/* File position */
-  struct file_operations 		*f_oper;  	/* Driver interface -> zeiger auf file_operations ?*/
+  int               		f_oflags; 	/* Open mode flags */
+  int             		f_pos;    	/* File position */
+  struct fs_driver 		*p_fs_drv;  	/* fs driver interface */
   
-  int							fd;			/* file handle */
-  struct _file 					*next;		/* pointer to next file in list */	
-  char							*pname;     /* filename with LW,path,name and extension  (fullpath) */
-  void         					*private;    /* file private data -> for example: pointer to jados fileinfo */
+  int				fd;		/* file handle */
+  struct _file 			*next;		/* pointer to next file in list */	
+  char				*pname;         /* filename with LW,path,name and extension  (fullpath) */
+  void         			*private;       /* file private data -> for example: pointer to jados fileinfo */
 
 };
 
@@ -56,7 +58,7 @@ struct file_operations
   int     (*read)(struct _file *filp, char *buffer, int buflen);
   int     (*write)(struct _file *filp, const char *buffer, int buflen);
   int     (*seek)(struct _file *filp, int offset, int whence);
-  int     (*ioctl)(char *name, int cmd, unsigned long arg);
+  int     (*ioctl)(struct _file *filp, int cmd, unsigned long arg);
   int     (*remove)(struct _file *filp);
   int     (*getpos)(struct _file *filp);
 
@@ -78,30 +80,118 @@ struct file_operations
 
 
 
-struct driver
+struct fs_driver
 {
-	char 						*pname;		/* name of filesystem (FAT,FAT32,NKC...) */
-	char						*pdrive;	/* name of drive, i.e. A, B... ,HDA1, HDA2..., USB1, USB2... */
+	char 				*pname;		/* name of filesystem (FAT,FAT32,NKC...) */
 	struct file_operations 		*f_oper;	/* file operations */
-	struct driver				*next;		/* pointer to next driver in driverlist */
+	struct fs_driver		*next;		/* pointer to next driver in driverlist */
 };
 
+struct fs_driver* get_driver(char *name);
 
-struct driver* get_driver(char *name);
+
+/* file system table entry */
+
+#define FS_READ  1
+#define FS_WRITE 2
+#define FS_RW	 3
+
+struct fstabentry
+{
+  char* devname;			/* devicename A, B ,HDA0 , HDB1... */   
+  int pdrv;				/* physical drive number */  
+  struct fs_driver	*pfsdrv;	/* pointer to file system driver */
+  struct blk_driver 	*pblkdrv;	/* pointer to block device driver */  
+  unsigned char options;		/* mount options */
+  struct fstabentry* next;		/* pointer to next fstab entry */
+};
+
+struct fstabentry* get_fstabentry(char* devicename);
+
+FRESULT add_fstabentry(char *devicename, char* fsname, unsigned char options);
+FRESULT remove_fstabentry(char* devicename);
+
+FRESULT mountfs(char *devicename, char* fsname, unsigned char options);
+FRESULT umountfs(char *devicename);
+
+int dn2vol(char* devicename);
+int dn2pdrv(char* devicename);
 
 /* fs_registerdriver.c ******************************************************/
 
-int register_driver(char *pdrive, 						/* drive name, e.g. "A" for a JADOS drive or "HDA1" for a FAT drive */
-					char *pname, 						/* name of the filesystem, e.g. JADOSFS for NKC or FAT32 for IDE    */
-					const struct file_operations  *f_oper);   /* pointer to the file_operations structure to handle this fs       */
+int register_fs_driver( char *pname, 				/* name of the filesystem, e.g. JADOSFS for NKC or FAT32 for IDE    */
+		     const struct file_operations  *f_oper) ;   /* pointer to the file_operations structure to handle this fs       */
                            
 /* fs_unregisterdriver.c ****************************************************/
 
-int un_register_driver(char *pdrive);
+int un_register_fs_driver(char *pdrive);
 
 
-void split_filename(char *name, char* drive, char* path, char* filename, char* ext, char* fullname, char* filepath, char* fullpath, char* dfdrv,  char* dfpath);
-void list_drivers();
+// void split_filename(char *name, char* drive, char* path, char* filename, char* ext, char* fullname, char* filepath, char* fullpath, char* dfdrv,  char* dfpath);
+
+
+
+/*
+ * device naming convention:
+ * [DeviceID][DeviceNo][Partition]:
+ * Device 	DeviceID
+ *
+ * SD/MMC	sd
+ * IDE/GIDE	hd
+ *
+ *
+ * DeviceNo: a,b,c,d....
+ *
+ * Partition: 0,1,2,3.....
+ * 
+ * special case for jados drives:
+ * 
+ * [DriveID]:
+ * 
+ * DriveID is a one letter ID in the range 1...9,A..Z
+ * 
+ */
+
+#define _MAX_DRIVE_NAME	10
+#define _MAX_DEVICE_ID	10
+#define _MAX_PATH	255
+#define _MAX_FILENAME	255
+#define _MAX_FILEEXT	10
+
+#define _STRLEN(s) (unsigned int)(strrchr(s,0)-s)
+  
+// file/path information  
+struct fpinfo		
+{
+  char* psz_driveName;  // drive name (HDA0,SDB1, A, B, 1, 2 ...)
+  char* psz_deviceID;	// physical drive type (HD=GIDE, SD=SDCARD, 1,2,3...A,B,C = JADOS drive (rechable via jados driver/ trap 6) )
+  char  c_deviceNO;	// A,B,C,D.... is the device number ( ex. HDA=first  GIDE device )
+  BYTE  n_partition;	// 0,1,2,3.... is the partition number (ex. HDA0=first partition on first GIDE drive
+  
+  char* psz_path;	// path to directory where the file resists
+  char* psz_filename;	// filename
+  char  c_separator;	// filename<->fileext separator character (if any) - can be the empty string or '.'
+  char* psz_fileext;	// filename extension
+  
+  char* psz_cdrive;	// current drive, use if no drive information is given
+  char* psz_cpath;	// current path, use if no path information is given
+};
+
+/* check given filepath and fill filepath structure, returns CFP_OK if fp points to a valid (i.e. a complete) filepath 
+   it's the callers responibility to allocate enough memory for the fpinfo struct
+*/
+unsigned char checkfp(char* fp, struct fpinfo *pfpinfo);
+
+/* error codes:
+ *	EINVDRV		no valid drive information
+ *	ENOPATH		no valid path information
+ *	ENOFILE		no valid filename information
+ *	EZERO		all information valid (we do not need all information in all commands, CD doesn't need filename information...) 
+ */
+
+
+
+
 
 /* ************************************************************************ */
 

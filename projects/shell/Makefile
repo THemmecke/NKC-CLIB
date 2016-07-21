@@ -25,7 +25,8 @@ all: $(OBJECTS)
 	$(LD)  $(LDFLAGS) -o $(OUTFILE).elf $(OBJECTS) > $(OUTFILE).map;	
 	$(BASEDIR)/tools/elf2bin -r -s -l $(LOADADDR) -o $(OUTFILE).68k $(OUTFILE).elf; \
 	#$(OC) -I elf32-m68k -Sgv --adjust-start $(LOADADDR) $(OUTFILE).elf $(OUTFILE).68k; \
-	$(OD) -D -b binary -m m68k $(OUTFILE).68k > $(OUTFILE).dis
+	$(OD) -D -b binary -m m68k $(OUTFILE).68k > $(OUTFILE).dis;\
+	cp $(OUTFILE).68k NKC68K.ROM
 
 	
 
@@ -49,4 +50,5 @@ clean:
 	rm -f *.68k; \
 	rm -f *.map; \
 	rm -f *.elf; \
-	rm -f *.flt
+	rm -f *.flt; \
+	rm -f *.ROM

@@ -7,7 +7,6 @@
 #include <ff.h> // FILINFO and DIR...
 #include "fs_nkc.h"
 
-#include "../../nkc/llnkc.h"
 
 
 const struct file_operations nkc_file_operations =
@@ -34,17 +33,34 @@ const struct file_operations nkc_file_operations =
 };
 
 
+
+/*******************************************************************************
+ *   private variables   
+ *******************************************************************************/
+ 
+#ifndef USE_JADOS
+extern struct fstabentry *fstab; 		/* global filesystem table -> fs/fs.c */
+extern struct blk_driver *blk_driverlist; 	/* global pointer to list of block device drivers -> driver/drivers.c */
+#endif
+
+static UINT current_jados_drive;
+
+
+
+
+
 /*******************************************************************************
  *   private functions   
  *******************************************************************************/
- 
-UINT read_sector(struct jdfileinfo *pfi)
+
+#ifdef USE_JADOS
+static DRESULT read_sector(struct jdfileinfo *pfi)
 {
 	UCHAR *pbuffer;
 	UCHAR result;
 	
 	fsnkc_dbg("read_sector...\n");
-	
+
 	if(pfi->eof) 
 	{
 		fsnkc_lldbgwait("...read_sector(1)\n");
@@ -52,7 +68,7 @@ UINT read_sector(struct jdfileinfo *pfi)
 	}
 	
 	pbuffer = pfi->pfcb->pbuffer; 		// save sector buffer address
-	result = nkc_readrec(pfi->pfcb);	// read sector
+	result = _nkc_readrec(pfi->pfcb);	// read sector
 	
 	switch(result)
 	{
@@ -70,24 +86,17 @@ UINT read_sector(struct jdfileinfo *pfi)
 	pfi->pfcb->pbuffer = pbuffer;	// restore sector buffer address
 	pfi->clsec++;			// increment current logical sector
 	pfi->crpos=0;			// reset current logical sector position
-	
+
 	fsnkc_lldbgwait("...read_sector\n");
 	return result;
 }
 
-/*
-			 UCHAR nkc_writerec(struct fcb *FCB)
-			 returns 	   0 - if successful
-			 		   5 - disk full
-			 		0xFF - access error 
-*/
-UINT write_sector(struct jdfileinfo *pfi)
+static DRESULT write_sector(struct jdfileinfo *pfi)
 {
 	UCHAR *pbuffer;
 	UCHAR result;
 	
 	fsnkc_dbg("write_sector...\n");
-	
 	
 	if(pfi->pfcb->mode != 0xE5 || (pfi->crpos == 0)) 
 	{
@@ -96,7 +105,7 @@ UINT write_sector(struct jdfileinfo *pfi)
 	}
 		    	
 	pbuffer = pfi->pfcb->pbuffer; 		// save sector buffer address
-	result = nkc_writerec(pfi->pfcb);	// write sector
+	result = _nkc_writerec(pfi->pfcb);	// write sector
 	
 	switch(result)
 	{
@@ -116,13 +125,126 @@ UINT write_sector(struct jdfileinfo *pfi)
 	
 	pfi->pfcb->pbuffer = pbuffer;	// restore sector buffer address
 	pfi->clsec++;			// increment current logical sector
-	//pfi->pfcb->length += 1;	// this done internal by jados
+	//pfi->pfcb->length += 1;	// this done jados internal
 	pfi->crpos=0;			// reset current logical sector position
 	memset(pbuffer,0,BUFFER_SIZE);	// clear buffer
-	
+
 	fsnkc_lldbgwait("...write_sector\n");
 	return result;
 }
+
+#else
+static
+struct blk_driver* get_phy_driver(UINT pdrv)
+/* pdrv == physical drive number ( 0 = RAMDISK, 1...4 = Diskette, 5...30 = Festplatten A..Z) */
+{
+  struct fstabentry *pcur;
+  struct blk_driver* drv = NULL;
+  char lw;
+  
+  pcur = fstab;	
+  
+  while(pcur)
+  {
+  	if(pcur->pdrv == pdrv)
+  	{ // found device 
+  	  drv = pcur->pblkdrv;
+	  break;
+  	}  	
+  	pcur = pcur->next;
+  }		
+
+  return drv; 
+}
+
+
+
+
+// 1) search 'JADOS' block driver
+// 2) call ioctrl JADOS_READ_REC 
+static DRESULT read_sector(struct jdfileinfo *pfi)
+{
+  
+  struct blk_driver* blk_drv;
+  DRESULT res = RES_PARERR;
+  
+  
+  if(!pfi) return res;
+  if(!pfi->pfcb) return res;
+    
+  blk_drv = get_phy_driver(pfi->pfcb->lw);
+  
+  if(blk_drv) {
+	  if(blk_drv->blk_oper) {
+	    if(blk_drv->blk_oper->ioctl) {
+	        res = blk_drv->blk_oper->ioctl(NULL,NKC_IOCTL_READ_REC,&pfi);
+	    }
+	  }
+	}	
+	
+  return res;
+}
+
+/*
+			 UCHAR nkc_writerec(struct fcb *FCB)
+			 returns 	   0 - if successful
+			 		   5 - disk full
+			 		0xFF - access error 
+*/
+
+// 1) search block driver
+// 2) call ioctrl JADOS_WRITE_REC
+UINT write_sector(struct jdfileinfo *pfi)
+{
+  struct blk_driver* blk_drv;
+  DRESULT res = RES_PARERR;
+  
+  
+  if(!pfi) return res;
+  if(!pfi->pfcb) return res;
+  
+  blk_drv = get_phy_driver(pfi->pfcb->lw);
+  
+  if(blk_drv) {
+	  if(blk_drv->blk_oper) {
+	    if(blk_drv->blk_oper->ioctl) {
+	        res = blk_drv->blk_oper->ioctl(NULL,NKC_IOCTL_WRITE_REC,&pfi);
+	    }
+	  }
+	}	
+	
+  return res;
+}
+
+
+UINT call_blk_ioctl(struct jdfcb *pfcb, int cmd, unsigned long arg)  
+{
+  struct blk_driver* blk_drv;
+  DRESULT res = RES_PARERR; 
+  
+  if(!pfcb) return res;
+  
+  blk_drv = get_phy_driver(pfcb->lw);
+  
+  if(blk_drv) {
+	  if(blk_drv->blk_oper) {
+	    if(blk_drv->blk_oper->ioctl) {
+	        res = blk_drv->blk_oper->ioctl(NULL,cmd,arg);
+	    }
+	  }
+	}	
+	
+  return res;
+}
+
+#endif
+
+
+
+/*******************************************************************************
+ *   public functions   
+ *******************************************************************************/
+
 
 
 /*
@@ -163,7 +285,7 @@ FRESULT nkcfs_readdir (
 /*******************************************************************************
  *   public functions   
  *******************************************************************************/
-static int     nkcfs_ioctl(char *name, int cmd, unsigned long arg){
+static int nkcfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 //  long p1,p2;
 //  WORD w;
 //  DWORD dw;
@@ -172,37 +294,47 @@ static int     nkcfs_ioctl(char *name, int cmd, unsigned long arg){
 //  char tmp[10];
 //  struct _deviceinfo di;
   
-  fsnkc_dbg("fs_nkc.c: [ nkcfs_ioctl ...\n");  
+  fsnkc_dbg("fs_nkc.c: [ nkcfs_ioctl (cmd = %d)...\n",cmd);   
 
   switch(cmd){
   
     // ****************************** get current working directory ****************************** 
     case FS_IOCTL_GETCWD:    
       fsnkc_dbg("fs_nkc.c: - FS_IOCTL_GETCWD -\n"); 
+      
+#ifdef USE_JADOS
+      current_jados_drive = _nkc_get_drive(); // call jados
+#endif
       cdrive[1] = 0;      
-      if(_DRIVE >= 0 && _DRIVE <= 4) /* is it a ramdisk(0) or floppy drive(1..4) ? */
+      if(current_jados_drive >= 0 && current_jados_drive <= 4) /* is it a ramdisk(0) or floppy drive(1..4) ? */
 		{
-			cdrive[0] = _DRIVE + '0';
+			cdrive[0] = current_jados_drive + '0';
 		}
 		
-		if(_DRIVE >= 5 && _DRIVE <= 30) /* is it a hard disk drive (5..30) ? */
+		if(current_jados_drive >= 5 && current_jados_drive <= 30) /* is it a hard disk drive (5..30) ? */
 		{
-			cdrive[0] = _DRIVE - 5 + 'A';
+			cdrive[0] = current_jados_drive - 5 + 'A';
 		}
 		
-      strcpy((char*)((struct ioctl_get_cwd*)(arg))->cdrv,cdrive);
+      strcpy((char*)((struct ioctl_get_cwd*)(arg))->cdrive,cdrive);
       strcpy((char*)((struct ioctl_get_cwd*)(arg))->cpath,"/");     /* there is nothing like a subdirectory in JADOS/NKC FS */
       res = FR_OK;
-      
+      break;
     // ****************************** change physical drive ****************************** 
-    case  FS_IOCTL_CHDRIVE:
-      fsnkc_dbg("fs_nkc.c: - FS_IOCTL_CHDRIVE -\n");            
-      if((*(char*)arg) >= '0' && (*(char*)arg) <= '4'){ /* is it a ramdisk(0) or floppy drive(1..4) ? */
-	_DRIVE = (*(char*)arg) - '0';
+    case  FS_IOCTL_CHDRIVE: 
+      // *filp=NULL, cmd=FS_IOCTL_CHDRIVE, arg = (struct fstabentry*)pfstab 
+      fsnkc_dbg(" fs_nkc.c: FS_IOCTL_CHDRIVE: %s", ((struct fstabentry*)arg)->devname);
+      fsnkc_lldbgwait("(KEY)\n");
+      
+      if((*(char*)((struct fstabentry*)arg)->devname) >= '0' && (*(char*)((struct fstabentry*)arg)->devname) <= '4'){ /* is it a ramdisk(0) or floppy drive(1..4) ? */
+	current_jados_drive = (*(char*)((struct fstabentry*)arg)->devname) - '0';
       }      
-      if((*(char*)arg) >= 'A' && (*(char*)arg) <= 'Z'){ /* is it a hard disk drive (5..30) ? */	
-	_DRIVE = (*(char*)arg) + 5 - 'A';
-      }                  
+      if((*(char*)((struct fstabentry*)arg)->devname) >= 'A' && (*(char*)((struct fstabentry*)arg)->devname) <= 'Z'){ /* is it a hard disk drive (5..30) ? */	
+	current_jados_drive = (*(char*)((struct fstabentry*)arg)->devname) + 5 - 'A';
+      }            
+#ifdef USE_JADOS
+      _nkc_set_drive(current_jados_drive); // call jados
+#endif
       res = 0;
       break;
     // ****************************** open directory **************************************  
@@ -221,24 +353,60 @@ static int     nkcfs_ioctl(char *name, int cmd, unsigned long arg){
 			      res = nkcfs_closedir((DIR*)arg);			      // IN: DIR structure      
 			      break;  
 			      
-			      
+    // ****************************** mount ******************************			      
+    case FS_IOCTL_MOUNT:
+      //name = NULL, cmd = FS_IOCTL_MOUNT, arg = pfstab
+      // this is called after an entry was inserted into fstab in fs.c. We have to translate volume name to physical drive number here,
+      // so 'get_phy_driver' can fetch the correct block driver in subsequent file operations.
+      
+      fsnkc_dbg("fs_nkc.c: - FS_IOCTL_MOUNT -\n"); 
+      
+      if(!arg){
+	res = FR_INVALID_PARAMETER;
+	fsnkc_lldbgwait(" error: invalid parameter arg=NULL !\n");
+	break;
+      }
+	
+      fsnkc_dbg("fs_nkc.c: convert drive %s to ",(((struct fstabentry*)arg)->devname) );
+	
+      if( (*((struct fstabentry*)arg)->devname) >= '0' && (*((struct fstabentry*)arg)->devname) <= '4' ){ /* is it a ramdisk(0) or floppy drive(1..4) ? */
+	((struct fstabentry*)arg)->pdrv = (*((struct fstabentry*)arg)->devname) - '0';	
+	fsnkc_dbg("phydrv(1) %d\n",((struct fstabentry*)arg)->pdrv); 
+      }      
+      else if( (*((struct fstabentry*)arg)->devname) >= 'A' && (*((struct fstabentry*)arg)->devname) <= 'Z' ){ /* is it a hard disk drive (5..30) ? */	
+	((struct fstabentry*)arg)->pdrv = (*((struct fstabentry*)arg)->devname) + 5 - 'A';
+	fsnkc_dbg("phydrv(2) %d \n",((struct fstabentry*)arg)->pdrv); 
+      }
+      else fsnkc_dbg("...ERROR\n"); 
+      res = FR_OK;
+      
+      break;			      
     // ****************************** directory function call to JADOS ******************************
-    //struct ioctl_nkc_dir {
-    //  BYTE  attrib;			// IN: bitmapped file attribute: 1=file length; 2=date; 4=r/w attribute
-    //  BYTE  *ppattern;	        // IN: pointer to file pattern (? and * and drive info are also allowed)
-    //  BYTE  cols;			// IN: number of colums for output
-    //  UINT  size;			// IN: size of output buffer pbuf (256x14 Bytes max.)
-    //  void* pbuf;			// OUT: output buffer
-    //};
-    //NKC_IOCTL_DIR
+   
     case NKC_IOCTL_DIR:  
+      // *filp = NULL, cmd=NKC_IOCTL_DIR, arg = ptr to struct ioctl_nkc_dir)
       fsnkc_dbg("fs_nkc.c: - NKC_IOCTL_DIR -\n"); 
-      res = _nkc_directory( ((struct ioctl_nkc_dir*)arg)->pbuf,
-			    ((struct ioctl_nkc_dir*)arg)->ppattern,
-			    ((struct ioctl_nkc_dir*)arg)->attrib,
-			    ((struct ioctl_nkc_dir*)arg)->cols,
-			    ((struct ioctl_nkc_dir*)arg)->size);
+
+      
+      if(!arg){
+	fsnkc_lldbgwait("fs_nkc.c: arg = NULL\n");
+	res = FR_INVALID_PARAMETER;
+	break;
+      }
+      
+#ifdef USE_JADOS
+      res = _nkc_directory( (void*)((struct ioctl_nkc_dir*)arg)->pbuf,
+			       (void*)((struct ioctl_nkc_dir*)arg)->ppattern,
+			       (BYTE)((struct ioctl_nkc_dir*)arg)->attrib,
+			       (WORD)((struct ioctl_nkc_dir*)arg)->cols,
+			       (WORD)((struct ioctl_nkc_dir*)arg)->size);  
+
+#else      
+      res = ((struct ioctl_nkc_dir*)arg)->pfstab->pblkdrv->blk_oper->ioctl(NULL,cmd,arg);            
+#endif
+      
       break;
+      
     default: res = 0;
   }
 
@@ -288,7 +456,14 @@ static int nkcfs_open(struct _file *filp)
 	fsnkc_lldbgwait("\n");
 	
 		
-	result = nkc_fillfcb(pfcb,pfilename);	
+#ifdef USE_JADOS
+	result = _nkc_fillfcb(pfcb,pfilename);
+#else	
+	// call NKC_IOCTL_FILLFCB (geht noch nicht, dieser Call muss von hier gemacht werden)	
+	//UINT call_blk_ioctl(struct jdfcb *pfcb, NKC_IOCTL_FILLFCB, unsigned long arg)
+#endif
+        
+	
 	/*
 		result	Bedeutung
 		0	FCB angelegt
@@ -311,7 +486,12 @@ static int nkcfs_open(struct _file *filp)
 		/*
 			OK, try to create the file
 		*/
-		result = nkc_erase(pfcb); 	// first we try to erase the file if it exists
+#ifdef USE_JADOS
+		result = _nkc_erase(pfcb); 	// first we try to erase the file if it exists 
+#else		
+		//result = call_blk_ioctl(pfcb, NKC_IOCTL_ERASE, NULL); // OK
+#endif
+		
 		/*
 		result	Bedeutung
 		0	Datei gel..scht
@@ -319,8 +499,12 @@ static int nkcfs_open(struct _file *filp)
 		0xff	Fehler beim Zugriff auf den Massenspeicher
 				
 		*/
+#ifdef USE_JADOS
+		result = _nkc_create(pfcb);	// create new file 
+#else
+		//result = call_blk_ioctl(pfcb, NKC_IOCTL_CREATE, NULL); // OK
+#endif		
 		
-		result = nkc_create(pfcb);	// create new file
 		/*
 		result	Bedeutung
 		0	Datei angelegt
@@ -337,7 +521,12 @@ static int nkcfs_open(struct _file *filp)
 		/*
 			OK, try to open the file
 		*/
-		result = nkc_open(pfcb);
+#ifdef USE_JADOS
+		result = _nkc_open(pfcb); 
+#else
+		//result = call_blk_ioctl(pfcb, NKC_IOCTL_OPEN, NULL); // OK
+#endif		
+		
 		/*
 			result	Bedeutung
 			0	Datei geöffnet
@@ -431,8 +620,12 @@ static int nkcfs_close(struct _file *filp)
 	}
 
 	    	
-	/* close file on media */  		    			    	
-	nkc_close(pfi->pfcb);
+	/* close file on media */ 
+#ifdef USE_JADOS
+	_nkc_close(pfi->pfcb); 
+#else
+	//result =  call_blk_ioctl(pfi->pfcb, NKC_IOCTL_CLOSE, NULL); // OK
+#endif	
     	
     /* free buffers and handles*/
 	free(pfi->pfcb->pbuffer);
@@ -588,6 +781,7 @@ static int  nkcfs_seek(struct _file *filp, int offset, int whence)
 	UCHAR res;
 	int newpos;
 	
+	
 	fsnkc_dbg("nkcfs_seek...\n");		
 	fsnkc_dbg(" offset: 0x%x  ",offset);
 	fsnkc_dbg(" whence: 0x%x\n",whence);
@@ -633,8 +827,14 @@ static int  nkcfs_seek(struct _file *filp, int offset, int whence)
 			
 	if(divresult.quot != pfi->pfcb->length) // did we seek into another sector ?
 	{
-		res = nkc_setrec(pfi->pfcb, (int)divresult.quot); // set new record ...
-			
+#ifdef USE_JADOS
+		res = _nkc_setrec(pfi->pfcb, (int)divresult.quot); // set new record ... 
+#else
+	  
+		//args.arg1 = pfi->pfcb;
+		//args.arg2 = divresult.quot;
+		//res = call_blk_ioctl(pfi->pfcb, NKC_IOCTL_SETREC, &args); // OK
+#endif			
 		switch(res)
 		{
 			case 0: // successful
@@ -680,10 +880,13 @@ static int  nkcfs_remove(struct _file *filp)
 {
 	int cjddrive,jddrive;
 	char *pfilename,*pc1,*pc2;
-	
-	fsnkc_lldbgwait("nkcfs_remove...\n");
-	
-	// remove path information from filename...
+	struct ioctl_nkc_blk args;
+	//{
+	//  unsigned long arg1;		// arguments
+	//  unsigned long arg2;	        // fsnkc_lldbgwait("nkcfs_remove...\n");
+	//  unsigned long arg3;
+	//  // remove path information from filename...
+	//};
 	pc1 = filp->pname;
 	pc2 = pfilename = (char*)malloc(strlen(pc1));
 	*pc2=0;
@@ -696,9 +899,13 @@ static int  nkcfs_remove(struct _file *filp)
 	  pc1++;	  
 	}
 	*pc2=0;
-	
-	_nkc_remove(pfilename);
-	
+#ifdef USE_JADOS
+	_nkc_remove(pfilename); 
+#else
+	//args.arg1 = filp->private->pfi->pfcb:
+	//args.arg2 = pfilename;
+	//call_blk_ioctl(pfi->pfcb, NKC_IOCTL_REMOVE, &args); 
+#endif	
 	free(pfilename);
 	
 	return 0;
@@ -720,7 +927,11 @@ static int  nkcfs_getpos(struct _file *filp)
 
 static int  nkcfs_rename(struct _file *filp, const char *oldrelpath, const char *newrelpath)
 {	
+#ifdef USE_JADOS
 	_nkc_rename(oldrelpath,newrelpath);
+#else
+	//UINT call_blk_ioctl(pfi->pfcb, NKC_IOCTL_REMOVE, arg) 
+#endif	
 }
 
 
@@ -728,9 +939,11 @@ void nkcfs_init_fs(void)
 {
 	fsnkc_dbg("nkcfs_init_fs...\n"); 
 	
-	register_driver("A","JADOSFS",&nkc_file_operations); 
-	register_driver("Q","JADOSFS",&nkc_file_operations);	// wir müssen natürlich M einhängen ...
-		
+	current_jados_drive = _DRIVE;
+			
+	register_driver("JADOSFS",&nkc_file_operations); 	// general driver for a JADOS filesystem
+	
+	
 	fsnkc_dbg(" Address of open: 0x%x\n",(int)nkcfs_open);
 	fsnkc_dbg(" Address of nkc_file_operations: 0x%x\n",(int)&nkc_file_operations);
 	fsnkc_dbg(" Address of ...->open: 0x%x\n",(int)nkc_file_operations.open);

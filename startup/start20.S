@@ -1,8 +1,13 @@
 #include "../nkc/nkc.h"
 #include "../nkc/macros.h"
 
+
+
+
 	.text
 	.global _start,__rexit,__main,__getErrno
+	
+	.equ _STACK         , 0x100000   /* define stack origin (if JADOS is not used) */
 /*	
 ;
 ; Main program
@@ -43,7 +48,7 @@ _start:
        bsr.l relocate		// do program relocation 1st
        cmp #0,%d2		// continue if successful
        bne __end		// exit otherwise
-       				// from now on all addresses are relocated !     			      
+       				// from now on all addresses are relocated !  
        
 /*	
 ;
@@ -82,9 +87,13 @@ LD2:
 	lea _HEAP(%pc),%a1
 	move.l %a0,(%a1)	/* _HEAP is already relocated, but... */
 	
+#ifdef USE_JADOS	
 	moveq #62,%d7            /* get _RAM_TOP from JADOS */
         trap #6
         move.l %a0,%d0
+#else
+	move.l #_STACK,%d0	
+#endif
         lea _RAM_TOP(%pc),%a0
         move.l %d0,(%a0)
 /*       
@@ -113,6 +122,8 @@ LD2:
 ; Get command line  
 ; --> von JADOS mit getparm holen (bis zu 4 Parameter können übergeben werden)
 */
+
+#ifdef USE_JADOS
 	moveq #25,%d7
 	trap #6
 	/* %a0 zeigt auf Null-Terminierten Parameter String  */	
@@ -124,7 +135,7 @@ LD1:	move.b (%a0)+,(%a1)+	/* copy command line */
         lea _CMDLINE(%pc),%a1
         lea _cmdline(%pc),%a0	/* set command line in argset.c */
 	move.l %a1,(%a0)
-	  
+#endif
 /*	
 ;
 ; Execute startup routines
@@ -147,7 +158,7 @@ procont/signal.c:#pragma startup siginit 128
 	bsr.l fileinit	; -> io/fclose.c (ruft _ll_init in nkc/llopen.S)
 	bsr.l siginit	; -> procont/signal.c
 */
-#ifdef CONFIG_FS_NKC
+#ifdef USE_JADOS
 	clr.l %d0
 	bsr.l _nkc_get_drive
 	lea _DRIVE(%pc),%a0
@@ -158,7 +169,8 @@ procont/signal.c:#pragma startup siginit 128
 	bsr.l argset	
 	bsr.l mbinit
 	bsr.l wcinit	
-	bsr.l fileinit
+	bsr.l drvinit		// initialize device drivers
+	bsr.l fileinit		// initialze file systems
 	bsr.l timerinit
 	bsr.l siginit
 /*	
@@ -281,10 +293,12 @@ rel01:
   	
   	beq rel07               // panic !, there is no relocation information ! 
 
+  	/*
 	writeln msg13(%pc)	// Number of relocations
 	prthex8 %d0				
        	writeln buffer(%pc)       	
        	crlf
+	*/
 	
 	sub.l #1,%d0		// adjust for dbra
         lea _start(%pc),%a0     // current start address -> a0
@@ -347,10 +361,11 @@ rel02:	writeln msg12(%pc)      // print >Magic not found<
        	waitcr
        	move.l #1,%d2		// set error flag
        	
-rel03:       	
-	 writeln msg15(%pc)       
+rel03:       
+/*
+	 writeln msg15(%pc)    // print sucess message   
        waitcr
-       	
+  */     	
 	rts 	
 	
 	

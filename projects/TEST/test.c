@@ -3,7 +3,6 @@
 #include <time.h>
 #include <signal.h>
 #include <math.h>
-#include <conio.h>
 #include <memory.h>
 
 //#define NKC_DEBUG	

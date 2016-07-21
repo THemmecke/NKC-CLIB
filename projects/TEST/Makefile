@@ -2,7 +2,7 @@
 .SUFFIXES:
 
 # wehere am i 
-BASEDIR=$(shell  pwd)/..
+BASEDIR=$(shell  pwd)/../..
 
 include $(BASEDIR)/Makefile.rules
 

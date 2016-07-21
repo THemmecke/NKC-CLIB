@@ -1,5 +1,5 @@
-#ifndef __EQU_H
-#define __EQU_H
+#ifndef __NKC_H
+#define __NKC_H
 
 /* 2 (68000), 4 (68020) */
 #ifdef M68000
@@ -175,7 +175,16 @@
 #define _SETSYS      160 
 #define _GETSYS      161 
 #define _PATCH       162 
+/* SD-Card */
+#define _SDTEST      163
+#define _SDDISK      164
+/* misc */
+#define _SETCHAR     165
+#define _SETTRANS    166
+#define _GETTRANS    167
 
+
+#ifdef USE_JADOS
 /* JADOS 3.4 TRAPS (TRAP #6) */
 
 #define __getleng 	0
@@ -270,7 +279,7 @@
 #define __loadauto	91
 #define __cmdexec	92
 #define __setrec	93
-
+#endif
 
 
 /* (G)IDE */

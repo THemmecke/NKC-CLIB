@@ -1,0 +1,33 @@
+
+move20.68k:     Dateiformat binary
+
+
+Disassembly of section .data:
+
+00000000 <.data>:
+   0:	0001 1ffe      	orib #-2,%d1
+   4:	0000 0008      	orib #8,%d0
+   8:	363c fffe      	movew #-2,%d3
+   c:	41f9 003c 0000 	lea 0x3c0000,%a0
+  12:	43f8 0100      	lea 0x100,%a1
+  16:	30d9           	movew %a1@+,%a0@+
+  18:	51cb fffc      	dbf %d3,0x16
+  1c:	363c 002f      	movew #47,%d3
+  20:	41f9 0003 0000 	lea 0x30000,%a0
+  26:	43fa 000e      	lea %pc@(0x36),%a1
+  2a:	10d9           	moveb %a1@+,%a0@+
+  2c:	51cb fffc      	dbf %d3,0x2a
+  30:	4ef9 0003 0000 	jmp 0x30000
+  36:	11fc 0080 ff24 	moveb #-128,0xffffff24
+  3c:	41f9 003c 0000 	lea 0x3c0000,%a0
+  42:	0c90 5aa5 8001 	cmpil #1520795649,%a0@
+  48:	6708           	beqs 0x52
+  4a:	d1fc 0000 0004 	addal #4,%a0
+  50:	60f0           	bras 0x42
+  52:	0c68 6000 0020 	cmpiw #24576,%a0@(32)
+  58:	66e8           	bnes 0x42
+  5a:	0c68 6000 0024 	cmpiw #24576,%a0@(36)
+  60:	66e0           	bnes 0x42
+  62:	4ee8 0024      	jmp %a0@(36)
+	...
+  fe:	4e71           	nop

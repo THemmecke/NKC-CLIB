@@ -1,6 +1,6 @@
 
-#include "../../nkc/nkc.h"
-#include "../../nkc/macros.h"
+#include "../nkc/nkc.h"
+#include "../nkc/macros.h"
 
 
 /* commands coming from the host */
@@ -101,7 +101,7 @@ msg03:	.ascii "send command read..."
 	Eingaberegister: d1.w = Auswahl des Befehls (0-31)
 	d2.l = Je nach Befehl verschieden
 	d3.l = Je nach Befehl verschieden
-	d4.b = Auswahl der Harddisk
+	d4.b = Auswahl der Harddisk (0=Master, 1=	Slave)
 	a0.l = Adresse der Daten, wenn welche verlangt werden
 	Ausgaberegister: d0.l = Fehlercode
 	CARRY = 1, wenn d0.l <> 0	
@@ -144,7 +144,7 @@ idetest:
 	move %d0,%d6
 							/* a0 points to a struct _driveinfo, d0 has error code */
 	tst.l %d0									
-	bne idetest_e
+	beq idetest_e
 	movea.l #0,%a0			/* in case of an error return NULL */
 idetest_e:		
 	movem.l (%sp)+,%d0-%d7
@@ -160,7 +160,41 @@ idetest_e:
    
 
 /*
-DRESULT idetifyIDE(BYTE disk, struct _deviceinfo *p)
+int idetifyIDE(BYTE disk, struct _deviceinfo *p)
+
+return values:
+  0 - no error
+  ide error register ...
+  
+  The error register indicates what went wrong when a command execution results in an error. 
+  The fact that an error has occurred is indicated in the status register, the explanation is given in the error register. This is a read register.
+
+	bit 0    : AMNF bit. Indicates that an address mark was not
+           found. What this means I not sure of. I have never
+           seen this happen.
+	bit 1    : TK0NF bit. When this bit is set the drive was not able
+           to find track 0 of the device. I think you will have
+           to throw away the disk if this happens.
+	bit 2    : ABRT bit. This bit is set when you have given an
+           indecent command to the disk. Mostly wrong parameters
+           (wrong head number etc..) cause the disk to respond
+           with error flag in the status bit set and the ABRT bit
+           set. I have gotten this error a lot when I tried to
+           run the disk with interrupts. Something MUST have been
+           wrong with my interface program. I have not (yet)
+           found what.
+	bit 3    : MCR bit. indicated that a media change was requested.
+           What that means I do not know. I've ignored this bit
+           till now.
+	bit 4    : IDNF bit. Means that a sector ID was not found. I have
+           never seen this happen, I guess it means that you've
+           requested a sector that is not there.
+	bit 5    : MC bit. Indicates that the media has been changed. I
+           ignore this bit.
+	bit 6    : UNC bit. Indicates that an uncorrectable data error
+           happened. Some read or write errors could provoke
+           this. I have never seen it happen.
+	bit 7    : reserved.
 */
 
 idetifyIDE: 
@@ -175,8 +209,12 @@ idetifyIDE:
 	move.b  #0xEC,idecmd.w    	/* send command 		*/	
 	bsr waitDRQ             	/* wait for IDE data		*/
 	
-	move.b idecmd.w,%d0		/* Status */
+	move.b idecmd.w,%d2		/* Status */
 	move.b ideerr.w,%d1		/* Error */
+	
+	andi.b #1,%d2			/* if an error occured, return with error code */
+	bne L2				/* if error => Z-Flag = 0 */
+	clr.l %d1			/* if status ok, clear error */
 	
 	move.l  (8,%A1),%a0
 	move.l #(512/2)-1,%d0       	/* read data to buffer		*/
@@ -235,7 +273,8 @@ _ide:
 	cmp.w	#CMD_WRITE,%d1
 	beq		_idewr
 	
-	moveq	#-100,%d0
+	moveq	#-100,%d0              /* error unknown command */
+
 	bra		_ideend
 	
 	/*******************************************************************************************************************************
@@ -444,18 +483,18 @@ _idewr_01b:
 
 
 _idewr_02:
-	move #512-1, %d6                    /* read 1 sector */	
+	move #512-1, %d6                    /* write 1 sector */	
 	bsr waitNBSY						/* wait for IDE to be not busy */	
  	tst %d0								/* still busy ? */
  	beq _idewr_02a           			/* no, so go ahead */
  	move (%a7)+, %sr               		/* error while waiting, restore status */
- 	bra.s _idewr_retry                  /* error reading sector */
+ 	bra.s _idewr_retry                  /* error writing sector */
 _idewr_02a:
  	bsr waitDRQ                         /* data ready?   */
 	tst %d0
 	beq.s _idewr_03                     /* yes (%d0=0), no error */
  	move (%a7)+, %sr               		/* error while waiting, restore status */
- 	bra.s _idewr_retry                  /* error reading sector */
+ 	bra.s _idewr_retry                  /* error writing sector */
 	
 _idewr_03:
     bra	.+4								/* delay ...*/

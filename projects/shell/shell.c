@@ -7,7 +7,7 @@
 #include <debug.h>
 
 #include <gide.h>
- 
+#include <fs.h> 
 
 #include "shell.h"
 #include "cmd.h"
@@ -25,9 +25,16 @@
 static char Line[MAX_CHAR];			/* Console input/output buffer */
 char com[MAX_CHAR];				/* command */
 char args[MAX_CHAR];				/* command argumennts */
-char CurrDirPath[MAX_CHAR];			/* current directory path */
-char CurrDrive[MAX_CHAR];			/* current drive */
-BYTE CurrFATDrive=0;
+//char CurrDirPath[MAX_CHAR];			/* current directory path */
+//char CurrDrive[MAX_CHAR];			/* current drive */
+//BYTE CurrFATDrive=0;
+struct fpinfo FPInfo;
+
+
+char HistoryBuffer[MAX_HISTORY+1][MAX_CHAR]; /* History Buffer */
+char histOLDEST = 0;                         /* Oldest entry */
+char histNEWEST = 0;			    /* Last/Newest entry */
+char histLEVEL = 0;			    
 
 unsigned char insmode = 0;			/* comand line insert mode on/off */
 
@@ -39,22 +46,46 @@ void shell()
 {
   struct CMD *cmdptr;
   char *ptr,*cp;
-  int res;     
+  int res,ii;     
   
-  /*
-  dbg("DEGUG %s\n","mit printf");
-  lldbg("DEBUG mit lldbg\n");
-  lldbgwait("DEBUG mit lldbgwait\n");
-  dbg("und nochmal ....\n");
-  dbg("DEGUG %s\n","mit printf");
-  lldbg("DEBUG mit lldbg\n");
-  lldbgwait("DEBUG mit lldbgwait\n");
-*/
+ 
+  /* allocate memeory ... */ 
+  FPInfo.psz_driveName 	= (char*)malloc(_MAX_DRIVE_NAME);
+  FPInfo.psz_deviceID  	= (char*)malloc(_MAX_DEVICE_ID);
+  FPInfo.psz_path  	= (char*)malloc(_MAX_PATH);
+  FPInfo.psz_filename  	= (char*)malloc(_MAX_FILENAME);
+  FPInfo.psz_fileext  	= (char*)malloc(_MAX_FILEEXT);
+  FPInfo.psz_cdrive  	= (char*)malloc(_MAX_DRIVE_NAME);
+  FPInfo.psz_cpath  	= (char*)malloc(_MAX_PATH);
+  
+   if( !FPInfo.psz_driveName || !FPInfo.psz_deviceID || !FPInfo.psz_path || !FPInfo.psz_filename ||
+      !FPInfo.psz_fileext || !FPInfo.psz_fileext || !FPInfo.psz_cpath )
+  {
+    printf(" error allocating memory for FPInfo....\n");
+    exit(1);
+  }
+  
+  // clear history
+  for(ii=0; ii<MAX_HISTORY; ii++){
+    HistoryBuffer[ii][0] = 0;
+  }
+  
+  // set current drive and path
+  //sprintf(FPInfo.psz_cdrive,"Q");
+  sprintf(FPInfo.psz_cpath,"/");
+  
+  init_cmd();
+      
+  ioctl(NULL,FS_IOCTL_GETDRV,FPInfo.psz_cdrive);
   
   
-  sprintf(CurrDirPath,"/");
-    
-  ioctl(NULL,FS_IOCTL_GETDRV,CurrDrive);
+  printf(" Test-Shell v 1.0\n\n"
+         "   To access any drive, you have to mount it first.\n"
+	 "   Use the following commands:\n"
+	 "      fs    - to show available file systems\n"
+	 "      dev   - to show available devices\n"
+	 "      mount - to mount a device and associate it with a file system\n"
+	 "      ?     - for help on all commands\n\n");
  
   for(;;)
   {
@@ -73,7 +104,7 @@ void shell()
      while(*ptr)
       *cp++ = *ptr++;
      
-     *cp = '\0'; // terminat argument string
+     *cp = '\0'; // terminate argument string
              
      
      /* Scan internal command table */
@@ -115,6 +146,8 @@ void shell()
        if (res != FR_OK) printf("%s: command not found\n",com);
      }
   }
+  
+  exit_cmd();
      
 }
 
@@ -158,19 +191,23 @@ void displayCmdHlp(unsigned id)
 int showcmds(char *args)
 {
     struct CMDHLP *hlpptr; 
-    int linecnt = 0;
+    int linecnt = 0, stop = 0;
+    char c;
 
     printf(" Available commands:\n\n");
 
     for (hlpptr = hlptxt
-        ; hlpptr->help_id != 0
+        ; hlpptr->help_id != 0 && !stop
         ; hlpptr++)
         if(hlpptr->help_id)
         {
          printf(hlpptr->text);
          linecnt++;
          
-         if(!(linecnt % 10)) getchar();
+         if(!(linecnt % 10)) {
+	   c=getchar();
+	   if(c=='q' || c== 'Q') stop = 1;
+	 }
         }
         
     printf("\n");
@@ -184,7 +221,7 @@ void getcommand(char* Line){
     
     
     //printf("%s%s> ",FAT_DRIVE_NAMES[CurrFATDrive],CurrDirPath); 
-    printf("%s:%s> ",CurrDrive,CurrDirPath);
+    printf("%s:%s>",FPInfo.psz_cdrive,FPInfo.psz_cpath);
       
     cpos = cmax = 0;
     cr=0;
@@ -196,26 +233,70 @@ void getcommand(char* Line){
     c = nkc_getchar();
     
       switch(c) {
-	  case 0x05:	// Arrow Up
-	    break;
-	  case 0x18:	// Arrow Down
+	  case 0x05:	// UP (go back in history)
+	      
+	      if(histLEVEL == histNEWEST) { // save current line
+		HistoryBuffer[histNEWEST][0] = 0;
+		Line[cmax] = 0;	
+		strcat(HistoryBuffer[histNEWEST],Line);	      		
+	      }
+	      
+	      if(histLEVEL != histOLDEST) {		
+	        histLEVEL--;
+	      }
+	      if(histLEVEL < 0) histLEVEL = MAX_HISTORY;
+	      
+					  // delete current Line ....
+	      nkc_getxy(&x,&y);
+	      nkc_setxy(x-cpos,y);             	// goto Pos1
+	      i = 0;
+	      while(i<cpos){		       	// erase all characters
+	        nkc_setxy(x-cpos+i++,y);
+	        nkc_putchar(' ');
+	      }		
+	      nkc_setxy(x-cpos,y);             	// goto Pos1		      
+	      
+	      *Line = 0;	      		// print line from history buffer
+	      strcat(Line,HistoryBuffer[histLEVEL]);
+	      cpos = cmax = strlen(Line);	      
+	      printf("%s",Line); 
+	      
+	      break;
+	  case 0x18:	// DOWN (go forth in history)
+	      if(histLEVEL != histNEWEST) histLEVEL++;
+	      if(histLEVEL > MAX_HISTORY) histLEVEL = 0;
+	      
+	                                    // delete current Line ....
+	      nkc_getxy(&x,&y);
+	      nkc_setxy(x-cpos,y);             	// goto Pos1
+	      i = 0;
+	      while(i<cpos){		       	// erase all characters
+	        nkc_setxy(x-cpos+i++,y);
+	        nkc_putchar(' ');
+	      }		
+	      nkc_setxy(x-cpos,y);             	// goto Pos1		      
+	      
+	      *Line = 0;	      		// print line from history buffer
+	      strcat(Line,HistoryBuffer[histLEVEL]);
+	      cpos = cmax = strlen(Line);	      
+	      printf("%s",Line); 
 	    break;
 	  case 0x13:	// Arrow Left
-	    if(!cpos) break;
-	    nkc_getxy(&x,&y);
-	    cpos--; x--;
-	    nkc_setxy(x,y);
+	      if(!cpos) break;
+	      nkc_getxy(&x,&y);
+	      cpos--; x--;
+	      nkc_setxy(x,y);
 	    break;
 	  case 0x04:	// Arrow Right	
-	    if(cpos >= MAX_CHAR || cpos >= cmax) break;
-	    nkc_getxy(&x,&y);
-	    cpos++; x++;
-	    nkc_setxy(x,y);
+	      if(cpos >= MAX_CHAR || cpos >= cmax) break;
+	      nkc_getxy(&x,&y);
+	      cpos++; x++;
+	      nkc_setxy(x,y);
 	    break;	  
 	  case 0x01:	// Ctrtl-A POS1
-	    nkc_getxy(&x,&y);
-	    nkc_setxy(x-cpos,y);
-	    cpos=0;
+	      nkc_getxy(&x,&y);
+	      nkc_setxy(x-cpos,y);
+	      cpos=0;
 	    break;
 	  //case 0x05:	// Ctrtl-E	(duplicate with Arrow Up) evtl. END ?
 	  //  break;
@@ -227,12 +308,37 @@ void getcommand(char* Line){
 	    
 	  case 0x0D:	// ENTER
 	    Line[cmax]=0;
+	    
+	    // History Management ----
+	
+	    // copy current line to buffer
+	    HistoryBuffer[histNEWEST][0] = 0;
+	    strcat(HistoryBuffer[histNEWEST],Line);
+	
+	    // Set Buffer Pointer	
+	    if(histNEWEST < MAX_HISTORY) {
+	      histNEWEST++;
+	    } else {
+	      histNEWEST = 0;
+	    }
+	    if(histNEWEST == histOLDEST) { 
+	      if(histOLDEST < MAX_HISTORY) {
+		histOLDEST++;
+	      }else{
+		histOLDEST = 0;
+	      }
+	    }
+	    
+	    histLEVEL = histNEWEST;
+	    
+	    // ------------------------
+	    
 	    nkc_getxy(&x,&y);
 	    nkc_setxy(x+cmax-cpos,y);
 	    //nkc_putchar(0x0D);
 	    //nkc_putchar(0x0A);
 	    printf("\n");
-	    cr = 1;
+	    cr = 1;	    
 	    break;
 	  case 0x7F:	// BSPACE
 	    if(!cpos) break;
@@ -296,4 +402,19 @@ void getcommand(char* Line){
     
     
     }while(!cr);   
+}
+
+
+static void execute(char *first, char *rest)
+{
+  /*
+   * This command (in first) was not found in the command table
+   *
+   *
+   * first - first word on command line
+   * rest  - rest of command line
+   *
+   */
+  
+  printf(" execute %s (with parameters %s) ....\n",first,rest);
 }

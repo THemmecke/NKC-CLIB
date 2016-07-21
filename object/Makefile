@@ -19,19 +19,28 @@ ARCH=$(BASEDIR)/arch/m68k
 export PATH:=/opt/m68k-elf-tools/bin:$(PATH)
 
 #LIBOBJECTS= abort.o argset.o asctime.o assert.o atexit.o atof.o atoi.o bsearch.o calloc.o clearerr.o clock.o ctime.o ctype.o difftime.o envset.o exit.o fclose.o fflush.o fget.o fgetpos.o fgets.o fopen.o fprintf.o fputc.o fputs.o fread.o free.o freopen.o fseek.o fsetpos.o ftell.o fwrite.o getenv.o gets.o gmtime.o first.o llmisc.o llopen.o llopenc.o llsig.o llstd.o llnkc.o lotime.o malloc.o mbtowc.o memchr.o memcmp.o memcpy.o memmove.o memset.o mktime.o phictype.o printf.o putget.o puts.o qsort.o readbuf.o realloc.o remove.o rename.o rewind.o scanf.o setbuf.o setjmp.o setvbuf.o signal.o sprintf.o sscanf.o strpbrk.o strcat.o strchr.o strcmp.o strcpy.o strcspn.o strdup.o strerr.o strftime.o strlen.o strncat.o strncmp.o strncpy.o strrchr.o strstr.o strtok.o strtoul.o system.o time.o tmpfil.o ungetc.o wctomb.o writebuf.o startup.o divmod64.o rand.o abs.o
-
-LIBOBJECTS= abort.o argset.o asctime.o assert.o atexit.o atof.o atoi.o bsearch.o calloc.o clearerr.o clock.o ctime.o ctype.o difftime.o envset.o exit.o fclose.o fflush.o fget.o fgetpos.o fgets.o fopen.o fprintf.o fputc.o fputs.o fread.o free.o freopen.o fseek.o fsetpos.o ftell.o fwrite.o getenv.o gets.o gmtime.o first.o llmisc.o llopen.o llsig.o llstd.o llnkc.o lotime.o malloc.o mbtowc.o memchr.o memcmp.o memcpy.o memmove.o memset.o mktime.o phictype.o printf.o putget.o puts.o qsort.o readbuf.o realloc.o remove.o rename.o rewind.o scanf.o setbuf.o setjmp.o setvbuf.o signal.o sprintf.o sscanf.o strpbrk.o strcat.o strchr.o strcmp.o strcpy.o strcspn.o strdup.o strerr.o strftime.o strlen.o strncat.o strncmp.o strncpy.o strrchr.o strstr.o strtok.o strtoul.o system.o time.o tmpfil.o ungetc.o wctomb.o writebuf.o startup.o divmod64.o rand.o abs.o
+LIBOBJECTS= abort.o argset.o asctime.o assert.o atexit.o atof.o atoi.o bsearch.o calloc.o clearerr.o clock.o ctime.o ctype.o difftime.o envset.o exit.o fclose.o fflush.o fget.o fgetpos.o fgets.o fopen.o fprintf.o fputc.o fputs.o fread.o free.o freopen.o fseek.o fsetpos.o ftell.o fwrite.o getenv.o gets.o gmtime.o first.o llmisc.o llopen.o llsig.o llstd.o llnkc.o lotime.o malloc.o mbtowc.o memchr.o memcmp.o memcpy.o memmove.o memset.o mktime.o phictype.o printf.o putget.o puts.o qsort.o readbuf.o realloc.o remove.o rename.o rewind.o scanf.o setbuf.o setjmp.o setvbuf.o signal.o sprintf.o sscanf.o strpbrk.o strcat.o strchr.o strcmp.o strcpy.o strcspn.o strdup.o strerr.o strftime.o strlen.o strncat.o strncmp.o strncpy.o strrchr.o strstr.o strtok.o strtoul.o system.o time.o tmpfil.o ungetc.o wctomb.o writebuf.o startup.o divmod64.o rand.o abs.o \
+            drivers.o  
 
 ifeq ($(CONFIG_FS),1)
 LIBOBJECTS += fs.o
 	ifeq ($(CONFIG_FS_NKC),1)
-	LIBOBJECTS += fs_nkc.o fs_nkcS.o
+	LIBOBJECTS += fs_nkc.o
 	endif
 	ifeq ($(CONFIG_FS_FAT),1)
-	LIBOBJECTS += fs_fat.o ff.o diskio.o gideS.o
+	LIBOBJECTS += fs_fat.o ff.o diskio.o
 	endif
 endif
 
+
+
+ifeq ($(CONFIG_DRV_GIDE),1)
+LIBOBJECTS += hd_block_drv.o gideS.o
+endif
+
+ifeq ($(CONFIG_DRV_SD),1)
+LIBOBJECTS += sd_block_drv.o sdS.o
+endif
 
 # add libgcc functions from comlib to libobjects:
 LIBOBJECTS += _mulsi3.o _udivsi3.o _nedf2.o _divsi3.o _umodsi3.o _modsi3.o _double.o _float.o _floatex.o _eqdf2.o _gtdf2.o _gedf2.o _ltdf2.o _ledf2.o _eqsf2.o _nesf2.o _gtsf2.o _gesf2.o _ltsf2.o _lesf2.o fpgnulib.o libgcc2.o

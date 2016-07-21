@@ -239,12 +239,13 @@ nkc_setpage: .global nkc_setpage
 	rts		
 
 	  
+#ifdef USE_JADOS
 /*  -------------------------- JADOS FUNKTIONEN ------------------------------- */ 	
 /*
- UCHAR nkc_fillfcb(struct fcb *FCB,char *name)
+ UCHAR _nkc_fillfcb(struct fcb *FCB,char *name)
  returns 0 if successful
 */	
-nkc_fillfcb: .global nkc_fillfcb 	
+_nkc_fillfcb: .global _nkc_fillfcb 	
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 12(%sp),%a0  	/* *name */
 	moveq #__uppercas, %d7	/* Dateinamen immer in Großbuchstaben */
@@ -257,10 +258,10 @@ nkc_fillfcb: .global nkc_fillfcb
 	rts
 
 /*
- UCHAR nkc_open(struct fcb *FCB)
+ UCHAR _nkc_open(struct fcb *FCB)
  returns 0 if successful
 */	
-nkc_open: .global nkc_open 	
+_nkc_open: .global _nkc_open 	
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	moveq #__open,%d7
@@ -269,10 +270,10 @@ nkc_open: .global nkc_open
 	rts
 	
 /*
- UCHAR nkc_create(struct fcb *FCB)
+ UCHAR _nkc_create(struct fcb *FCB)
  returns 0 if successful
 */	
-nkc_create: .global nkc_create 	
+_nkc_create: .global _nkc_create 	
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	moveq #__create,%d7
@@ -281,9 +282,9 @@ nkc_create: .global nkc_create
 	rts	
 
 /*
- void nkc_close(struct fcb *FCB)
+ void _nkc_close(struct fcb *FCB)
 */	
-nkc_close: .global nkc_close 	
+_nkc_close: .global _nkc_close 	
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	moveq #__close,%d7
@@ -292,7 +293,7 @@ nkc_close: .global nkc_close
 	rts
 	
 /*
- UCHAR nkc_erase(struct fcb *FCB)
+ UCHAR _nkc_erase(struct fcb *FCB)
  
  result	Bedeutung
 		0	Datei gelöscht
@@ -302,7 +303,7 @@ nkc_close: .global nkc_close
 		Achtung: falls die Datei schon existiert, wird sie lediglich geöffnet !
 		
 */	
-nkc_erase: .global nkc_erase 	
+_nkc_erase: .global _nkc_erase 	
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	moveq #__erase,%d7
@@ -311,13 +312,13 @@ nkc_erase: .global nkc_erase
 	rts			
 
 /*
- UCHAR nkc_readrec(struct fcb *FCB)
+ UCHAR _nkc_readrec(struct fcb *FCB)
  returns 	   0 - if successful
  		   1 - EOF
  		  99 - end of memory
  		0xFF - access error 
 */	
-nkc_readrec: .global nkc_readrec
+_nkc_readrec: .global _nkc_readrec
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	moveq #__readrec,%d7
@@ -326,12 +327,12 @@ nkc_readrec: .global nkc_readrec
 	rts		
 
 /*
- UCHAR nkc_writerec(struct fcb *FCB)
+ UCHAR _nkc_writerec(struct fcb *FCB)
  returns 	   0 - if successful
  		   5 - disk full
  		0xFF - access error 
 */	
-nkc_writerec: .global nkc_writerec
+_nkc_writerec: .global _nkc_writerec
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	moveq #__writerec,%d7
@@ -340,12 +341,12 @@ nkc_writerec: .global nkc_writerec
 	rts		
 
 /*
- UCHAR nkc_setrec(struct fcb *FCB, int sector)
+ UCHAR _nkc_setrec(struct fcb *FCB, int sector)
  returns 	   0 - if successful
  		   1 - EOF
  		0xFF - access error 
 */	
-nkc_setrec: .global nkc_setrec	
+_nkc_setrec: .global _nkc_setrec	
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	move.l 12(%sp),%d1 	/* sector  */
@@ -355,9 +356,9 @@ nkc_setrec: .global nkc_setrec
 	rts		
 	
 /*
- void nkc_setdta(struct fcb *FCB, void* buffer)
+ void _nkc_setdta(struct fcb *FCB, void* buffer)
 */	
-nkc_setdta: .global nkc_setdta
+_nkc_setdta: .global _nkc_setdta
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	movea.l 12(%sp),%a0 	/* buffer  */	
@@ -369,6 +370,221 @@ nkc_setdta: .global nkc_setdta
 	
 	movem.l (%a7)+,%a6
 	rts	
+
+/*****************************************************************************
+ * int _nkc_remove(char *name)
+  * delete file
+ *****************************************************************************/                                       
+_nkc_remove: .global _nkc_remove
+	movem.l %d7/%a6,-(%sp)	/* used by jados frame-pointer */
+	movea.l 12(%sp),%a0  	/* *name */
+	moveq #__uppercas, %d7	/* Dateinamen immer in Großbuchstaben */
+	trap #6
+#ifdef M68000
+	lea buffer,%a1   	/* *fcb  <<-- !!*/
+#else
+	lea buffer(%pc),%a1   	/* *fcb  <<-- !!*/
+#endif
+	movea.l 12(%sp),%a0  	/* *name */
+	moveq #__fillfcb,%d7
+	trap #6
+#ifdef M68000
+	lea buffer,%a1 	/* *fcb  <<-- !!*/
+#else
+	lea buffer(%pc),%a1 	/* *fcb  <<-- !!*/
+#endif
+	moveq #__erase,%d7
+	trap #6
+	movem.l (%sp)+,%d7/%a6
+	rts
+	
+	
+/*****************************************************************************
+ * int _nkc_rename(char *old , char *new)
+ * Rename a file (DOS function 56h,Int21)
+ * z.B. rename C:/Mydir/myfile.dat c:/newdir/otherfile.dat
+ *****************************************************************************/                                      
+_nkc_rename: .global _nkc_rename
+	movem.l %d7/%a2/%a6,-(%sp)	/* used by jados frame-pointer */
+	movea.l 20(%sp),%a0  	/* *newname */
+	moveq #__uppercas, %d7	/* Dateinamen immer in Großbuchstaben */
+	trap #6
+#ifdef M68000
+	lea buffer,%a1   	/* *fcb  */
+#else
+	lea buffer(%pc),%a1   	/* *fcb  */
+#endif
+	movea.l 20(%sp),%a0  	/* *newname <<--! */
+	moveq #__fillfcb,%d7
+	trap #6
+	movea.l %a1, %a2
+	movea.l 16(%sp),%a0  	/* *oldname */
+	moveq #__uppercas, %d7	/* Dateinamen immer in Großbuchstaben */
+	trap #6
+#ifdef M68000
+	lea buffer,%a1     /* <<--- !! */
+#else
+	lea buffer(%pc),%a1     /* <<--- !! */
+#endif
+	adda.l #64, %a1   	/* *fcb  */
+	movea.l 16(%sp),%a0  	/* *oldname */
+	moveq #__fillfcb,%d7
+	trap #6
+	moveq #__rename, %d7
+	trap #6
+	movem.l (%sp)+, %d7/%a2/%a6
+	rts
+
+/*****************************************************************************
+ * int _nkc_get_drive();
+ *
+ * Return vaules:
+ * 	0 		= ramdisk
+ *	1..4 	= disk 1..4
+ *  5..30 	= harddisk partition A..Z
+ *****************************************************************************/ 
+_nkc_get_drive: .global _nkc_get_drive
+	movem.l %d7/%a2/%a6,-(%sp)	/* used by jados frame-pointer */
+	clr.l %d0
+	moveq #__getdrive,%d7		/* call jados */
+	trap #6
+	movem.l (%sp)+, %d7/%a2/%a6
+	rts
+/*****************************************************************************
+ * void _nkc_set_drive(int drive);
+ *
+ * input:
+ * 	0 		= ramdisk
+ *	1..4 	= disk 1..4
+ *  5..30 	= harddisk partition A..Z
+ *****************************************************************************/  	
+_nkc_set_drive: .global _nkc_set_drive
+	movem.l %d7/%a2/%a6,-(%sp)	/* used by jados frame-pointer */
+	move.l 16(%sp),%d0  		/* drive */
+	moveq #__setdrive,%d7		/* call jados */
+	trap #6
+	movem.l (%sp)+, %d7/%a2/%a6
+	rts 
+
+/*****************************************************************************
+ * BYTE _nkc_directory(void* pbuf, void* ppattern, BYTE attrib, WORD columns, WORD size);
+ *
+ * input:
+ *      pbuf		pointer output buffer
+ *	ppattern	pointer to file pattern
+ *	attrib		bitmapped file attribute: 1=file length; 2=date; 4=r/w attribute
+ *	columns		number of colums for output
+ *	size		size of output buffer pbuf (256x14 Bytes max.)
+ *	
+ * output:
+ *    	buffer filled with directory entries
+ *	return code: 0x00 = Success, 0xFF = Values unvalid
+ *  
+ * stack-frame:
+ *		0x0028   40+2	size		(WORD)
+ *		0x0024	 36+2	columns 	(WORD)
+ *		0x0020	 32+3	attrib 		(BYTE)
+ *		0x001C	 28	ppattern	(DOWRD)
+ *              0x0018	 24	pbuf		(DWORD)
+ *		0x0014	 20	return address
+ *		0x0010	 16	saved jados frame
+ *		0x000C	 12	---"---	
+ *		0x0008	 8	---"---
+ *		0x0004	 4	saved registers
+ *	sp--->	0x0000	 0	---"---
+ *****************************************************************************/
+_nkc_directory: .global _nkc_directory
+        movem.l %d7/%a2/%a6,-(%sp)      /* used by jados frame-pointer */
+	movem.l %d2/%d3,-(%sp)		/* save used regs (%a0,%a1,%d0,%d1 are scratch regs) */
+
+        movea.l 24(%sp),%a0             /* pbuf */
+	movea.l 28(%sp),%a1		/* ppattern */
+	move.b  35(%sp),%d2		/* attrib */
+	move.w  38(%sp),%d3		/* columns */
+	move.w  42(%sp),%d1		/* size */
+	
+        moveq #__directory,%d7           /* call jados */
+        trap #6
+
+	movem.l (%sp)+, %d2/%d3		/* restore used regs */
+        movem.l (%sp)+, %d7/%a2/%a6	/* restore jados frame-pointer */
+        rts
+
+ _nkc_directory_test: .global _nkc_directory_test
+        movem.l %d7/%a2/%a6,-(%sp)      /* used by jados frame-pointer */
+	movem.l %d2/%d3,-(%sp)		/* save used regs (%a0,%a1,%d0,%d1 are scratch regs) */
+	
+	clr.l %d1
+	clr.l %d2
+	clr.l %d3
+	
+        movea.l 24(%sp),%a0             /* pbuf */
+	movea.l 28(%sp),%a1		/* ppattern */
+	move.b  35(%sp),%d2		/* attrib */
+	move.w  38(%sp),%d3		/* columns */
+	move.w  42(%sp),%d1		/* size */
+	
+	writeln msg001(%pc)
+	/*
+        prthex8 %a0
+        crlf
+        prthex8 %a1
+        crlf
+        */
+        prthex8 %d1
+        writeln buffer(%pc)
+        crlf
+        prthex8 %d2
+        writeln buffer(%pc)
+        crlf
+        prthex8 %d3
+        writeln buffer(%pc)
+        crlf
+
+	movem.l (%sp)+, %d2/%d3		/* restore used regs */
+        movem.l (%sp)+, %d7/%a2/%a6	/* restore jados frame-pointer */
+        rts
+/*****************************************************************************
+ * void* _nkc_get_ramtop(void);
+ *
+ * get end of user space from JAODS 
+ *
+ *****************************************************************************/  	
+_nkc_get_ramtop: .global _nkc_get_ramtop
+	movem.l %d7/%a2/%a6,-(%sp)	/* used by jados frame-pointer */	
+	moveq #__ramtop,%d7		/* call jados */
+	trap #6
+	movem.l (%sp)+, %d7/%a2/%a6
+	rts 
+	
+/*****************************************************************************
+ * void* _nkc_get_gp(void);
+ *
+ * get start address of GP from JADOS 
+ *
+ *****************************************************************************/  	
+_nkc_get_gp: .global _nkc_get_gp
+	movem.l %d7/%a2/%a6,-(%sp)	/* used by jados frame-pointer */	
+	moveq #__getgrund,%d7		/* call jados */
+	trap #6
+	movem.l (%sp)+, %d7/%a2/%a6
+	rts 	
+	
+/*****************************************************************************
+ * void* _nkc_get_laddr(void);
+ *
+ * get start address of user space from JADOS 
+ *
+ *****************************************************************************/  	
+_nkc_get_laddr: .global _nkc_get_laddr
+	movem.l %d7/%a2/%a6,-(%sp)	/* used by jados frame-pointer */	
+	moveq #__getladdr,%d7		/* call jados */
+	trap #6
+	movem.l (%sp)+, %d7/%a2/%a6
+	rts 		
+	
+#endif /* USE_JADOS */
+
 
 /*
 void nkc_showsp()
@@ -416,3 +632,5 @@ nkc_cmos_read: .global nkc_cmos_read
 .data
 
 buffer:		ds.b 255 	
+msg001:	.ascii "_nkc_directory_test:" 	
+	.byte 0x0d,0x0a,0x00	

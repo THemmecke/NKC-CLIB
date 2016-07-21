@@ -16,16 +16,16 @@
 /*---------------------------------------*/
 /* Prototypes for disk control functions */
 
-void init_ff(void);
+//void init_ff(void);
 
-DSTATUS disk_initialize (BYTE pdrv);
-DRESULT disk_readp (BYTE*, DWORD, WORD, WORD);
-DRESULT disk_writep (const BYTE*, DWORD);
+DSTATUS disk_initialize ( struct fstabentry *pfstab );
+//DRESULT disk_readp (BYTE*, DWORD, WORD, WORD);
+//DRESULT disk_writep (const BYTE*, DWORD);
 
-DSTATUS disk_status (BYTE pdrv);
-DRESULT disk_read (BYTE pdrv,BYTE *buff,DWORD sector,UINT count);
-DRESULT disk_write (BYTE pdrv,const BYTE *buff,DWORD sector,UINT count);
-DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
+DSTATUS disk_status ( struct fstabentry *pfstab );
+DRESULT disk_read ( struct fstabentry *pfstab, BYTE *buff,DWORD sector,UINT count);
+DRESULT disk_write ( struct fstabentry *pfstab, const BYTE *buff,DWORD sector,UINT count);
+DRESULT disk_ioctl ( struct fstabentry *pfstab, int cmd, void* buff);
 
 
 /* Disk Status Bits (DSTATUS) */
@@ -42,20 +42,22 @@ DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
 #define CT_SDC				(CT_SD1|CT_SD2)	/* SD */
 #define CT_BLOCK			0x08	/* Block addressing */
 
-/* Command code for disk_ioctrl fucntion */
 
-/* Generic command (used by FatFs) */
-#define CTRL_SYNC			0	/* Flush disk cache (for write functions) */
-#define GET_SECTOR_COUNT	1	/* Get media size (for only f_mkfs()) */
-#define GET_SECTOR_SIZE		2	/* Get sector size (for multiple sector size (_MAX_SS >= 1024)) */
-#define GET_BLOCK_SIZE		3	/* Get erase block size (for only f_mkfs()) */
-#define CTRL_ERASE_SECTOR	4	/* Force erased a block of sectors (for only _USE_ERASE) */
-
-/* Generic command (not used by FatFs) */
-#define CTRL_POWER			5	/* Get/Set power status */
-#define CTRL_LOCK			6	/* Lock/Unlock media removal */
-#define CTRL_EJECT			7	/* Eject media */
-#define CTRL_FORMAT			8	/* Create physical format on the media */
+// All commands are defined in ioctl.h !!
+///* Command code for disk_ioctrl fucntion */
+//
+///* Generic command (used by FatFs) */
+//#define CTRL_SYNC			0	/* Flush disk cache (for write functions) */
+//#define GET_SECTOR_COUNT	1	/* Get media size (for only f_mkfs()) */
+//#define GET_SECTOR_SIZE		2	/* Get sector size (for multiple sector size (_MAX_SS >= 1024)) */
+//#define GET_BLOCK_SIZE		3	/* Get erase block size (for only f_mkfs()) */
+//#define CTRL_ERASE_SECTOR	4	/* Force erased a block of sectors (for only _USE_ERASE) */
+//
+///* Generic command (not used by FatFs) */
+//#define CTRL_POWER			5	/* Get/Set power status */
+//#define CTRL_LOCK			6	/* Lock/Unlock media removal */
+//#define CTRL_EJECT			7	/* Eject media */
+//#define CTRL_FORMAT			8	/* Create physical format on the media */
 
 /* MMC/SDC specific ioctl command */
 #define MMC_GET_TYPE		10	/* Get card type */

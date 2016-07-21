@@ -22,6 +22,27 @@ CONFIG_FS = 1
 CONFIG_FS_NKC = 1
 CONFIG_FS_FAT = 1
 
+############## block devices ...  ###################################################
+CONFIG_BLOCK_DEVICES = 1
+############## select block devices: GIDE, SDCard ... ###############################
+CONFIG_DRV_GIDE = 1
+CONFIG_DRV_SD = 1
+CONFIG_DRV_JD = 0
+
+############## character devices ... ################################################
+CONFIG_CHAR_DEVICES = 1
+
+
+############## use GP / JADOS ? #####################################################
+# use GP (trap 1) calls 
+CONFIG_USE_GP = 1
+# use JADOS (trap 6) calls
+# if JADOS should not be used, the following must be defined at a minimum:
+#	in start*.S the top of ram for stack must be set
+#	in start*.S the command line cannot be retreived using JADOS
+#	if set to 0 FS_NKC should not be used (yet there are JADOS calls used for file control...) !!
+CONFIG_USE_JADOS = 1
+
 
 ############# DEBUG configuration #################################################
 # #include <debug.h> in 
@@ -38,8 +59,13 @@ CONFIG_DEBUG_FS = 1
 # NKC/JADOS FileSystem
 CONFIG_DEBUG_FS_NKC = 0
 # FAT file system module
-CONFIG_DEBUG_FS_FAT = 0
-CONFIG_DEBUG_FF = 0
+CONFIG_DEBUG_FS_FAT = 1
+CONFIG_DEBUG_FF = 1
+# Driver Subsystem
+CONFIG_DEBUG_DRV = 1
+CONFIG_DEBUG_DRV_GIDE = 1
+CONFIG_DEBUG_DRV_SD = 0
+CONFIG_DEBUG_DRV_JD = 0
 
 ############## tell if internal math lib should be used (/math) ############################
 # 0 = no internal, use libgcc routines, 1 = use internal math, needs FPU !
@@ -86,6 +112,25 @@ ifeq ($(CONFIG_FS_FAT),1)
 CCFLAGS += -DCONFIG_FS_FAT
 endif
 
+# ########## use hardware drivers ... ################
+ifeq ($(CONFIG_DRV_GIDE),1)
+CCFLAGS += -DCONFIG_DRV_GIDE
+endif
+ifeq ($(CONFIG_DRV_SD),1)
+CCFLAGS += -DCONFIG_DRV_SD
+endif
+ifeq ($(CONFIG_DRV_JD),1)
+CCFLAGS += -DCONFIG_DRV_JD
+endif
+
+# #### use GP / JADOS calls #####################
+ifeq ($(CONFIG_USE_GP),1)
+CCFLAGS += -DUSE_GP
+endif
+ifeq ($(CONFIG_USE_JADOS),1)
+CCFLAGS += -DUSE_JADOS
+endif
+
 # DEBUG options ####################
 ifeq ($(CONFIG_DEBUG),1)
 CCFLAGS += -DCONFIG_DEBUG
@@ -118,13 +163,28 @@ ifeq ($(CONFIG_DEBUG_FS),1)
 CCFLAGS += -DCONFIG_DEBUG_FS
 endif
 
-
 ifeq ($(CONFIG_DEBUG_FS_NKC),1)
 CCFLAGS += -DCONFIG_DEBUG_FS_NKC
 endif
 
 ifeq ($(CONFIG_DEBUG_FS_FAT),1)
 CCFLAGS += -DCONFIG_DEBUG_FS_FAT
+endif
+
+ifeq ($(CONFIG_DEBUG_DRV),1)
+CCFLAGS += -DCONFIG_DEBUG_DRV
+endif
+
+ifeq ($(CONFIG_DEBUG_DRV_GIDE),1)
+CCFLAGS += -DCONFIG_DEBUG_DRV_GIDE
+endif
+
+ifeq ($(CONFIG_DEBUG_DRV_SD),1)
+CCFLAGS += -DCONFIG_DEBUG_DRV_SD
+endif
+
+ifeq ($(CONFIG_DEBUG_DRV_JD),1)
+CCFLAGS += -DCONFIG_DEBUG_DRV_JD
 endif
 
 endif
@@ -222,6 +282,14 @@ endif
 
 endif
 
+
+# ### use GP / JADOS calls #####################
+ifeq ($(CONFIG_USE_GP),1)
+AFLAGS += -DUSE_GP
+endif
+ifeq ($(CONFIG_USE_JADOS),1)
+AFLAGS += -DUSE_JADOS
+endif
 
 # -Wa,option instrucs the gnu c compiler to pass option to the assembler, so this is an assembler option given to the compiler
 AFLAGS += -Wa,-a,-ad,--bitwise-or

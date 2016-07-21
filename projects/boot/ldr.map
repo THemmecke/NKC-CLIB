@@ -1,0 +1,1377 @@
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+ram              0x00000000         0x001fffff
+ram_rs           0x00000000         0x001fffff
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.text           0x00000000     0x67ba
+                0x00000000                _stext = .
+ *(.text)
+ .text          0x00000000     0x67ba ldr.o
+                0x00000000                start
+                0x00000004                m001
+                0x0000000e                m002
+                0x00000026                mainend
+                0x00000028                mtools
+                0x00000054                lp00
+                0x0000005a                lp01
+                0x0000007e                lp02
+                0x00000090                lp03
+                0x000000aa                lp04
+                0x000000c6                lp05
+                0x000000d2                Exit
+                0x000000d8                ClrVars
+                0x000000e2                cb01
+                0x000000ea                SetLW
+                0x00000106                GetDrive
+                0x0000020e                GDerr2
+                0x00000212                GDerr
+                0x00000214                GDex
+                0x0000021a                Ident
+                0x00000236                idlp01
+                0x00000244                idlp02
+                0x00000256                idlp10
+                0x00000264                idlp20
+                0x00000266                idex
+                0x0000026c                ReadSec
+                0x00000296                RdSlp01
+                0x000002a6                RdSerr
+                0x000002b2                RdSerr1
+                0x000002b6                RdSlp20
+                0x000002be                RdSex
+                0x000002c4                WriteSec
+                0x000002ee                WrSlp01
+                0x000002fe                WrSerr
+                0x0000030a                WrSerr1
+                0x0000030e                WrSlp20
+                0x00000316                WrSex
+                0x0000031c                LBHLW
+                0x00000320                LowBHigh
+                0x00000324                FSChk
+                0x0000034e                FSC01
+                0x0000035c                FSC02
+                0x0000036a                FSC03
+                0x00000378                FSC10
+                0x00000386                ALW
+                0x000003a4                ALW01
+                0x000003ae                ALW10
+                0x000003b8                ALW11
+                0x000003be                LoadLW
+                0x000003f8                LLW00
+                0x00000408                LLW01
+                0x00000418                LLW02
+                0x0000042c                LLW20
+                0x00000446                LLWOK
+                0x0000044a                LLWErr
+                0x0000044c                LLWExit
+                0x00000452                LoadBPB
+                0x0000056a                LBPB01
+                0x00000578                LBPB02
+                0x0000061c                LdBPBerr
+                0x0000061e                LdBPBex
+                0x00000624                UpFATBu
+                0x00000636                UFB01
+                0x00000656                UFB02
+                0x00000678                UFBerr
+                0x0000067a                UFBex
+                0x00000680                FFAT
+                0x000006a4                FFATerr
+                0x000006a6                FFATex
+                0x000006ac                GNCN
+                0x000006f2                GNCNerr1
+                0x000006fe                GNCNerr
+                0x00000700                GNCNex
+                0x00000706                GFSOC
+                0x00000728                AllClus
+                0x00000748                AClp01
+                0x0000075a                ACerr
+                0x0000075c                ACex
+                0x00000762                FFC
+                0x0000076a                FFClp01
+                0x0000078a                FFClp03
+                0x00000790                FFClp02
+                0x00000792                FFClp04
+                0x000007ac                FFClp05
+                0x000007b2                FFCerr1
+                0x000007be                FFCerr
+                0x000007c0                FFCex
+                0x000007c6                WCN
+                0x000007e2                WCN01
+                0x0000081a                WCNerr
+                0x0000081c                WCNex
+                0x00000822                FFFD
+                0x00000830                FFFD01
+                0x00000856                FFFD10
+                0x000008b0                FFFDExit
+                0x000008b6                FindName
+                0x000008da                FN01
+                0x000008e8                FNerr
+                0x000008ee                FNex
+                0x000008f4                fload
+                0x00000918                fld01
+                0x00000930                fld02
+                0x00000940                fld03
+                0x00000960                fld04
+                0x00000984                fld10
+                0x00000988                flderr
+                0x0000098a                fldex
+                0x00000990                fsave
+                0x000009b4                fsv01
+                0x000009dc                fsv02
+                0x000009f2                fsv03
+                0x00000a24                fsv10
+                0x00000a36                fsv20
+                0x00000a42                fsverr
+                0x00000a44                fsvex
+                0x00000a4a                remove
+                0x00000a88                rmv01
+                0x00000ac8                rmv02
+                0x00000ae6                rmv03
+                0x00000b10                rmv04
+                0x00000b3c                rmv05
+                0x00000b58                rmv06
+                0x00000b5c                rmverr1
+                0x00000b60                rmverr
+                0x00000b62                rmvex
+                0x00000b6a                rmvex1
+                0x00000b70                rem
+                0x00000b98                rem02
+                0x00000ba0                rem03
+                0x00000bc6                rem04
+                0x00000bce                rem05
+                0x00000bd2                remerr
+                0x00000bd4                remex
+                0x00000bda                QForm
+                0x00000bea                QF01
+                0x00000c04                QF02
+                0x00000c20                QF03
+                0x00000c3a                QF04
+                0x00000c60                QF05
+                0x00000cc2                QFerr
+                0x00000cc4                QFex
+                0x00000cca                ScRD
+                0x00000ce8                ScRD01
+                0x00000cfa                ScRDerr
+                0x00000cfc                ScRDex
+                0x00000d02                ScSD
+                0x00000d10                ScSD01
+                0x00000d2e                ScSD02
+                0x00000d54                ScSDerr
+                0x00000d56                ScSDex
+                0x00000d5c                ScODS
+                0x00000d7c                ScODS01
+                0x00000d96                ScODS10
+                0x00000dd2                ScODS21
+                0x00000df2                ScODS20
+                0x00000e32                ScODS30
+                0x00000e94                ScODS90
+                0x00000eae                ScODSerr
+                0x00000eb4                ScODSex
+                0x00000ebc                FileDsct
+                0x00000ed2                FNE
+                0x00000ee4                FNE01
+                0x00000ef8                FNE02
+                0x00000f06                FNEerr
+                0x00000f08                FNEex
+                0x00000f0e                MFN
+                0x00000f32                MFN01
+                0x00000f56                MFN03
+                0x00000f5a                MFN04
+                0x00000f66                MFN11
+                0x00000f66                MFN10
+                0x00000f72                MFN12
+                0x00000f7e                MFNex
+                0x00000f84                FFD
+                0x00000fb2                FFD01
+                0x00000fdc                FFD03
+                0x00000fe0                FFD04
+                0x00000fec                FFD11
+                0x00000fec                FFD10
+                0x00001000                FFD12
+                0x0000100c                FFD13
+                0x00001070                FFDerr
+                0x00001072                FFDex
+                0x00001078                chdir
+                0x000010b0                cd01
+                0x000010e8                cd02
+                0x000010f8                cd03
+                0x000010fa                cdok
+                0x00001114                cd04
+                0x00001118                cd05
+                0x00001132                cderr1
+                0x0000113e                cderr
+                0x0000114a                cdex
+                0x00001150                UFE
+                0x0000128e                UFEerr
+                0x00001290                UFEex
+                0x00001296                mkdir
+                0x000012c6                mkdir00
+                0x0000130c                mkdir03
+                0x0000132a                mkdir01
+                0x0000133c                mkdir02
+                0x000013c2                mkdirer1
+                0x000013c6                mkdirerr
+                0x000013c8                mkdirex
+                0x000013d0                mkdirex1
+                0x000013d6                SRD
+                0x000013ee                SRD01
+                0x000013fc                SRDerr
+                0x000013fe                SRDex
+                0x00001404                SSD
+                0x0000140c                SSD01
+                0x0000142a                SSD02
+                0x0000144c                SSDerr
+                0x0000144e                SSDex
+                0x00001454                SODS
+                0x00001472                SODS01
+                0x00001490                SODS02
+                0x000014a6                SODSerr
+                0x000014a8                SODSex
+                0x000014ae                MNFE
+                0x000014d2                MNFE01
+                0x000014d8                MNFE02
+                0x000014f6                MNFE02a
+                0x000014f8                MNFE03
+                0x00001530                MNFE04
+                0x0000154a                MNFE05
+                0x00001574                MNFE10
+                0x000015a6                MNFEerr
+                0x000015a8                MNFEex
+                0x000015ae                FindFrst
+                0x000015f8                FF01
+                0x0000160c                FF02
+                0x00001622                FFerr
+                0x00001624                FFex
+                0x0000162a                FindNext
+                0x0000163e                FNX01
+                0x00001656                FNX02
+                0x00001686                FNX03
+                0x000016ca                FNX10
+                0x000016ea                FNX11
+                0x00001722                FNX14
+                0x00001730                FNX15
+                0x00001776                FNXnf
+                0x00001786                FNXerr
+                0x00001794                FNXex
+                0x0000179a                dircmp
+                0x000017bc                dircmp01
+                0x000017d0                dircmp02
+                0x000017d4                dircmp03
+                0x000017da                dircmp05
+                0x000017e6                dircmp10
+                0x00001804                dircmp11
+                0x00001818                dircmp12
+                0x0000181c                dircmp13
+                0x00001822                dircmp15
+                0x0000182c                dircmp20
+                0x00001830                dircmp30
+                0x00001832                dircmpex
+                0x00001838                csts
+                0x00001844                key
+                0x00001848                key01
+                0x0000185e                ci
+                0x0000186e                cls
+                0x0000187e                co2
+                0x0000188e                idetest
+                0x0000189e                idedisk
+                0x000018ae                sdtest
+                0x000018be                sddisk
+                0x000018ce                writetxt
+                0x000018d2                wrtxt01
+                0x000018de                wrtxtex
+                0x000018e4                tron
+                0x000018f2                troff
+                0x000018fc                trout
+                0x0000190c                troex
+                0x0000190e                regout
+                0x00001a08                printl
+                0x00001a24                print8d
+                0x00001a48                prt8d01
+                0x00001a62                prt8d02
+                0x00001a78                print4d
+                0x00001aa2                print2d
+                0x00001ac8                prt2d02
+                0x00001ad6                print2d0
+                0x00001afc                prt2d002
+                0x00001b0a                wert
+                0x00001b20                werterr
+                0x00001b2a                getuhr
+                0x00001b3a                delay500
+                0x00001b4e                strgcopy
+                0x00001b54                sc00
+                0x00001b60                strgcmp
+                0x00001b66                scmp01
+                0x00001b72                scmperr
+                0x00001b74                scmpex
+                0x00001b7a                toupper
+                0x00001b8a                tupex
+                0x00001b8c                bcdtobin
+                0x00001ba6                JNA
+                0x00001bcc                JNA00
+                0x00001be0                JNA01
+                0x00001bf0                JNAex
+                0x00001bf6                JNAex1
+                0x00001bfc                JN
+                0x00001c20                JN01
+                0x00001c34                JNex
+                0x00001c3a                JNex1
+                0x00001c3e                NameOut
+                0x00001c56                NO01
+                0x00001c64                NO02
+                0x00001c72                NO03
+                0x00001c80                NO04
+                0x00001c94                trap10
+                0x00001cc2                trap10ex
+                0x00001cc8                jclrfcb
+                0x00001cd2                jcf01
+                0x00001cde                jfinfo
+                0x00001cf2                jfillfcb
+                0x00001d06                jfload
+                0x00001d34                jfld01
+                0x00001d48                jfld02
+                0x00001d56                jfldex
+                0x00001d5c                jfsave
+                0x00001d96                jfsv01
+                0x00001dac                jfsv02
+                0x00001dba                jfsvex
+                0x00001dc0                jmotoff
+                0x00001dd0                jusradr
+                0x00001de0                jconvlw
+                0x00001df8                jclw01
+                0x00001e0a                jclwerr
+                0x00001e18                jclwex
+                0x00001e1a                JMDL
+                0x00001e40                JMDL01
+                0x00001e52                JMDL02
+                0x00001e60                JMDL03
+                0x00001e72                JMDL04
+                0x00001e94                JMDL05
+                0x00001ea8                JMDL06
+                0x00001eac                JMDLerr
+                0x00001eba                JMDLex
+                0x00001ec0                JMFN
+                0x00001edc                JMFN01
+                0x00001f00                JMFN03
+                0x00001f04                JMFN04
+                0x00001f12                JMFN10
+                0x00001f1a                JMFN12
+                0x00001f20                JMFNex
+                0x00001f26                jtom
+                0x00001f52                jtom01
+                0x00001fd8                jtom01a
+                0x0000201e                jtom02
+                0x00002042                jtomerr3
+                0x0000204e                jtomerr2
+                0x0000205a                jtomerr1
+                0x00002062                jtomerr
+                0x00002064                jtomex
+                0x0000206a                mtoj
+                0x0000208e                mtoj01
+                0x000020cc                mtoj02
+                0x000020da                parser
+                0x000020f4                pars02
+                0x0000210a                pars02a
+                0x00002140                pars02b
+                0x00002144                pars03
+                0x00002152                pars04
+                0x0000217c                pars04a
+                0x000021da                pars04b
+                0x0000222c                pars04c
+                0x00002280                pars04ex
+                0x00002288                pars06
+                0x00002288                pars05
+                0x000022aa                pars06z
+                0x000022b2                pars06a
+                0x000022d4                pars06b
+                0x000022da                pars07
+                0x000022ea                pars07a
+                0x00002302                pars07ex
+                0x00002310                pars08
+                0x00002334                pars08a
+                0x00002340                pars08ex
+                0x0000234e                pars10
+                0x00002378                pars10a
+                0x000023b2                pars10b
+                0x000023f2                pars10c
+                0x00002438                pars10ex
+                0x00002440                pars11
+                0x00002440                pars12
+                0x00002458                pars12a
+                0x00002476                pars12b
+                0x0000247c                pars13
+                0x0000248c                pars13a
+                0x0000249c                pars14
+                0x000024be                pars14a
+                0x000024ca                parsex
+                0x000024da                parserr
+                0x000024e8                parsclr
+                0x000024f4                parsclr1
+                0x00002500                mdiska
+                0x0000251c                mda00a
+                0x00002558                mda00
+                0x00002566                mda01
+                0x0000256c                mda02
+                0x00002584                mdaerr
+                0x0000258c                mdaex
+                0x00002592                mdiskb
+                0x000025a8                komma
+                0x000025ba                komma02
+                0x000025c2                komma01
+                0x000025c4                hdpars
+                0x000025d4                hdp02
+                0x000025da                hdp03
+                0x000025e4                hdp04
+                0x000025f0                hdp05
+                0x00002600                hdperr
+                0x00002602                hdpex
+                0x00002604                mdira
+                0x00002666                mdira00
+                0x00002668                mdira00a
+                0x0000266a                mdira01
+                0x0000269e                mdira05
+                0x000026a0                mdira06
+                0x000026b4                mdira10
+                0x000026bc                mdiraer
+                0x000026c2                mdiraex
+                0x000026c8                mdirausg
+                0x000026d2                mdaus02
+                0x000026e8                mdaus03
+                0x00002718                mdaus04
+                0x0000272e                mdaus04a
+                0x00002740                mdaus04b
+                0x00002752                mdaus04c
+                0x00002764                mdaus04d
+                0x00002770                mdaus05
+                0x0000278c                mdaus06
+                0x0000282c                mdausex
+                0x00002832                dirkopf
+                0x0000287e                dirfuss
+                0x000028de                nextside
+                0x000028fa                nxtsd01
+                0x00002934                nxtsdex
+                0x0000293a                mcda
+                0x00002956                mcda01
+                0x00002972                mcdaerr
+                0x0000297a                mcdaex
+                0x000029a8                mcdaex1
+                0x000029ae                mmda
+                0x000029ca                mmda02
+                0x000029ec                mmda03
+                0x000029f4                mmdaerr
+                0x000029f8                mmdaex
+                0x000029fe                mloada
+                0x00002a1e                mlda00a
+                0x00002a3e                mlda01
+                0x00002a4c                mlda01a
+                0x00002a76                mlda02
+                0x00002aae                mlda10
+                0x00002ab2                mldaerr
+                0x00002aba                mldaerr1
+                0x00002ac2                mldaex
+                0x00002ad4                mldaex1
+                0x00002ada                mcopya
+                0x00002afc                mcpa01
+                0x00002b1e                mcpa01a
+                0x00002b48                mcpa02
+                0x00002bac                mcpa03
+                0x00002bd2                mcpa03a
+                0x00002c12                mcpa04
+                0x00002c1a                mcpa05
+                0x00002c30                mcpa10
+                0x00002c54                mcpa11
+                0x00002c90                mcpa12
+                0x00002d38                mcpa13
+                0x00002d56                mcpa13a
+                0x00002d80                mcpa14
+                0x00002d9a                mcpaerr
+                0x00002da0                mcpaex
+                0x00002db4                mcpaex1
+                0x00002dba                mdela
+                0x00002dd6                mdela02
+                0x00002dde                mdelaer
+                0x00002de2                mdelaex
+                0x00002de8                mforma
+                0x00002e54                mfrma01
+                0x00002e96                mfrmaer
+                0x00002e98                mfrmaex
+                0x00002e9e                hilfe
+                0x00002eba                error
+                0x00002ee4                err01
+                0x00002ef2                errex
+                0x00002ef8                option
+                0x00002f3c                opt00
+                0x00002f62                opt01
+                0x00002f74                opt02
+                0x00002f86                opt03
+                0x00002f98                opt04
+                0x00002faa                opt05
+                0x00002fae                opterr
+                0x00002fc0                optex
+                0x00002fc6                NKCtoIBM
+                0x00002ff6                NtI01
+                0x00002ff8                NtI02
+                0x00002ffc                NtI03
+                0x00003002                NtI04
+                0x00003008                NtI05
+                0x0000300a                NtI05a
+                0x0000301a                NtI05b
+                0x00003020                NtI05c
+                0x00003024                NtI10
+                0x00003028                NtI20
+                0x00003034                NtIerr
+                0x00003042                NtIex
+                0x00003048                IBMtoNKC
+                0x0000306e                ItN01
+                0x0000307c                ItN02
+                0x00003080                ItN03
+                0x00003090                ItN03a
+                0x00003098                ItN04
+                0x000030b6                ItN04b
+                0x000030c4                ItN04c
+                0x000030c8                ItN04a
+                0x000030ca                ItN05
+                0x000030cc                ItN05a
+                0x000030dc                ItN05b
+                0x000030e2                ItN05c
+                0x000030e6                ItN10
+                0x000030ea                ItN20
+                0x00003112                ItN201
+                0x00003118                ItN20a
+                0x00003124                ItNerr
+                0x00003132                ItNex
+                0x00003138                umbruch
+                0x00003158                TABtoSP
+                0x0000316a                TtS01
+                0x0000317a                TtS02
+                0x0000318a                mover
+                0x00003190                mvrlp01
+                0x000031a0                txtinit
+                0x000031c1                txtcrlf
+                0x000031c4                txtnv
+                0x000031dd                txtcyl
+                0x000031e8                txtsec
+                0x000031f3                txthd
+                0x000031fb                txtpart
+                0x00003208                txtnr
+                0x0000320b                txtstart
+                0x00003212                txt1start
+                0x00003219                txtgroess
+                0x00003220                txt1groess
+                0x00003229                txtMB
+                0x00003233                txt1MB
+                0x00003237                txttyp
+                0x00003245                txtkomma
+                0x00003247                txtstern
+                0x0000324a                txtaktlw
+                0x0000325f                txtweit
+                0x00003281                txtforts
+                0x00003292                txtlw
+                0x0000329c                txtverz
+                0x000032a9                txterst
+                0x000032b2                txtdirat
+                0x000032b9                txtdatei
+                0x000032c4                txtdir
+                0x000032d5                txtbyte
+                0x000032db                txt15spc
+                0x000032eb                txtroot
+                0x000032ed                txtjn
+                0x000032f9                txtjna
+                0x0000330a                txtueber
+                0x00003319                txtcopy
+                0x00003321                txtdel
+                0x0000332a                txtloe
+                0x00003333                txtload
+                0x00003343                txtakt
+                0x00003353                txtform
+                0x00003361                txtform1
+                0x00003372                terr1
+                0x0000338a                terr2
+                0x000033aa                terr3
+                0x000033bf                terr4
+                0x000033d7                terr5
+                0x000033f8                terr6
+                0x0000341d                terr7
+                0x0000342b                terr8
+                0x0000343f                terr9
+                0x00003458                terr10
+                0x00003477                terr11
+                0x00003493                terr12
+                0x000034a8                terr13
+                0x000034c4                terr14
+                0x000034db                terr15
+                0x000034f4                terr16
+                0x0000350a                terr17
+                0x00003519                terr18
+                0x00003532                terr19
+                0x00003548                terr20
+                0x00003568                terr21
+                0x00003580                terr22
+                0x0000359b                terr23
+                0x000035b8                terr24
+                0x000035d3                terr25
+                0x000035ec                terr26
+                0x00003605                terr27
+                0x0000361a                terr28
+                0x00003640                terr29
+                0x0000367c                OStype
+                0x0000446c                fd0
+                0x0000446c                hdtab
+                0x00004472                fd1
+                0x00004478                hda1
+                0x0000447e                hda2
+                0x00004484                hda3
+                0x0000448a                hda4
+                0x00004490                hdb1
+                0x00004496                hdb2
+                0x0000449c                hdb3
+                0x000044a2                hdb4
+                0x000044a8                sda1
+                0x000044ae                sda2
+                0x000044b4                sda3
+                0x000044ba                sda4
+                0x000044c0                sdb1
+                0x000044c6                sdb2
+                0x000044cc                sdb3
+                0x000044d2                sdb4
+                0x000044d8                res1
+                0x000044de                res2
+                0x000044e4                res3
+                0x000044ea                res4
+                0x000044f0                res5
+                0x000044f6                res6
+                0x000044fc                res7
+                0x00004502                res8
+                0x00004508                res9
+                0x0000450e                res10
+                0x00004514                res11
+                0x0000451a                res12
+                0x00004520                res13
+                0x00004526                res14
+                0x0000452c                hmdisk
+                0x000045ac                hmdir
+                0x000046d4                hmcd
+                0x000047e8                hmcopy
+                0x000048e4                hmload
+                0x000049d0                hmmd
+                0x00004a38                hmdel
+                0x00004ab4                hmform
+                0x00004af8                traptab
+                0x00004b1c                hilfetab
+                0x00004b1c                trapend
+                0x00004b40                opttab
+                0x00004b40                htabend
+                0x00004b64                errtab
+                0x00004b64                otabend
+                0x00004bdc                errend
+                0x00004bdc                nkctab
+                0x00004be4                ibmtab
+                0x00004bec                allgm
+                0x00004bec                VarStart
+                0x00004c2c                parsdat
+                0x00004c6c                hddat
+                0x0000506c                fatbuff
+                0x0000526c                dirbuff
+                0x0000546c                buffer
+                0x0000566c                jfcb
+                0x0000569c                jdirbuf
+                0x0000669c                filebuff
+                0x0000679c                meldung
+                0x0000679c                VarEnd
+                0x000067af                fname
+                0x000067ba                ende
+                0x000067ba                _etext = ALIGN (0x2)
+
+.data           0x000067bc        0x0
+                0x000067bc                _sdata = .
+ *(.data)
+ .data          0x000067bc        0x0 ldr.o
+                0x000067bc                _edata = ALIGN (0x2)
+
+.bss            0x000067bc        0x0
+                0x000067bc                _sbss = .
+ *(.bss)
+ .bss           0x000067bc        0x0 ldr.o
+ *(COMMON)
+                0x000067bc                _ebss = ALIGN (0x2)
+LOAD ldr.o
+OUTPUT(ldr.elf elf32-m68k)
+
+Cross Reference Table
+
+Symbol                                            File
+ACerr                                             ldr.o
+ACex                                              ldr.o
+AClp01                                            ldr.o
+ALW                                               ldr.o
+ALW01                                             ldr.o
+ALW10                                             ldr.o
+ALW11                                             ldr.o
+AllClus                                           ldr.o
+ClrVars                                           ldr.o
+Exit                                              ldr.o
+FF01                                              ldr.o
+FF02                                              ldr.o
+FFAT                                              ldr.o
+FFATerr                                           ldr.o
+FFATex                                            ldr.o
+FFC                                               ldr.o
+FFCerr                                            ldr.o
+FFCerr1                                           ldr.o
+FFCex                                             ldr.o
+FFClp01                                           ldr.o
+FFClp02                                           ldr.o
+FFClp03                                           ldr.o
+FFClp04                                           ldr.o
+FFClp05                                           ldr.o
+FFD                                               ldr.o
+FFD01                                             ldr.o
+FFD03                                             ldr.o
+FFD04                                             ldr.o
+FFD10                                             ldr.o
+FFD11                                             ldr.o
+FFD12                                             ldr.o
+FFD13                                             ldr.o
+FFDerr                                            ldr.o
+FFDex                                             ldr.o
+FFFD                                              ldr.o
+FFFD01                                            ldr.o
+FFFD10                                            ldr.o
+FFFDExit                                          ldr.o
+FFerr                                             ldr.o
+FFex                                              ldr.o
+FN01                                              ldr.o
+FNE                                               ldr.o
+FNE01                                             ldr.o
+FNE02                                             ldr.o
+FNEerr                                            ldr.o
+FNEex                                             ldr.o
+FNX01                                             ldr.o
+FNX02                                             ldr.o
+FNX03                                             ldr.o
+FNX10                                             ldr.o
+FNX11                                             ldr.o
+FNX14                                             ldr.o
+FNX15                                             ldr.o
+FNXerr                                            ldr.o
+FNXex                                             ldr.o
+FNXnf                                             ldr.o
+FNerr                                             ldr.o
+FNex                                              ldr.o
+FSC01                                             ldr.o
+FSC02                                             ldr.o
+FSC03                                             ldr.o
+FSC10                                             ldr.o
+FSChk                                             ldr.o
+FileDsct                                          ldr.o
+FindFrst                                          ldr.o
+FindName                                          ldr.o
+FindNext                                          ldr.o
+GDerr                                             ldr.o
+GDerr2                                            ldr.o
+GDex                                              ldr.o
+GFSOC                                             ldr.o
+GNCN                                              ldr.o
+GNCNerr                                           ldr.o
+GNCNerr1                                          ldr.o
+GNCNex                                            ldr.o
+GetDrive                                          ldr.o
+IBMtoNKC                                          ldr.o
+Ident                                             ldr.o
+ItN01                                             ldr.o
+ItN02                                             ldr.o
+ItN03                                             ldr.o
+ItN03a                                            ldr.o
+ItN04                                             ldr.o
+ItN04a                                            ldr.o
+ItN04b                                            ldr.o
+ItN04c                                            ldr.o
+ItN05                                             ldr.o
+ItN05a                                            ldr.o
+ItN05b                                            ldr.o
+ItN05c                                            ldr.o
+ItN10                                             ldr.o
+ItN20                                             ldr.o
+ItN201                                            ldr.o
+ItN20a                                            ldr.o
+ItNerr                                            ldr.o
+ItNex                                             ldr.o
+JMDL                                              ldr.o
+JMDL01                                            ldr.o
+JMDL02                                            ldr.o
+JMDL03                                            ldr.o
+JMDL04                                            ldr.o
+JMDL05                                            ldr.o
+JMDL06                                            ldr.o
+JMDLerr                                           ldr.o
+JMDLex                                            ldr.o
+JMFN                                              ldr.o
+JMFN01                                            ldr.o
+JMFN03                                            ldr.o
+JMFN04                                            ldr.o
+JMFN10                                            ldr.o
+JMFN12                                            ldr.o
+JMFNex                                            ldr.o
+JN                                                ldr.o
+JN01                                              ldr.o
+JNA                                               ldr.o
+JNA00                                             ldr.o
+JNA01                                             ldr.o
+JNAex                                             ldr.o
+JNAex1                                            ldr.o
+JNex                                              ldr.o
+JNex1                                             ldr.o
+LBHLW                                             ldr.o
+LBPB01                                            ldr.o
+LBPB02                                            ldr.o
+LLW00                                             ldr.o
+LLW01                                             ldr.o
+LLW02                                             ldr.o
+LLW20                                             ldr.o
+LLWErr                                            ldr.o
+LLWExit                                           ldr.o
+LLWOK                                             ldr.o
+LdBPBerr                                          ldr.o
+LdBPBex                                           ldr.o
+LoadBPB                                           ldr.o
+LoadLW                                            ldr.o
+LowBHigh                                          ldr.o
+MFN                                               ldr.o
+MFN01                                             ldr.o
+MFN03                                             ldr.o
+MFN04                                             ldr.o
+MFN10                                             ldr.o
+MFN11                                             ldr.o
+MFN12                                             ldr.o
+MFNex                                             ldr.o
+MNFE                                              ldr.o
+MNFE01                                            ldr.o
+MNFE02                                            ldr.o
+MNFE02a                                           ldr.o
+MNFE03                                            ldr.o
+MNFE04                                            ldr.o
+MNFE05                                            ldr.o
+MNFE10                                            ldr.o
+MNFEerr                                           ldr.o
+MNFEex                                            ldr.o
+NKCtoIBM                                          ldr.o
+NO01                                              ldr.o
+NO02                                              ldr.o
+NO03                                              ldr.o
+NO04                                              ldr.o
+NameOut                                           ldr.o
+NtI01                                             ldr.o
+NtI02                                             ldr.o
+NtI03                                             ldr.o
+NtI04                                             ldr.o
+NtI05                                             ldr.o
+NtI05a                                            ldr.o
+NtI05b                                            ldr.o
+NtI05c                                            ldr.o
+NtI10                                             ldr.o
+NtI20                                             ldr.o
+NtIerr                                            ldr.o
+NtIex                                             ldr.o
+OStype                                            ldr.o
+QF01                                              ldr.o
+QF02                                              ldr.o
+QF03                                              ldr.o
+QF04                                              ldr.o
+QF05                                              ldr.o
+QFerr                                             ldr.o
+QFex                                              ldr.o
+QForm                                             ldr.o
+RdSerr                                            ldr.o
+RdSerr1                                           ldr.o
+RdSex                                             ldr.o
+RdSlp01                                           ldr.o
+RdSlp20                                           ldr.o
+ReadSec                                           ldr.o
+SODS                                              ldr.o
+SODS01                                            ldr.o
+SODS02                                            ldr.o
+SODSerr                                           ldr.o
+SODSex                                            ldr.o
+SRD                                               ldr.o
+SRD01                                             ldr.o
+SRDerr                                            ldr.o
+SRDex                                             ldr.o
+SSD                                               ldr.o
+SSD01                                             ldr.o
+SSD02                                             ldr.o
+SSDerr                                            ldr.o
+SSDex                                             ldr.o
+ScODS                                             ldr.o
+ScODS01                                           ldr.o
+ScODS10                                           ldr.o
+ScODS20                                           ldr.o
+ScODS21                                           ldr.o
+ScODS30                                           ldr.o
+ScODS90                                           ldr.o
+ScODSerr                                          ldr.o
+ScODSex                                           ldr.o
+ScRD                                              ldr.o
+ScRD01                                            ldr.o
+ScRDerr                                           ldr.o
+ScRDex                                            ldr.o
+ScSD                                              ldr.o
+ScSD01                                            ldr.o
+ScSD02                                            ldr.o
+ScSDerr                                           ldr.o
+ScSDex                                            ldr.o
+SetLW                                             ldr.o
+TABtoSP                                           ldr.o
+TtS01                                             ldr.o
+TtS02                                             ldr.o
+UFB01                                             ldr.o
+UFB02                                             ldr.o
+UFBerr                                            ldr.o
+UFBex                                             ldr.o
+UFE                                               ldr.o
+UFEerr                                            ldr.o
+UFEex                                             ldr.o
+UpFATBu                                           ldr.o
+VarEnd                                            ldr.o
+VarStart                                          ldr.o
+WCN                                               ldr.o
+WCN01                                             ldr.o
+WCNerr                                            ldr.o
+WCNex                                             ldr.o
+WrSerr                                            ldr.o
+WrSerr1                                           ldr.o
+WrSex                                             ldr.o
+WrSlp01                                           ldr.o
+WrSlp20                                           ldr.o
+WriteSec                                          ldr.o
+allgm                                             ldr.o
+bcdtobin                                          ldr.o
+buffer                                            ldr.o
+cb01                                              ldr.o
+cd01                                              ldr.o
+cd02                                              ldr.o
+cd03                                              ldr.o
+cd04                                              ldr.o
+cd05                                              ldr.o
+cderr                                             ldr.o
+cderr1                                            ldr.o
+cdex                                              ldr.o
+cdok                                              ldr.o
+chdir                                             ldr.o
+ci                                                ldr.o
+cls                                               ldr.o
+co2                                               ldr.o
+csts                                              ldr.o
+delay500                                          ldr.o
+dirbuff                                           ldr.o
+dircmp                                            ldr.o
+dircmp01                                          ldr.o
+dircmp02                                          ldr.o
+dircmp03                                          ldr.o
+dircmp05                                          ldr.o
+dircmp10                                          ldr.o
+dircmp11                                          ldr.o
+dircmp12                                          ldr.o
+dircmp13                                          ldr.o
+dircmp15                                          ldr.o
+dircmp20                                          ldr.o
+dircmp30                                          ldr.o
+dircmpex                                          ldr.o
+dirfuss                                           ldr.o
+dirkopf                                           ldr.o
+ende                                              ldr.o
+err01                                             ldr.o
+errend                                            ldr.o
+errex                                             ldr.o
+error                                             ldr.o
+errtab                                            ldr.o
+fatbuff                                           ldr.o
+fd0                                               ldr.o
+fd1                                               ldr.o
+filebuff                                          ldr.o
+fld01                                             ldr.o
+fld02                                             ldr.o
+fld03                                             ldr.o
+fld04                                             ldr.o
+fld10                                             ldr.o
+flderr                                            ldr.o
+fldex                                             ldr.o
+fload                                             ldr.o
+fname                                             ldr.o
+fsave                                             ldr.o
+fsv01                                             ldr.o
+fsv02                                             ldr.o
+fsv03                                             ldr.o
+fsv10                                             ldr.o
+fsv20                                             ldr.o
+fsverr                                            ldr.o
+fsvex                                             ldr.o
+getuhr                                            ldr.o
+hda1                                              ldr.o
+hda2                                              ldr.o
+hda3                                              ldr.o
+hda4                                              ldr.o
+hdb1                                              ldr.o
+hdb2                                              ldr.o
+hdb3                                              ldr.o
+hdb4                                              ldr.o
+hddat                                             ldr.o
+hdp02                                             ldr.o
+hdp03                                             ldr.o
+hdp04                                             ldr.o
+hdp05                                             ldr.o
+hdpars                                            ldr.o
+hdperr                                            ldr.o
+hdpex                                             ldr.o
+hdtab                                             ldr.o
+hilfe                                             ldr.o
+hilfetab                                          ldr.o
+hmcd                                              ldr.o
+hmcopy                                            ldr.o
+hmdel                                             ldr.o
+hmdir                                             ldr.o
+hmdisk                                            ldr.o
+hmform                                            ldr.o
+hmload                                            ldr.o
+hmmd                                              ldr.o
+htabend                                           ldr.o
+ibmtab                                            ldr.o
+idedisk                                           ldr.o
+idetest                                           ldr.o
+idex                                              ldr.o
+idlp01                                            ldr.o
+idlp02                                            ldr.o
+idlp10                                            ldr.o
+idlp20                                            ldr.o
+jcf01                                             ldr.o
+jclrfcb                                           ldr.o
+jclw01                                            ldr.o
+jclwerr                                           ldr.o
+jclwex                                            ldr.o
+jconvlw                                           ldr.o
+jdirbuf                                           ldr.o
+jfcb                                              ldr.o
+jfillfcb                                          ldr.o
+jfinfo                                            ldr.o
+jfld01                                            ldr.o
+jfld02                                            ldr.o
+jfldex                                            ldr.o
+jfload                                            ldr.o
+jfsave                                            ldr.o
+jfsv01                                            ldr.o
+jfsv02                                            ldr.o
+jfsvex                                            ldr.o
+jmotoff                                           ldr.o
+jtom                                              ldr.o
+jtom01                                            ldr.o
+jtom01a                                           ldr.o
+jtom02                                            ldr.o
+jtomerr                                           ldr.o
+jtomerr1                                          ldr.o
+jtomerr2                                          ldr.o
+jtomerr3                                          ldr.o
+jtomex                                            ldr.o
+jusradr                                           ldr.o
+key                                               ldr.o
+key01                                             ldr.o
+komma                                             ldr.o
+komma01                                           ldr.o
+komma02                                           ldr.o
+lp00                                              ldr.o
+lp01                                              ldr.o
+lp02                                              ldr.o
+lp03                                              ldr.o
+lp04                                              ldr.o
+lp05                                              ldr.o
+m001                                              ldr.o
+m002                                              ldr.o
+mainend                                           ldr.o
+mcda                                              ldr.o
+mcda01                                            ldr.o
+mcdaerr                                           ldr.o
+mcdaex                                            ldr.o
+mcdaex1                                           ldr.o
+mcopya                                            ldr.o
+mcpa01                                            ldr.o
+mcpa01a                                           ldr.o
+mcpa02                                            ldr.o
+mcpa03                                            ldr.o
+mcpa03a                                           ldr.o
+mcpa04                                            ldr.o
+mcpa05                                            ldr.o
+mcpa10                                            ldr.o
+mcpa11                                            ldr.o
+mcpa12                                            ldr.o
+mcpa13                                            ldr.o
+mcpa13a                                           ldr.o
+mcpa14                                            ldr.o
+mcpaerr                                           ldr.o
+mcpaex                                            ldr.o
+mcpaex1                                           ldr.o
+mda00                                             ldr.o
+mda00a                                            ldr.o
+mda01                                             ldr.o
+mda02                                             ldr.o
+mdaerr                                            ldr.o
+mdaex                                             ldr.o
+mdaus02                                           ldr.o
+mdaus03                                           ldr.o
+mdaus04                                           ldr.o
+mdaus04a                                          ldr.o
+mdaus04b                                          ldr.o
+mdaus04c                                          ldr.o
+mdaus04d                                          ldr.o
+mdaus05                                           ldr.o
+mdaus06                                           ldr.o
+mdausex                                           ldr.o
+mdela                                             ldr.o
+mdela02                                           ldr.o
+mdelaer                                           ldr.o
+mdelaex                                           ldr.o
+mdira                                             ldr.o
+mdira00                                           ldr.o
+mdira00a                                          ldr.o
+mdira01                                           ldr.o
+mdira05                                           ldr.o
+mdira06                                           ldr.o
+mdira10                                           ldr.o
+mdiraer                                           ldr.o
+mdiraex                                           ldr.o
+mdirausg                                          ldr.o
+mdiska                                            ldr.o
+mdiskb                                            ldr.o
+meldung                                           ldr.o
+mforma                                            ldr.o
+mfrma01                                           ldr.o
+mfrmaer                                           ldr.o
+mfrmaex                                           ldr.o
+mkdir                                             ldr.o
+mkdir00                                           ldr.o
+mkdir01                                           ldr.o
+mkdir02                                           ldr.o
+mkdir03                                           ldr.o
+mkdirer1                                          ldr.o
+mkdirerr                                          ldr.o
+mkdirex                                           ldr.o
+mkdirex1                                          ldr.o
+mlda00a                                           ldr.o
+mlda01                                            ldr.o
+mlda01a                                           ldr.o
+mlda02                                            ldr.o
+mlda10                                            ldr.o
+mldaerr                                           ldr.o
+mldaerr1                                          ldr.o
+mldaex                                            ldr.o
+mldaex1                                           ldr.o
+mloada                                            ldr.o
+mmda                                              ldr.o
+mmda02                                            ldr.o
+mmda03                                            ldr.o
+mmdaerr                                           ldr.o
+mmdaex                                            ldr.o
+mover                                             ldr.o
+mtoj                                              ldr.o
+mtoj01                                            ldr.o
+mtoj02                                            ldr.o
+mtools                                            ldr.o
+mvrlp01                                           ldr.o
+nextside                                          ldr.o
+nkctab                                            ldr.o
+nxtsd01                                           ldr.o
+nxtsdex                                           ldr.o
+opt00                                             ldr.o
+opt01                                             ldr.o
+opt02                                             ldr.o
+opt03                                             ldr.o
+opt04                                             ldr.o
+opt05                                             ldr.o
+opterr                                            ldr.o
+optex                                             ldr.o
+option                                            ldr.o
+opttab                                            ldr.o
+otabend                                           ldr.o
+pars02                                            ldr.o
+pars02a                                           ldr.o
+pars02b                                           ldr.o
+pars03                                            ldr.o
+pars04                                            ldr.o
+pars04a                                           ldr.o
+pars04b                                           ldr.o
+pars04c                                           ldr.o
+pars04ex                                          ldr.o
+pars05                                            ldr.o
+pars06                                            ldr.o
+pars06a                                           ldr.o
+pars06b                                           ldr.o
+pars06z                                           ldr.o
+pars07                                            ldr.o
+pars07a                                           ldr.o
+pars07ex                                          ldr.o
+pars08                                            ldr.o
+pars08a                                           ldr.o
+pars08ex                                          ldr.o
+pars10                                            ldr.o
+pars10a                                           ldr.o
+pars10b                                           ldr.o
+pars10c                                           ldr.o
+pars10ex                                          ldr.o
+pars11                                            ldr.o
+pars12                                            ldr.o
+pars12a                                           ldr.o
+pars12b                                           ldr.o
+pars13                                            ldr.o
+pars13a                                           ldr.o
+pars14                                            ldr.o
+pars14a                                           ldr.o
+parsclr                                           ldr.o
+parsclr1                                          ldr.o
+parsdat                                           ldr.o
+parser                                            ldr.o
+parserr                                           ldr.o
+parsex                                            ldr.o
+print2d                                           ldr.o
+print2d0                                          ldr.o
+print4d                                           ldr.o
+print8d                                           ldr.o
+printl                                            ldr.o
+prt2d002                                          ldr.o
+prt2d02                                           ldr.o
+prt8d01                                           ldr.o
+prt8d02                                           ldr.o
+regout                                            ldr.o
+rem                                               ldr.o
+rem02                                             ldr.o
+rem03                                             ldr.o
+rem04                                             ldr.o
+rem05                                             ldr.o
+remerr                                            ldr.o
+remex                                             ldr.o
+remove                                            ldr.o
+res1                                              ldr.o
+res10                                             ldr.o
+res11                                             ldr.o
+res12                                             ldr.o
+res13                                             ldr.o
+res14                                             ldr.o
+res2                                              ldr.o
+res3                                              ldr.o
+res4                                              ldr.o
+res5                                              ldr.o
+res6                                              ldr.o
+res7                                              ldr.o
+res8                                              ldr.o
+res9                                              ldr.o
+rmv01                                             ldr.o
+rmv02                                             ldr.o
+rmv03                                             ldr.o
+rmv04                                             ldr.o
+rmv05                                             ldr.o
+rmv06                                             ldr.o
+rmverr                                            ldr.o
+rmverr1                                           ldr.o
+rmvex                                             ldr.o
+rmvex1                                            ldr.o
+sc00                                              ldr.o
+scmp01                                            ldr.o
+scmperr                                           ldr.o
+scmpex                                            ldr.o
+sda1                                              ldr.o
+sda2                                              ldr.o
+sda3                                              ldr.o
+sda4                                              ldr.o
+sdb1                                              ldr.o
+sdb2                                              ldr.o
+sdb3                                              ldr.o
+sdb4                                              ldr.o
+sddisk                                            ldr.o
+sdtest                                            ldr.o
+start                                             ldr.o
+strgcmp                                           ldr.o
+strgcopy                                          ldr.o
+terr1                                             ldr.o
+terr10                                            ldr.o
+terr11                                            ldr.o
+terr12                                            ldr.o
+terr13                                            ldr.o
+terr14                                            ldr.o
+terr15                                            ldr.o
+terr16                                            ldr.o
+terr17                                            ldr.o
+terr18                                            ldr.o
+terr19                                            ldr.o
+terr2                                             ldr.o
+terr20                                            ldr.o
+terr21                                            ldr.o
+terr22                                            ldr.o
+terr23                                            ldr.o
+terr24                                            ldr.o
+terr25                                            ldr.o
+terr26                                            ldr.o
+terr27                                            ldr.o
+terr28                                            ldr.o
+terr29                                            ldr.o
+terr3                                             ldr.o
+terr4                                             ldr.o
+terr5                                             ldr.o
+terr6                                             ldr.o
+terr7                                             ldr.o
+terr8                                             ldr.o
+terr9                                             ldr.o
+toupper                                           ldr.o
+trap10                                            ldr.o
+trap10ex                                          ldr.o
+trapend                                           ldr.o
+traptab                                           ldr.o
+troex                                             ldr.o
+troff                                             ldr.o
+tron                                              ldr.o
+trout                                             ldr.o
+tupex                                             ldr.o
+txt15spc                                          ldr.o
+txt1MB                                            ldr.o
+txt1groess                                        ldr.o
+txt1start                                         ldr.o
+txtMB                                             ldr.o
+txtakt                                            ldr.o
+txtaktlw                                          ldr.o
+txtbyte                                           ldr.o
+txtcopy                                           ldr.o
+txtcrlf                                           ldr.o
+txtcyl                                            ldr.o
+txtdatei                                          ldr.o
+txtdel                                            ldr.o
+txtdir                                            ldr.o
+txtdirat                                          ldr.o
+txterst                                           ldr.o
+txtform                                           ldr.o
+txtform1                                          ldr.o
+txtforts                                          ldr.o
+txtgroess                                         ldr.o
+txthd                                             ldr.o
+txtinit                                           ldr.o
+txtjn                                             ldr.o
+txtjna                                            ldr.o
+txtkomma                                          ldr.o
+txtload                                           ldr.o
+txtloe                                            ldr.o
+txtlw                                             ldr.o
+txtnr                                             ldr.o
+txtnv                                             ldr.o
+txtpart                                           ldr.o
+txtroot                                           ldr.o
+txtsec                                            ldr.o
+txtstart                                          ldr.o
+txtstern                                          ldr.o
+txttyp                                            ldr.o
+txtueber                                          ldr.o
+txtverz                                           ldr.o
+txtweit                                           ldr.o
+umbruch                                           ldr.o
+wert                                              ldr.o
+werterr                                           ldr.o
+writetxt                                          ldr.o
+wrtxt01                                           ldr.o
+wrtxtex                                           ldr.o

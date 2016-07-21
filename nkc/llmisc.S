@@ -247,12 +247,14 @@ tr1Fend:
  	executes the "name" command, then resumes execution
  ************************************************************************/
 _ll_system:
+#ifdef USE_JADOS
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a0
 	moveq #__cmdexec,%d7
 	trap #6
 	movem.l (%a7)+,%a6
 	moveq.l #0,%d0
+#endif
 	rts
 /************************************************************************
  * int _ll_getenv(char *buf, int id)

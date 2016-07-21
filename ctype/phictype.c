@@ -480,3 +480,11 @@ int _ltoupper(int c)
 		return c-32;
 	return c;
 }
+
+int isnumber(char* _s)
+{
+  while(_s) {
+    if(!isdigit(_s++)) return 0;
+  }
+  return 1;
+}
