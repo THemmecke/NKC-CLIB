@@ -3,6 +3,7 @@ Direkter Bildschirmzugriff:
 
 - Framebuffer unterteilt in Sektoren, die als dirty gemarkt werden, wenn auf sie geschrieben wurde.
 - In den Framebuffer kann dann bitwise geschrieben werden, die Übertragung erfolgt in den VSync Pausen interruptgesteuert
+- mehrere Bildschirmseiten verwenden
 
 
 
