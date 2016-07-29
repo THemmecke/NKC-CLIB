@@ -23,11 +23,15 @@ the following subdirs acomplish the ANSI standard C-lib:
  
  doc		- some documentation
  fdlibm		- a floating point emulation library (can be dis-/enabled in Makefile.rules) for system lacking a FPU
+ 
+ drivers	- hardware driver subsystem
+		- drivers/drivers.c is the abstraction layer which registeres the hardware drivers and in turn initializes the hardware
+		- the abstraction layer uses char- and block devices. char devices are yet not implemented		
  fs		- filesystem implementation (NKC/JADOS-FS and FAT/FAT16/FAT32)
 		- fs/fs.c is the abstraction layer which calls the registered driver
 		- fs/fat and fs/nkc contain the file system implementations
-		- fs/fat/fs_fat.c -> fatfs_init_fs initializes the FAT filesystem and registers the IDE/FAT drives
-		- fs/nkc/fs_nkc.c -> nkcfs_init_fs initializes the NKC filesystem and registeres all the drives to be used
+		- fs/fat/fs_fat.c -> fatfs_init_fs initializes and registers the FAT filesystem
+		- fs/nkc/fs_nkc.c -> nkcfs_init_fs initializes and registers the NKC filesystem (access to hardware is yed done via calls to JADOS/GP, so no hardware driver is used)
 		- every new filesystem has to implement a 'struct file_operations' that can be registered to (and used by) the fs
 		
  object		- holds all the compiled object files, which are bundled to lib/libCC.a and (if used) to libftlibm.a in lib

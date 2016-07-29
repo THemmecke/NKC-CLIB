@@ -24,3 +24,13 @@ David Lindauer
 Louisville, KY 40204
 
 email:  gclind01@starbase.spd.louisville.edu
+
+
+
+The given run-time library has been extended to provide support for filesystems and hardware devices through drivers.
+It has been narrowed down to be used on NKC hardware (http://www.schuetz.thtec.org/), but can easily be extended/changed to be used on any other hardware.
+Focus has been set on ease of use and understanding, therefore the i386 and other DOS/Win related parts have been removed and only necessary (68k) parts left.
+
+The used FAT file system was developed by Elm Chang (http://elm-chan.org/fsw/ff/00index_e.html) and has been integrated in the filesystem with minor changes.
+
+TorstenHemmecke@yahoo.de
