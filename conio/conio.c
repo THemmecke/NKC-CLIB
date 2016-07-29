@@ -103,7 +103,7 @@ dez hex 	NKC 		I-Net 	hex 	binär 			HTML-Code
 #define HPIXELS 256
 #define VPIXELS 512
 
-// define video memory layout (redefine with cpu!)
+// define video memory layout FIXME (redefine with cpu!)
 #define PAGE0 0x1C00000
 #define PAGE1 0x1C10000
 #define PAGE2 0x1C20000

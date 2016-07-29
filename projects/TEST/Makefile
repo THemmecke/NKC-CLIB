@@ -7,14 +7,14 @@ BASEDIR=$(shell  pwd)/../..
 include $(BASEDIR)/Makefile.rules
 
 OBJECTS= test.o mem.o
-OUTFILE=test
+OUTFILE=NKC68K.ROM
 LOADADDR=1024
 #LOADADDR=1280
 
 
 all: $(OBJECTS)	
 	$(LD)  $(LDFLAGS) -o $(OUTFILE).elf $(OBJECTS) > $(OUTFILE).map;	\
-	$(BASEDIR)/tools/elf2bin -r -s -l $(LOADADDR) -o $(OUTFILE).68k $(OUTFILE).elf; \
+	$(BASEDIR)/tools/elf2bin -r -s -l $(LOADADDR) -o $(OUTFILE) $(OUTFILE).elf; \
 	$(OC) -I elf32-m68k -S --adjust-start $(LOADADDR) $(OUTFILE).elf $(OUTFILE)_.68k; \
 	$(OD) -D -b binary -m m68k $(OUTFILE).68k > $(OUTFILE).S; \
 	$(OD) -D -b binary -m m68k $(OUTFILE)_.68k > $(OUTFILE)_.S; 
