@@ -600,6 +600,21 @@ nkc_showsp: .global nkc_showsp
         rts
 
 /*  -------------------------- VERSCH. HILFS FUNKTIONEN ------------------------------- */ 	
+
+cli:  .global cli
+      lea TIMER1_CTRL.w,%a0     /* adresse ctrl-reg in a0 */
+      move.b #0,(%a0)          	/* stop timer and interrupts */
+      ori #0x0700, %sr		/* Interrupts aus	*/
+      rts
+      
+sti:  .global sti
+      lea TIMER1_CTRL.w,%a0     /* adresse ctrl-reg in a0 	*/
+      move.b #0b10000001,(%a0)  /* start timer, enable interupt */
+      andi #0xf8ff, %sr		/* Interrups freigeben	*/
+      rts
+      
+      
+      
 /*
  unsigned char nkc_bcd2bin(unsigned char val)
 */	  

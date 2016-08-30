@@ -7,8 +7,12 @@
 #include <ff.h>
 #include <gide.h>
 
+//#include <conio.h>
+
 #include "cmd.h"
 #include "shell.h"
+
+#include "gdp.h"
 
 #include "../../nkc/llnkc.h"
 
@@ -63,6 +67,11 @@
 #define TEXT_CMDHELP_HISTORY		42
 
 #define TEXT_CMDHELP                    43
+
+// TEST commands ...
+#define	TEXT_CMDHELP_SP			44
+#define	TEXT_CMDHELP_FILL		45
+#define	TEXT_CMDHELP_TEST		46
 
 // Help text ... 
 struct CMDHLP hlptxt[] =
@@ -242,12 +251,25 @@ struct CMDHLP hlptxt[] =
 {TEXT_CMDHELP_PWD,
 	    "PWD: print working directory\n",
             "pwd\n"},           
+	    
+// TEST -----
+{TEXT_CMDHELP_SP,             
+                        "SP: set point <x,y,page,color>\n",
+                        "set point: <x,y,page,color>\n"},	
+{TEXT_CMDHELP_FILL,             
+                        "FILL: fill area <x1,y1,x2,y2,page,color>\n",
+                        "fill area: <x1,y1,x2,y2,page,color>\n"},
+{TEXT_CMDHELP_TEST,             
+                        "TEST\n",
+                        "test function\n"},			
+// TEST -----	    
+	    
 {TEXT_CMDHELP_QUIT,             
                         "QUIT: quit/exit program\n",
                         "quit\n"},    
 {TEXT_CMDHELP_HISTORY,             
                         "HISTORY: show command history\n",
-                        "history\n"},			
+                        "history\n"},		
 {TEXT_CMDHELP,
 			"type cmd /? for more information on cmd\n",""},        
         {0,"",""}
@@ -300,6 +322,11 @@ struct CMD internalCommands[] =
   {"REN"        , cmd_rename    , TEXT_CMDHELP_REN},
   {"RENAME"     , cmd_rename    , TEXT_CMDHELP_REN},
   {"RMDIR"      , cmd_rmdir     , TEXT_CMDHELP_RD},
+// --- TEST ------------------
+  {"SP"      	, cmd_setpoint  , TEXT_CMDHELP_SP},  
+  {"FILL"      	, cmd_fill  	, TEXT_CMDHELP_FILL}, 
+  {"TEST"      	, cmd_test  	, TEXT_CMDHELP_TEST},  
+// ---------------------------  
   {"QUIT"       , cmd_quit      , TEXT_CMDHELP_QUIT},
   {"Q"          , cmd_quit      , TEXT_CMDHELP_QUIT},  
   {"EXIT"       , cmd_quit      , TEXT_CMDHELP_QUIT},
@@ -476,9 +503,10 @@ FRESULT scan_fat_files (	/* used in cmd_lstatus */
 	return res;
 }
 
-/*----------------------------------------------*/
-/* Get a value of the string                    */
-/*----------------------------------------------*/
+/*--------------------------------------------------------*/
+/* Get a (long / 32Bit) value of the string               */
+/* the variable, where res points to, has to be 32 bits ! */
+/*--------------------------------------------------------*/
 /*	"123 -5   0x3ff 0b1111 0377  w "
 	    ^                           1st call returns 123 and next ptr
 	       ^                        2nd call returns -5 and next ptr
@@ -544,7 +572,7 @@ int xatoi (			/* 0:Failed, 1:Successful */
 }
 
 /*----------------------------------------------*/
-/* Get a (string)value of the string                    */
+/* Get a (string)value of the string            */
 /*----------------------------------------------*/
 /*	"HDA0   binary w "
 	    ^                       1st call returns 'HDA0' and next ptr (if len = 4)
@@ -2376,6 +2404,387 @@ int cmd_history(char* args)
     
     if(!(++line % 10)) getchar();     
   }
+  
+  return 0;
+}
+
+
+
+
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------ conio test --------------------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// define number of pixel per byte
+#define PPB 2
+// define resolution
+#define HPIXELS 512
+#define VPIXELS 256
+
+
+
+#if defined M68000
+#define GDPBASE 0x0E00000
+#elif defined M68020
+#define GDPBASE 0x1C00000
+#else
+#error "conio.c: no cpu type given"
+#endif
+   
+
+#define PAGE0 GDPBASE
+#define PAGE1 GDPBASE + 1 * (HPIXELS/PPB * VPIXELS)
+#define PAGE2 GDPBASE + 2 * (HPIXELS/PPB * VPIXELS)
+#define PAGE3 GDPBASE + 3 * (HPIXELS/PPB * VPIXELS)
+
+
+static 
+unsigned char *mem[] = {(unsigned char*) PAGE0,
+                        (unsigned char*) PAGE1,
+		        (unsigned char*) PAGE2,
+		        (unsigned char*) PAGE3,
+                       };
+
+	
+/* ******************************************************************************************************************************************
+ * 	arbitrary functions, slow
+ *
+ *
+ * ******************************************************************************************************************************************/
+
+static 
+void drv_put_pixel(int x, int y, int p, unsigned char color)
+{
+  
+    register unsigned char tmp,mask,col;
+    
+    col=0;
+#if PPB == 8
+    register int offset = (y<<6) + x/8;
+    mask = 0b10000000 >> (x % 8);
+    if(color)
+      col  = 0b10000000 >> (x % 8);    
+#elif PPB == 4       
+    register int offset = (y<<7) + x/4;
+    mask = 0b11000000 >> ((x % 4)*2);
+    if(color)
+      col  = (color << 6) >> ((x % 4)*2);
+#elif PPB == 2   
+    register int offset = (y<<8) + x/2;
+    mask = 0b11110000 >> ((x % 2)*4);
+    if(color)
+      col  = (color << 4) >> ((x % 2)*4);    
+#elif PPB == 1   
+    register int offset = (y<<9) + x;
+    mask = 0b11111111;   
+    col = color; 
+#endif        
+
+    if(color)
+    {
+      tmp = *(mem[p] + offset) & ~mask;            
+      *(mem[p] + offset) = tmp | col;
+    }
+    else
+    {
+      *(mem[p] + offset) &= ~mask;
+    }        
+}
+
+
+/*
+ * static void drv_fill_area(int x1, int y1, int x2, int y2, int p, unsigned char color)
+ * 
+ * Input:
+ * 	x1,y1	-	left bottom corner of area 
+ * 	x2,y2	-	top rigth corner of area 
+ * 	buffer	-	pointer to buffer, enough buffer space must already be allocated by caller
+ * 	page	-	gdp page
+ * 
+ * Output:
+
+ */ 
+static 
+void drv_fill_area(int x1, int y1, int x2, int y2, int p, unsigned char color)
+{
+  
+    register unsigned char tmp,mask,col;
+    register int offset,col16,xx1,xx2,yy; 
+    
+    col16=color + (color << 4) + (color << 8) + (color << 12); // 4 Pixel auf Einmal !!
+    
+   
+    // linker Rand
+    xx1 = x1;
+    switch(xx1 % 4)
+      {
+	
+	case 2: // 8-Bit Grenze
+		// erstes Byte komplett
+		// Rest mit memset16
+	  for(yy = y1; yy < y2; yy++)
+	  {
+	    offset = (yy<<8) + xx1/2;
+	    *(mem[p]+offset) = (unsigned char)(color + (color << 4));	    
+	  }
+	  xx1+=2;	  
+	  break;
+	case 1: // zweites Pixel erstes Byte eines Word
+		// erstes Byte mit drv_put_pixel
+		// zweites Byte komplett als Byte
+	  for(yy = y1; yy < y2; yy++)
+	  {
+	    drv_put_pixel(xx1,yy,p,color);
+	    offset = (yy<<8) + (xx1+1)/2;
+	    *(mem[p]+offset) = (unsigned char)(color + (color << 4));
+	  }	  	  
+	  xx1+=3;
+	  break;
+	case 3: // zweites Pixel zweites Byte eines Word
+		// erstes Byte mit drv_put_pixel
+		// Rest mit memset16
+	  for(yy = y1; yy < y2; yy++)
+	  {
+	      drv_put_pixel(xx1,yy,p,color);	      
+	  }	  	  
+	  xx1+=1;
+	  break;
+	case 0: // 16-Bit Grenze (0,4,8,12...)
+	        // memset16
+	  break;
+	  
+      }
+      
+      // Rechter Rand
+      xx2 = x2;
+      switch(xx2 % 4)
+      {
+	case 0: // letzten 3 Pixel felhlen
+	  for(yy = y1; yy < y2; yy++)
+	  {	    	    
+	    drv_put_pixel(xx2,yy,p,color);
+	  }
+	  xx2--;	  
+	  break;
+	case 1: // letzte beiden Pixel fehlen
+	  for(yy = y1; yy < y2; yy++)
+	  {	    
+	    offset = (yy<<8) + (xx2-1)/2;
+	    *(mem[p]+offset) = (unsigned char)(color + (color << 4));
+	  }
+	  xx2-=2;;	  
+	  break;
+	case 2: // letztes Pixel fehlt	
+	  for(yy = y1; yy < y2; yy++)
+	  {	    
+	    offset = (yy<<8) + (xx2-2)/2;
+	    *(mem[p]+offset) = (unsigned char)(color + (color << 4));
+	    drv_put_pixel(xx2,yy,p,color);
+	  }
+	  xx2-=3;	  
+	  break;
+	case 3: // 16-Bit voll	      	  
+	  break;
+      }
+	  
+      // fast fill ...
+      for(yy = y1; yy < y2; yy++)
+      {
+	offset = (yy<<8) + xx1/2;
+	memset16(mem[p]+offset,col16,(xx2-xx1)/2);
+      }
+
+
+}
+
+static
+void drv_save_area(void* buffer,unsigned int x,unsigned int y,unsigned int sx,unsigned int sy,unsigned int page)
+{
+  unsigned char pixel_offset; 			// -3 ... +3, legt notwenidge Verschiebung der 16Bit Wortes fest
+  unsigned char left_mask, right_mask;		// legt fest, welche bits im Zielbereich maskiert werden müssen
+
+}
+
+static
+void drv_restore_area(void* buffer,unsigned int x,unsigned int y,unsigned int sx,unsigned int sy,unsigned int page)
+{
+  unsigned char pixel_offset; 			// -3 ... +3, legt notwenidge Verschiebung der 16Bit Wortes fest
+  unsigned char left_mask, right_mask;		// legt fest, welche bits im Zielbereich maskiert werden müssen
+
+}
+
+static
+void drv_move_area(unsigned int x1,unsigned int y1,unsigned int x2,unsigned int y2,unsigned int sx,unsigned int sy,unsigned int page)
+{
+  unsigned char pixel_offset; 			// -3 ... +3, legt notwenidge Verschiebung der 16Bit Wortes fest
+  unsigned char left_mask, right_mask;		// legt fest, welche bits im Zielbereich maskiert werden müssen
+  
+}
+
+static
+void drv_draw_line(unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, unsigned int page, unsigned int color)
+{
+}
+
+/* ******************************************************************************************************************************************
+ * 	optimized functions for 16 bit access, faster ....
+ *
+ *
+ * ******************************************************************************************************************************************/
+
+/*
+ * static void drv_fill_area16(int x, int y, int sx, int sy, int p, unsigned char color)
+ * 
+ * Input:
+ * 	x1,y1	-	left bottom corner of area (x1 has to be at 16 bit boundary: if PPB=2 => x1 in 0,4,8,12 ....)
+ * 	sx,sy	-	sizes of area in pixels in x and y direction (sx has to be multiple of 4 if PPB=2)
+ * 	buffer	-	pointer to buffer, enough buffer space must already be allocated by caller
+ * 	page	-	gdp page
+ * 	color	-	fill color
+ * 
+ * Output:
+
+ */ 
+static 
+void drv_fill_area16(int x, int y, int sx, int sy, int p, unsigned char color)
+{
+   register unsigned long i,xx,yy,offset;
+   register unsigned short col16;
+
+   
+   col16=color + (color << 4) + (color << 8) + (color << 12); // 4 Pixel auf Einmal !!
+   
+    // fast fill ...
+    for(yy = y; yy < y+sy; yy++)
+    {
+      offset = (yy<<8) + x/2;
+      memset16(mem[p]+offset,col16,sx/2);
+    }
+}
+
+
+/*
+ * static int drv_save_area16(void* buffer,unsigned int x,unsigned int y,unsigned int sx,unsigned int sy, unsigned int page)
+ * 
+ * Input:
+ * 	x,y	-	left bottom corner of area (x has to be at 16 bit boundary: if PPB=2 => x in 0,4,8,12 ....)
+ * 	sx,sy	-	sizes of area in pixels in x and y direction (sx has to be multiple of 4 if PPB=2)
+ * 	buffer	-	pointer to buffer, enough buffer space must already be allocated by caller
+ * 	page	-	gdp page
+ * 
+ * Output:
+ * 	0	- 	success
+ * 	1	-	failed 
+ */ 
+static
+int drv_save_area16(void* buffer,unsigned int x,unsigned int y,unsigned int sx,unsigned int sy,unsigned int page)
+{
+  register unsigned long i,xx,yy,offset;
+  
+  // check, if values are at 16bit boundary
+  
+  for(yy=y; yy<y+sy; yy++) {
+	offset = (yy<<8) + x/2;
+        memcpy16(buffer+(yy-y)*sx, mem[page]+offset, sx/2);
+      }
+}
+
+/*
+ * static int drv_restore_area16(void* buffer,unsigned int x,unsigned int y,unsigned int sx,unsigned int sy, unsigned int page)
+ * 
+ * Input:
+ * 	x,y	-	left bottom corner of area (x has to be at 16 bit boundary: if PPB=2 => x in 0,4,8,12 ....)
+ * 	sx,sy	-	sizes of area in pixels in x and y direction (sx has to be multiple of 4 if PPB=2)
+ * 	buffer	-	pointer to buffer, enough buffer space must already be allocated by caller
+ * 	page	-	gdp page
+ * 
+ * Output:
+ * 	0	- 	success
+ * 	1	-	failed 
+ */ 
+static
+int drv_restore_area16(void* buffer,unsigned int x,unsigned int y,unsigned int sx,unsigned int sy,unsigned int page)
+{
+  register unsigned long i,xx,yy,offset;
+  
+  // check, if values are at 16bit boundary
+  
+  for(yy=y; yy<y+sy; yy++) {
+	offset = (yy<<8) + x/2;
+        memcpy16( mem[page]+offset, buffer+(yy-y)*sx, sx/2);
+      }
+}
+
+static
+void drv_draw_border(unsigned int x, unsigned int y, unsigned int sx, unsigned int sy, unsigned int page, unsigned int color, unsigned int single)
+{
+  gdp_set_page(0, 0, 1);
+  gdp_setcolor(color, 0);
+  
+  gdp_movetoxy(x,y);
+  gdp_drawtoxy(x+sx,y);
+  gdp_drawtoxy(x+sx,y+sy);
+  gdp_drawtoxy(x,y+sy);
+  gdp_drawtoxy(x,y);
+}
+
+
+/* ******************************************************************************************************************************************
+ * 	shell commands ....
+ *
+ *
+ * ******************************************************************************************************************************************/
+
+
+
+int cmd_setpoint(char* args)
+{
+  // SP: set point <x,y,page,color>
+  
+  unsigned long x,y,page,color,offs;
+  unsigned char *p;
+
+  
+  if (!xatoi(&args, &x) || !xatoi(&args, &y) || !xatoi(&args, &page)|| !xatoi(&args, &color)) return 0;
+  
+  drv_put_pixel(x,y,page,color);
+  
+  return 0;
+}
+
+int cmd_fill(char* args)
+{
+  // FILL: fill area <x1,y1,x2,y2, page,color>
+  
+  unsigned long x1,y1,x2,y2,page,color,offs;
+  unsigned char *p;
+
+  
+  if (!xatoi(&args, &x1) || !xatoi(&args, &y1) || !xatoi(&args, &x2) || !xatoi(&args, &y2) || !xatoi(&args, &page)|| !xatoi(&args, &color)) return 0;
+  
+  
+  drv_fill_area(x1,y1,x2,y2,page,color);
+  
+  return 0;
+}
+
+
+int cmd_test(char* args)
+{
+  
+  nkc_curoff();
+  nkc_setflip(0,0);
+  
+  gdp_init();
+  gdp_sethwcursor(1);
+  
+  drv_draw_border(4,4,43,40,0,4,0);
+  
+  nkc_getchar();
+  
+  gdp_sethwcursor(0);
+  nkc_curon();
+  nkc_setflip(20,0);
   
   return 0;
 }

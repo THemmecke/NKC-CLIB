@@ -4,13 +4,13 @@
 #include <signal.h>
 #include <math.h>
 #include <memory.h>
+#include <conio.h>
 
 //#define NKC_DEBUG	
 
 #ifdef NKC_DEBUG
 #include "../nkc/llnkc.h"
 #endif
-
 
 
 void PRINTF_TEST();
@@ -55,7 +55,7 @@ int main(int argc, const char* argv[])
 void CONIO_TEST()
 {
   int x,y;
-  //void drv_put_pixel(int x, int y, int p, unsigned char color);
+  //void drv_put_pixel( int x, int y, int p, unsigned char color);
   drv_put_pixel(10, 10, 0,0x01);
   nkc_getchar();
   

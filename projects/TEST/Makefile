@@ -7,7 +7,8 @@ BASEDIR=$(shell  pwd)/../..
 include $(BASEDIR)/Makefile.rules
 
 OBJECTS= test.o mem.o
-OUTFILE=NKC68K.ROM
+#OUTFILE=NKC68K.ROM
+OUTFILE=test.68k
 LOADADDR=1024
 #LOADADDR=1280
 

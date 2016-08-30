@@ -1,7 +1,7 @@
 /*  
     conio.h
 
-    taken from turbo c 3.1, modified for NKC use
+    taken from turbo c 3.1, modified for NKC
 */
 
 #ifndef __CONIO_H
@@ -49,7 +49,7 @@ enum COLORS {
 #define BLINK       128 /* blink bit */
 
 // private functions
-void drv_put_pixel(int x, int y, int p, unsigned char color);
+static void drv_put_pixel(int x, int y, int p, unsigned char color);
 
 
 void clreol( void );            /* clear top end of line, deletes all characters starting from next cursor position */

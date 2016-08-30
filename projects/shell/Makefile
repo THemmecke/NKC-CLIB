@@ -6,7 +6,7 @@ BASEDIR=$(shell  pwd)/../..
 
 include $(BASEDIR)/Makefile.rules
 
-OBJECTS=main.o cmd.o shell.o
+OBJECTS=main.o cmd.o shell.o mem.o gdp.o llgdp.o
 OUTFILE=test
 LOADADDR=1024
 

@@ -70,6 +70,10 @@ void* _nkc_get_laddr(void);
 void* _nkc_get_gp(void);
 
 /*  -------------------------- VERSCH. HILFS FUNKTIONEN ------------------------------- */ 	
+
+void cli();
+void sti();
+
 /*
  unsigned char nkc_bcd2bin(unsigned char val)
 */	 

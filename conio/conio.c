@@ -3,7 +3,7 @@
  
 
 /*
-	FIX: make all functions text window defined by window
+	FIXME: make all functions text window based - defined by window
 */
 
 
@@ -12,7 +12,7 @@
 
 	Auflösung einer Seite:  
 
-		(x)256 x (y)512 Bildpunkte = 131072 Bildpunkte
+		(x)511 x (y)256 Bildpunkte = 131072 Bildpunkte
 
 		1Byte speichert 8 Bildpunkte (Monochrom-Mode)
 		1 Seite benötigt damit 16KByte (16483Bytes), 4 Seiten 64KByte
@@ -62,10 +62,10 @@ dez hex 	NKC 		I-Net 	hex 	binär 			HTML-Code
 9 	$9 	Hellgrau 	    silver 	$0124 100 	100 	100 	#808080
 10 	$A 	Dunkelgelb	    olive 	$00D8 011 	011 	000 	#606000
 11 	$B 	Dunkelgrün	    green 	$0018 000 	011 	000 	#006000
-12 	$C 	Dunkelrot		maroon 	$00C0 011 	000 	000 	#600000
-13 	$D 	Dunkelblau		navy 	$0003 000 	000 	011 	#000060
-14 	$E 	Violett dunkel 	purple 	$00C3 011 	000 	011 	#600060
-15 	$F 	Zyan dunkel 	teal 	$001B 000 	011 	011 	#006060
+12 	$C 	Dunkelrot	    maroon 	$00C0 011 	000 	000 	#600000
+13 	$D 	Dunkelblau	    navy 	$0003 000 	000 	011 	#000060
+14 	$E 	Violett dunkel 	    purple 	$00C3 011 	000 	011 	#600060
+15 	$F 	Zyan dunkel 	    teal 	$001B 000 	011 	011 	#006060
 
 */
 /*
@@ -100,22 +100,33 @@ dez hex 	NKC 		I-Net 	hex 	binär 			HTML-Code
 // define number of pixel per byte
 #define PPB 2
 // define resolution
-#define HPIXELS 256
-#define VPIXELS 512
+#define HPIXELS 512
+#define VPIXELS 256
 
-// define video memory layout FIXME (redefine with cpu!)
+// define video memory layout 
+#if defined M68000
+#define PAGE0 0x0E00000
+#define PAGE1 0x0E10000
+#define PAGE2 0x0E20000
+#define PAGE3 0x0E30000
+
+#elif defined M68020
 #define PAGE0 0x1C00000
 #define PAGE1 0x1C10000
 #define PAGE2 0x1C20000
 #define PAGE3 0x1C30000
+#else
+#error "conio.c: no cpu type given"
+#endif
 
+static 
 unsigned char *mem[] = {(unsigned char*) PAGE0,
                         (unsigned char*) PAGE1,
 		        (unsigned char*) PAGE2,
 		        (unsigned char*) PAGE3,
                        };
 
-//static 
+static 
 void drv_put_pixel(int x, int y, int p, unsigned char color)
 {
   
@@ -149,9 +160,7 @@ void drv_put_pixel(int x, int y, int p, unsigned char color)
     else
     {
       *(mem[p] + offset) &= ~mask;
-    }
-    
-    
+    }        
 }
 
 /*--------------------------------------------------------------------------

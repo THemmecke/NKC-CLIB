@@ -75,10 +75,7 @@ CONFIG_USE_CLIBS_MATH=0
 ######## c-compiler ################
 CC=m68k-uclinux-gcc
 ############## c-compiler flags ############################################
-CFLAGS=
-
-# ############# to use recursive functions disable the following flag #############
-GCFLAGS+=NONRECURSIVE
+CCFLAGS=
 
 # ######### optimization level (-O0 = do not Optimize, default) #####################
 CCFLAGS +=  -O0 

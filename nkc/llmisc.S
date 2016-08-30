@@ -5,6 +5,9 @@
 	.text
 	.global _ll_gettime, _ll_ticks, _ll_getenv, _ll_system, timerinit, timerclose
 
+	
+
+      
 /************************************************************************
  * struct tm *_ll_gettime(struct tm *tm2)
  ************************************************************************/
@@ -98,6 +101,13 @@ _ll_ticks:
 	move.l (%a0),%d0
 	rts
 	
+	
+/*
+ INT 0x74 = Autovector Ebene 5 (IPL0..IPL4 =)
+ INT 0x7C = Autovector Ebene 7 (IPL0..IPL4 = / nicht maskierbar !)
+ 
+*/
+
 timerinit:
 #ifdef M68000
 	lea kqstart, %a0		/* clear Key-Queue Vars */
@@ -108,10 +118,10 @@ timerinit:
 	clr (%a0)
 
 	lea oldint7c,%a0
-    move.l 0x7c, (%a0)       	/* save old int vector */
+        move.l 0x7c, (%a0)       	/* save old int vector */
 	lea oldint74,%a0
 	move.l 0x74, (%a0)
-    lea trap1F,%a0
+        lea trap1F,%a0
 #else
 	lea kqstart(%pc), %a0		/* clear Key-Queue Vars */
 	clr (%a0)
@@ -121,50 +131,50 @@ timerinit:
 	clr (%a0)
 
 	lea oldint7c(%pc),%a0
-    move.l 0x7c, (%a0)       	/* save old int vector */
+        move.l 0x7c, (%a0)       	/* save old int vector */
 	lea oldint74(%pc),%a0
 	move.l 0x74, (%a0)
-    lea trap1F(%pc),%a0	
+        lea trap1F(%pc),%a0	
 #endif
-    move.l %a0, 0x7c         	/* install new int vector */
+        move.l %a0, 0x7c         	/* install new int vector */
 	move.l %a0, 0x74
         
 #ifdef M68000
-    lea ticks,%a0
+	lea ticks,%a0
 #else
-    lea ticks(%pc),%a0
+	lea ticks(%pc),%a0
 #endif
-    move.b #0x0,(%a0)
+	move.b #0x0,(%a0)
         
-    lea TIMER1_CTRL.w,%a0        	/* adresse ctrl-reg in a0 	*/
-    lea TIMER1_HI.w,%a1          	/* adresse hi-reg in a1	*/
-    lea TIMER1_LO.w,%a2          	/* adresse lo-reg in a2 */
+	lea TIMER1_CTRL.w,%a0        	/* adresse ctrl-reg in a0 	*/
+	lea TIMER1_HI.w,%a1          	/* adresse hi-reg in a1	*/
+	lea TIMER1_LO.w,%a2          	/* adresse lo-reg in a2 */
 
-    move.b #4,(%a0)          	/* schreibe preset und timer register */
+	move.b #4,(%a0)          	/* schreibe preset und timer register */
         				/* timer counts with 1Mhz, CLOCKS_PER_SEC = 1000 => counter=1000=0x03e8 => overflow after 50 days */
-    move.b #0x03,(%a1)        	/* hi-byte */
-    move.b #0xe8,(%a2)        	/* low-byte */
-    move.b #0b10000001,(%a0)  	/* start timer, enable interupt */
+	move.b #0x03,(%a1)        	/* hi-byte */
+	move.b #0xe8,(%a2)        	/* low-byte */
+	move.b #0b10000001,(%a0)  	/* start timer, enable interupt */
 	andi #0xf8ff, %sr		/* Interrups freigeben	*/
 	rts
 	
 timerclose:
 	lea TIMER1_CTRL.w,%a0        	/* adresse ctrl-reg in a0 */
 	move.b #0,(%a0)          	/* stop timer and interrupts */
-    ori #0x0700, %sr		/* Interrupts aus	*/
+	ori #0x0700, %sr		/* Interrupts aus	*/
 #ifdef M68000
-    lea oldint7c,%a0
+	lea oldint7c,%a0
 #else
-    lea oldint7c(%pc),%a0
+	lea oldint7c(%pc),%a0
 #endif
-    move.l (%a0),0x7c       	/* restore old interrupt */
+	move.l (%a0),0x7c       	/* restore old interrupt */
 #ifdef M68000
 	lea oldint74,%a0
 #else
 	lea oldint74(%pc),%a0
 #endif
-    move.l (%a0),0x74       	/* restore old interrupt */
-    rts
+	move.l (%a0),0x74       	/* restore old interrupt */
+	rts
 		
 /* TIMER INTERRUPT ROUTINE */	
 trap1F:
@@ -233,12 +243,12 @@ getkbd:
 tr1Fend:
 	
 	lea TIMER1_CTRL.w,%a0
-    move.b #0b10000001,(%a0)  /* clear ovl bit(6), continue running(0), enable INT(7) */	
+	move.b #0b10000001,(%a0)  /* clear ovl bit(6), continue running(0), enable INT(7) */	
         
-    move (%sp)+,%sr 
-    movem.l (%sp)+,%a0-%a6/%d0-%d7
+	move (%sp)+,%sr 
+	movem.l (%sp)+,%a0-%a6/%d0-%d7
 
-    rte
+	rte
 
 
 			
