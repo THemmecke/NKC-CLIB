@@ -172,21 +172,21 @@ void gdp_init( void )
   gdp_delay(100);
   
  
-  gdp_gotoxy(0,1); gdp_setcolor(GDP_COLOR_BLACK, GDP_COLOR_WHITE);  gdp_print_line(" Black on White "); gdp_drawcursor(1);gdp_drawcursor(0);gdp_print_line("TEST");
-  gdp_gotoxy(0,2); gdp_setcolor(GDP_COLOR_GREEN, GDP_COLOR_YELLOW); gdp_print_line(" Green on Yellow");gdp_drawcursor(1);gdp_print_line("TEST");
-  gdp_gotoxy(0,3); gdp_setcolor(GDP_COLOR_GREEN, GDP_COLOR_BLACK); gdp_print_line(" Green ");gdp_drawcursor(1);gdp_drawcursor(0);gdp_print_line("TEST");
-  gdp_gotoxy(0,4); gdp_setcolor(GDP_COLOR_RED, GDP_COLOR_BLACK); gdp_print_line(" Red ");gdp_drawcursor(1);gdp_print_line("TEST");
-  gdp_gotoxy(0,5); gdp_setcolor(GDP_COLOR_BLUE, GDP_COLOR_RED); gdp_print_line(" Blue on Red");gdp_drawcursor(1);gdp_drawcursor(0);gdp_print_line("TEST");
-  gdp_gotoxy(0,6); gdp_setcolor(GDP_COLOR_VIOLETT, GDP_COLOR_BLACK); gdp_print_line(" Violett ");gdp_drawcursor(1);gdp_print_line("TEST");
-  gdp_gotoxy(0,7); gdp_setcolor(GDP_COLOR_CYAN, GDP_COLOR_BLACK); gdp_print_line(" Cyan ");gdp_drawcursor(1);gdp_drawcursor(0);gdp_print_line("TEST");
-  gdp_gotoxy(0,8); gdp_setcolor(GDP_COLOR_DARKGREY, GDP_COLOR_BLACK); gdp_print_line(" Dark Grey ");gdp_drawcursor(1);gdp_print_line("TEST");
-  gdp_gotoxy(0,9); gdp_setcolor(GDP_COLOR_LIGHTGREY, GDP_COLOR_BLACK); gdp_print_line(" Light Grey ");gdp_drawcursor(1);gdp_drawcursor(0);gdp_print_line("TEST");
-  gdp_gotoxy(0,10); gdp_setcolor(GDP_COLOR_DARKYELLOW, GDP_COLOR_BLACK); gdp_print_line(" Dark Yellow ");gdp_drawcursor(1);gdp_print_line("TEST");
-  gdp_gotoxy(0,11); gdp_setcolor(GDP_COLOR_DARKGREEN, GDP_COLOR_BLACK); gdp_print_line(" Dark Green ");gdp_drawcursor(1);gdp_drawcursor(0);gdp_print_line("TEST");
-  gdp_gotoxy(0,12); gdp_setcolor(GDP_COLOR_DARKRED, GDP_COLOR_BLACK); gdp_print_line(" Dark Red ");gdp_drawcursor(1);gdp_print_line("TEST");
-  gdp_gotoxy(0,13); gdp_setcolor(GDP_COLOR_DARKBLUE, GDP_COLOR_BLACK); gdp_print_line(" Dark Blue ");gdp_drawcursor(1);gdp_drawcursor(0);gdp_print_line("TEST");
-  gdp_gotoxy(0,14); gdp_setcolor(GDP_COLOR_DARKVIOLETT, GDP_COLOR_BLACK); gdp_print_line(" Dark Violett ");gdp_drawcursor(1);gdp_print_line("TEST");
-  gdp_gotoxy(0,15); gdp_setcolor(GDP_COLOR_DARKCYAN, GDP_COLOR_BLACK); gdp_print_line(" Dark Cyan ");gdp_drawcursor(1);gdp_drawcursor(0);gdp_print_line("TEST");
+  gdp_gotoxy(0,1); gdp_setcolor(GDP_COLOR_BLACK, GDP_COLOR_WHITE);  gdp_print_line(" Black on White "); 
+  gdp_gotoxy(0,2); gdp_setcolor(GDP_COLOR_GREEN, GDP_COLOR_YELLOW); gdp_print_line(" Green on Yellow");
+  gdp_gotoxy(0,3); gdp_setcolor(GDP_COLOR_GREEN, GDP_COLOR_BLACK); gdp_print_line(" Green ");
+  gdp_gotoxy(0,4); gdp_setcolor(GDP_COLOR_RED, GDP_COLOR_BLACK); gdp_print_line(" Red ");
+  gdp_gotoxy(0,5); gdp_setcolor(GDP_COLOR_BLUE, GDP_COLOR_RED); gdp_print_line(" Blue on Red");
+  gdp_gotoxy(0,6); gdp_setcolor(GDP_COLOR_VIOLETT, GDP_COLOR_BLACK); gdp_print_line(" Violett ");
+  gdp_gotoxy(0,7); gdp_setcolor(GDP_COLOR_CYAN, GDP_COLOR_BLACK); gdp_print_line(" Cyan ");
+  gdp_gotoxy(0,8); gdp_setcolor(GDP_COLOR_DARKGREY, GDP_COLOR_BLACK); gdp_print_line(" Dark Grey ");
+  gdp_gotoxy(0,9); gdp_setcolor(GDP_COLOR_LIGHTGREY, GDP_COLOR_BLACK); gdp_print_line(" Light Grey ");
+  gdp_gotoxy(0,10); gdp_setcolor(GDP_COLOR_DARKYELLOW, GDP_COLOR_BLACK); gdp_print_line(" Dark Yellow ");
+  gdp_gotoxy(0,11); gdp_setcolor(GDP_COLOR_DARKGREEN, GDP_COLOR_BLACK); gdp_print_line(" Dark Green ");
+  gdp_gotoxy(0,12); gdp_setcolor(GDP_COLOR_DARKRED, GDP_COLOR_BLACK); gdp_print_line(" Dark Red ");
+  gdp_gotoxy(0,13); gdp_setcolor(GDP_COLOR_DARKBLUE, GDP_COLOR_BLACK); gdp_print_line(" Dark Blue ");
+  gdp_gotoxy(0,14); gdp_setcolor(GDP_COLOR_DARKVIOLETT, GDP_COLOR_BLACK); gdp_print_line(" Dark Violett ");
+  gdp_gotoxy(0,15); gdp_setcolor(GDP_COLOR_DARKCYAN, GDP_COLOR_BLACK); gdp_print_line(" Dark Cyan ");
 
   gdp_setcolor(GDP_COLOR_WHITE, GDP_COLOR_BLACK);
   
@@ -367,7 +367,7 @@ void gdp_setcolor(unsigned char fgcolor, unsigned char bkcolor)
 {
 /* GDPFPGA intern sind Vorder- und Hintergrundfarbe jeweils 4 Bit
  * und werden in einem 8-bit Register verwaltet.
- * Die Standard Farbwerte können nkc_gdplib.h entnommen werden
+ * Die Standard Farbwerte können gdp.h entnommen werden
  * über die CLUT können andere Werte geladen werden
  */
 
@@ -929,7 +929,7 @@ void gdp_put_char(unsigned char c)
     GDP_WAIT_READY;
     GDP_CMD = GDP_CMD_PENDOWN;
 
-					// 1st step: erase space between last and actual character if cursor position > 0:
+					// 1st step: erase space between last and current character if cursor position > 0:
     if(gdp_cursor_x > 0){
       dy = sizey-gdp_char_scaley-1;		// deltaY is size of character without vertical spacing
       while(xpos < gdp_xpos){			// erase spacing
@@ -990,7 +990,7 @@ void gdp_put_char(unsigned char c)
     gdp_cursor_x++;
 }
 
-void gdp_print_line(unsigned char *pline)
+void gdp_print_line_(unsigned char *pline)
 // print a line of zero-terminated text with auto wrap if eol reached
 // to do: 	handling of non printable chars (i.e. RC-LF etc.)
 //		cursor movement too slow using gdp_gotoxy
@@ -1190,6 +1190,59 @@ void gdp_print_line(unsigned char *pline)
 
   
 }
+
+
+
+void gdp_print_line(unsigned char *pline)
+
+
+{
+  unsigned long flags;
+  unsigned char sizex, sizey; 	// character size
+  unsigned int maxx, maxy;
+  unsigned int xpos,ypos,dx;	// graphic cursor position
+  unsigned char dy;
+  
+
+ 
+
+  while(*pline){ 
+    
+    if( (*pline  > 0x1F) &&(*pline < 0x7F) ){						// printable character (7bit ASCII)
+      gdp_put_char(*pline++);			// put char
+      gdp_cursor_x ++;				// advance text cursor
+	  
+						// check cursor position
+      if(gdp_cursor_x > gdp_max_cx){		// cursor is at eol, so try to advance to next line
+        gdp_cursor_x = 0;			// move textcursor to start of line
+        gdp_cursor_y++;				// advance line
+      }
+	  
+      if(gdp_cursor_y > gdp_max_cy){		// cursor is at bottom of screen, scoll one line up
+      }
+      
+    }else if( *pline < 0x20 ){								// Ctrl-character
+        switch(*pline){
+		case (ASCII_CR):	
+		  if(*pline++ == ASCII_LF){        	// DOS CR+LF encoding
+		    *pline++;					// simply advance pointer
+		    gdp_cursor_x = gdp_max_cx + 1; 		// move cursor to EOL
+		  }else{			  		// Unix return to SOL
+		    gdp_cursor_x = 0; 				// move cursor to start of line
+		  }
+		  break;
+		case (ASCII_LF):			// Unix CR+LF encoding					
+		  break;
+		case (ASCII_TAB):			// handle tabulator
+		  break;
+	}
+    }else{										// extended 8-bit ASCII  
+    }
+    
+  } // while
+  
+}
+
 
 void gdp_set_page(unsigned char writepage, unsigned char viewpage, unsigned char xormode)
 {

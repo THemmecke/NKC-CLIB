@@ -166,6 +166,7 @@ attempt to open /home/myCLib/CLIBS/projects/shell/../../lib/libCC.a succeeded
 (/home/myCLib/CLIBS/projects/shell/../../lib/libCC.a)divmod64.o
 (/home/myCLib/CLIBS/projects/shell/../../lib/libCC.a)rand.o
 (/home/myCLib/CLIBS/projects/shell/../../lib/libCC.a)abs.o
+(/home/myCLib/CLIBS/projects/shell/../../lib/libCC.a)conio.o
 (/home/myCLib/CLIBS/projects/shell/../../lib/libCC.a)drivers.o
 (/home/myCLib/CLIBS/projects/shell/../../lib/libCC.a)fs.o
 (/home/myCLib/CLIBS/projects/shell/../../lib/libCC.a)fs_nkc.o
@@ -225,3 +226,9 @@ attempt to open cmd.o succeeded
 cmd.o
 attempt to open shell.o succeeded
 shell.o
+attempt to open mem.o succeeded
+mem.o
+attempt to open gdp.o succeeded
+gdp.o
+attempt to open llgdp.o succeeded
+llgdp.o
