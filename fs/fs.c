@@ -285,17 +285,19 @@ struct fs_driver* get_driver(char *name)
    UINT i=0;
    int drive = -1;
    
-   do {
-   	sp = str[i]; tp = devicename;
-   	do {	/* Compare a string drive id with devicename */
-   		c = *sp++; tc = *tp++;
-   		if (IsLower(tc)) tc -= 0x20; /* make tc uppercase */
-   	} while (c > '9'  &&  (TCHAR)c == tc); /* while c is alpha and equal tc ... */
-   } while ( !( c<='9' && c>='0') && ((TCHAR)c == tc || !tc) && ++i < _VOLUMES);	/* Repeat for each id until pattern match */
+//   do {
+//   	sp = str[i]; tp = devicename;
+//   	do {	/* Compare a string drive id with devicename */
+//   		c = *sp++; tc = *tp++;
+//   		if (IsLower(tc)) tc -= 0x20; /* make tc uppercase */
+//   	} while (c > '9'  &&  (TCHAR)c == tc); /* while c is alpha and equal tc ... */
+//   } while ( !( c<='9' && c>='0') && ((TCHAR)c == tc || !tc) && ++i < _VOLUMES);	/* Repeat for each id until pattern match */
+
+   i = dn2vol(devicename);
    
    if (i < _VOLUMES ) {	/* If a drive id is found, get the value and strip it */
    	drive = VolToPart[i].pd;
-   }
+   }      
    
    fsfat_dbg(" dn2pdrv(%s)=%d\n",devicename,drive);
    

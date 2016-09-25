@@ -124,7 +124,7 @@ sddisk:
 	rts				
     		
 /*
-struct _driveinfo *sdtest(BYTE disk)
+struct _sddriveinfo *sdtest(BYTE disk)
 
 Kurzbeschreibung: Testet, ob ein SD-Laufwerk vorhanden ist.
 Eingaberegister: d4.b = Auswahl des Laufwerks
@@ -140,7 +140,7 @@ sdtest:
 	move.l	#_SDTEST,%d7		/* _SDTEST */
 	trap #1
 	move %d0,%d6
-                                     /* a0 points to a struct _driveinfo, d0 has error code */
+                                     /* a0 points to a struct _sddriveinfo, d0 has error code */
 	tst.l %d0                    /* d0 = 0, if no error */
 	beq sdtest_e
 	movea.l #0,%a0			/* in case of an error return NULL */

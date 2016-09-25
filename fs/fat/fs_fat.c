@@ -42,6 +42,7 @@ const struct file_operations fat_file_operations =
  /*
   * volume 0-3 => gide drive A partition 0-3
   * volume 4-7 => sdcard A partition 0-3
+  * volume 8   => sdcard B partition 0
   * (see ffconf.h) 
   * 
   */ 
@@ -57,9 +58,9 @@ const struct file_operations fat_file_operations =
   * This must match the FAT module configuration in /fs/fat/ffconf.h -> 'Drive/Volume Configurations'
   * 
   * current definitions in ffconf.h:
-  *	#define _VOLUMES	8 
+  *	#define _VOLUMES	9 
   * 	#define _STR_VOLUME_ID	1
-  * 	#define _VOLUME_STRS	"HDA0","HDA1","HDA2","HDA3","SDA0","SDA1","SDA2","SDA3"
+  * 	#define _VOLUME_STRS	"HDA0","HDA1","HDA2","HDA3","SDA0","SDA1","SDA2","SDA3","SDB0"
   * 	#define	_MULTI_PARTITION	1
   * 	#define _MULTI_DISK		1
   */
@@ -73,10 +74,11 @@ const struct file_operations fat_file_operations =
   {0, 1}, /* "4:" <== Disk# SDA, 1st partition (SDA0:) -- physical SD  drive 0, logical drive / volume 4 */
   {0, 2}, /* "5:" <== Disk# SDA, 2nd partition (SDA1:) -- physical SD  drive 0, logical drive / volume 5 */
   {0, 3}, /* "6:" <== Disk# SDA, 3rd partition (SDA2:) -- physical SD  drive 0, logical drive / volume 6 */
-  {0, 4}  /* "7:" <== Disk# SDA, 4th partition (SDA3:) -- physical SD  drive 0, logical drive / volume 7 */
+  {0, 4}, /* "7:" <== Disk# SDA, 4th partition (SDA3:) -- physical SD  drive 0, logical drive / volume 7 */
+  {1, 1}  /* "8:" <== Disk# SDB, 1st partition (SDB0:) -- physical SD  drive 1, logical drive / volume 8 */
 };
 
-char* const drvstr[] = {"HD","HD","HD","HD","SD","SD","SD","SD"}; // volume -> driver mapping
+char* const drvstr[] = {"HD","HD","HD","HD","SD","SD","SD","SD","SD"}; // volume -> driver mapping
  
 #endif  
 

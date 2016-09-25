@@ -125,18 +125,19 @@ struct _deviceinfo
 	};
 //}__attribute__ ((packed));	
 
-struct _driveinfo			//		(32)
+struct _sddriveinfo			//		(24)
 {
-	USHORT	numcyl;			// +0  	(2)
-	BYTE	numhead;		// +2	(1)
-	BYTE	numsec;			// +3	(1)
-	ULONG	nkcmode;		// +4	(4)
-	char    idename[24];	        // +8	(24)
+	ULONG	size;			// +0  	(4)  size in sectors
+	USHORT	bpb;			// +4	(2)  bytes per block/sector (512/1024)
+	USHORT	type;			// +6	(2)  0=MMC, 1=SD, 2=SDv2, 3=SDHC	
+	char    sdname[17];	        // +8	(17) 16 chars zero terminated
 	};
 //}__attribute__ ((packed));
 
+char* const SDTYPE[] = {"MMC","SD","SDv2","SDHC"};	
+	
 //int sddisk(USHORT cmd,ULONG arg1,ULONG arg2,BYTE disk,void* pdata);
-struct _driveinfo* sdtest(BYTE disk);
+struct _sddriveinfo* sdtest(BYTE disk);
 DRESULT lbamode(BYTE on, BYTE disk);
 DRESULT idetifySD(BYTE disk, struct _deviceinfo *p);
 int _sd(USHORT cmd,ULONG arg1,ULONG arg2,BYTE disk,void* pdata);

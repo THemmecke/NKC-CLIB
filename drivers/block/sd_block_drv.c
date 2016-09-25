@@ -115,7 +115,7 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 	DSTATUS stat;
 	UINT result = RES_OK;
 	struct _deviceinfo di;
-	struct _driveinfo *pdi;
+	struct _sddriveinfo *pdi;
 	
 	drvsd_dbg("sd disk_initialize (%d)...\n",pdrv);
 	
@@ -140,7 +140,7 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 	}
 	
 	//Stat[pdrv].n_sectors = di.cylinders * di.heads *di.sptrack; // sectors per card
-	Stat[pdrv].n_sectors = pdi->numsec;
+	Stat[pdrv].n_sectors = pdi->size;
 	
 	drvgide_dbg("...\n");
 	
@@ -166,11 +166,10 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 //	} else Stat[pdrv].status = STA_NODISK;
 	
 	
-	drvsd_dbg(" Model: %s\n",pdi->idename);
-	drvsd_dbg("   Cylinders      : %u\n",pdi->numcyl);
-	drvsd_dbg("   Heads          : %u\n",pdi->numhead);
-	drvsd_dbg("   Sectors/Card   : %lu\n",pdi->numsec);
-	drvsd_dbg("   NKC-Mode       : 0x%0X\n",pdi->nkcmode);
+	drvsd_dbg(" Model: %s\n",pdi->sdname);
+	drvsd_dbg("   bytes per block: %u\n",pdi->bpb);
+	drvsd_dbg("   type           : %u (%s)\n",pdi->type, SDTYPE[pdi->type]);
+	drvsd_dbg("   size in sects  : %lu\n",pdi->size);
 	
         drvsd_lldbgwait("KEY...\n");	
 
@@ -192,19 +191,17 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
  *
  ****************************************************************************/
 
-//struct _driveinfo			//		(32)
-//{
-//	USHORT	numcyl;			// +0  	(2)
-//	BYTE	numhead;		// +2	(1)
-//	BYTE	numsec;			// +3	(1)
-//	ULONG	nkcmode;		// +4	(4)
-//	char    idename[24];	// +8	(24)
-//	};
-////}__attribute__ ((packed));
+// struct _sddriveinfo			//		(24)
+// {
+// 	ULONG	size;			// +0  	(4)  size in sectors
+// 	USHORT	bpb;			// +4	(2)  bytes per block (512)
+// 	BYTE	type;			// +6	(1)  0=MMC, 1=SD, 2=SDv2, 3=SDHC	
+// 	char    sdname[17];	        // +8	(17) 16 chars zero terminated
+// 	};
 
 static UINT sd_open(struct _dev *devp)
 {
-  struct _driveinfo* pdi;
+  struct _sddriveinfo* pdi;
   BYTE disk;  
   DSTATUS stat = STA_OK;
   
@@ -212,9 +209,6 @@ static UINT sd_open(struct _dev *devp)
    
   if(devp == NULL) return EINVAL;    
   disk = devp->pdrv+1;
-  //disk = 1; // currently there is only one disk
-    
-  //struct _driveinfo *sdtest(BYTE disk)
   
   pdi = sdtest(disk);
   
@@ -222,13 +216,12 @@ static UINT sd_open(struct _dev *devp)
   
   Stat[devp->pdrv].status = stat;	
   Stat[devp->pdrv].sz_sector = 512;
-  Stat[devp->pdrv].n_sectors = pdi->numsec;
+  Stat[devp->pdrv].n_sectors = pdi->size;
     
-  drvsd_dbg(" Model: %s\n",pdi->idename);
-  drvsd_dbg("   Cylinders      : %u\n",pdi->numcyl);
-  drvsd_dbg("   Heads          : %u\n",pdi->numhead);
-  drvsd_dbg("   Sectors/Card   : %lu\n",pdi->numsec);
-  drvsd_dbg("   NKC-Mode       : 0x%0X\n",pdi->nkcmode);
+  drvsd_dbg(" Model: %s\n",pdi->sdname);
+  drvsd_dbg("   bytes per block: %u\n",pdi->bpb);
+  drvsd_dbg("   type           : %u (%s)\n",pdi->type, SDTYPE[pdi->type]);
+  drvsd_dbg("   size in sects  : %lu\n",pdi->size);
 
   drvsd_lldbgwait("KEY...\n");	
   
@@ -266,7 +259,6 @@ static UINT sd_read(struct _dev *devp, char *buffer, UINT start_sector, UINT num
   
   if(devp == NULL) return EINVAL;
   disk = devp->pdrv+1;
-  //disk = 1; // currently there is only one disk
      
   res = sddisk(CMD_READ,start_sector,num_sectors,disk,buffer);	
   
@@ -292,7 +284,6 @@ static UINT sd_write(struct _dev *devp, char *buffer, UINT start_sector, UINT nu
   if(buffer == NULL) return EINVAL;
   
   disk = devp->pdrv+1;
-  //disk = 1; // currently there is only one disk
   
   drvsd_lldbg("sd_write\n");
   
@@ -318,32 +309,33 @@ static UINT sd_write(struct _dev *devp, char *buffer, UINT start_sector, UINT nu
 //  UINT   geo_sectorsize;   /* Size of one sector */
 //};
 
-//struct _driveinfo			//		(32)
-//{
-//	USHORT	numcyl;			// +0  	(2)
-//	BYTE	numhead;		// +2	(1)
-//	BYTE	numsec;			// +3	(1)
-//	ULONG	nkcmode;		// +4	(4)
-//	char    idename[24];	// +8	(24)
-//	};
-////}__attribute__ ((packed));
+// struct _sddriveinfo			//		(24)
+// {
+// 	ULONG	size;			// +0  	(4)  size in sectors
+// 	USHORT	bpb;			// +4	(2)  bytes per block (512)
+// 	BYTE	type;			// +6	(2)  0=MMC, 1=SD, 2=SDv2, 3=SDHC	
+// 	char    sdname[17];	        // +8	(17) 16 chars zero terminated
+// 	};
 	
 static UINT sd_geometry(struct _dev *devp, struct geometry *geometry)
 {
   unsigned int stat; //STA_NODISK
-  struct _driveinfo* pdi;
+  struct _sddriveinfo* pdi;
   BYTE disk;  
   
   drvsd_lldbg("sd_geometry\n");
    
-  //if(devp == NULL) return EINVAL;
-  if(geometry == NULL) return EINVAL; // return 'Invalid argument'
+  if(geometry == NULL) {
+    drvsd_lldbg(" error: NULL pointer\n");
+    return RES_PARERR;  
+  }
   
-  //disk = devp->drv;
-  disk = 1; // currently there is only one disk
+  if(devp == NULL) {
+    drvsd_lldbg(" error: no physical device given\n");
+    return RES_PARERR;  
+  }
+  disk = devp->pdrv;
     
-  //struct _driveinfo *sdtest(BYTE disk)
-  
   pdi = sdtest(disk);
   
   if(pdi == NULL) return ENODEV;
@@ -351,8 +343,8 @@ static UINT sd_geometry(struct _dev *devp, struct geometry *geometry)
   geometry->geo_available = TRUE;
   geometry->geo_mediachanged = FALSE;
   geometry->geo_writeenabled = TRUE;
-  geometry->geo_nsectors = pdi->numcyl * pdi->numhead *pdi->numsec; // sectors per card
-  geometry->geo_sectorsize = 512; // usually 512 Bytes per Sector
+  geometry->geo_nsectors = pdi->size; // sectors per card
+  geometry->geo_sectorsize = pdi->bpb;; // usually 512 Bytes per Sector
 }
 
 /****************************************************************************
@@ -501,6 +493,7 @@ int sd_initialize()
   init_ff();
   
   disk_initialize (0);
+  disk_initialize (1);
   
   register_blk_driver("SD",  &sd_bops);
 }
