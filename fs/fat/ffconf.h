@@ -140,11 +140,11 @@
  * 
  */ 
 
-#define _VOLUMES	8
+#define _VOLUMES	9
 /* Number of volumes (logical drives) to be used. */
 
 #define _STR_VOLUME_ID	1	/* 0:Use only 0-9 for drive ID, 1:Use strings for drive ID */
-#define _VOLUME_STRS	"HDA0","HDA1","HDA2","HDA3","SDA0","SDA1","SDA2","SDA3"
+#define _VOLUME_STRS	"HDA0","HDA1","HDA2","HDA3","SDA0","SDA1","SDA2","SDA3","SDB0"
 
 /* When _STR_VOLUME_ID is set to 1, also pre-defined string can be used as drive number
 /  in the path name. _VOLUME_STRS defines the drive ID strings for each logical drives.

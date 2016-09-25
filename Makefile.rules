@@ -63,8 +63,8 @@ CONFIG_DEBUG_FS_FAT = 1
 CONFIG_DEBUG_FF = 1
 # Driver Subsystem
 CONFIG_DEBUG_DRV = 1
-CONFIG_DEBUG_DRV_GIDE = 1
-CONFIG_DEBUG_DRV_SD = 0
+CONFIG_DEBUG_DRV_GIDE = 0
+CONFIG_DEBUG_DRV_SD = 1
 CONFIG_DEBUG_DRV_JD = 0
 
 ############## tell if internal math lib should be used (/math) ############################

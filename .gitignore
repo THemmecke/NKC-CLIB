@@ -1,0 +1,12 @@
+./lib/*
+./object/*
+*.o
+*.lst
+*.dep
+*.68k
+*.dis
+*.elf
+*.a
+*~
+/doc/ongoing.txt
+/doc/syntax.txt
