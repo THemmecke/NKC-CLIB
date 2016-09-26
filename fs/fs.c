@@ -1438,6 +1438,7 @@ FRESULT add_fstabentry(char *volume, char* fsname, unsigned char options)
     char* pdevname;
     char* pfsname;
     struct fstabentry *pfstab, *ptail;
+    
 #ifdef USE_JADOS
     BOOL isJados = FALSE;
 #endif    
@@ -1509,7 +1510,7 @@ FRESULT add_fstabentry(char *volume, char* fsname, unsigned char options)
     fs_dbg("pfstab->options = %d\n",pfstab->options);
     fs_dbg("pfstab->pdrv = %d\n",pfstab->pdrv);
     
-    if(pfstab->pdrv == -1) {
+    if(pfstab->pdrv == -1 && !isJados) {
       fs_dbg("error: invalid drive specified\n");
       free(pfstab);
       return FR_INVALID_DRIVE;
