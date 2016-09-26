@@ -35,7 +35,8 @@ extern "C" {
 
 
 /* Definitions of volume management */
-
+#ifdef DYNAMIC_FSTAB
+#else
 #if _MULTI_PARTITION		/* Multiple partition configuration */
 typedef struct {
 	BYTE pd;	/* Physical drive number */
@@ -54,7 +55,7 @@ extern char* const drvstr[];
 
 #endif
 
-
+#endif
 
 /* Type of path name strings on FatFs API */
 

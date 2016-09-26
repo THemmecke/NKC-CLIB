@@ -65,6 +65,8 @@ const struct file_operations fat_file_operations =
   * 	#define _MULTI_DISK		1
   */
  
+#ifdef DYNAMIC_FSTAB
+#else
  PARTITION VolToPart[] = {
   /* Physical disk, partition -> Volume */
   {0, 1}, /* "0:" <== Disk# HDA, 1st partition (HDA0:) -- physical IDE drive 0, logical drive / volume 0 */
@@ -79,12 +81,14 @@ const struct file_operations fat_file_operations =
 };
 
 char* const drvstr[] = {"HD","HD","HD","HD","SD","SD","SD","SD","SD"}; // volume -> driver mapping
- 
+#endif 
 #endif  
 
+#ifdef DYNAMIC_FSTAB
+#else
 // Note: dn2vol (DiskName-To-Volume) maps devicename (HDA0...) to a FatFs index 
-static FATFS FatFs[_VOLUMES];		/* Pointer to the fat file system objects  -> ff.c */
-
+static FATFS FatFs[_VOLUMES];		/* Pointer to the fat file system objects  -> ff.c moved to fstabentry.pfs (fs.c) */
+#endif
 
 static BYTE Buff[262144];      /* Working buffer */
 
@@ -477,14 +481,30 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 //		       };
 	                      sprintf(tmp, "%s:", ((struct fstabentry*)arg)->devname);
 			      
+#ifdef DYNAMIC_FSTAB
+			      fsfat_dbg("try mount logical drive %s:\n", ((struct fstabentry*)arg)->devname);			      
+#else			      
 			      fsfat_dbg("try mount logical drive/volume %s/%d:\n", ((struct fstabentry*)arg)->devname, dn2vol(((struct fstabentry*)arg)->devname));			      
+#endif			      
 			      fsfat_dbg("  phydrv  = %d\n",((struct fstabentry*)arg)->pdrv);
 			      fsfat_dbg("  fsdrv   = 0x%x\n",((struct fstabentry*)arg)->pfsdrv);
 			      fsfat_dbg("  blkdrv  = 0x%x\n",((struct fstabentry*)arg)->pblkdrv);
 			      fsfat_dbg("  options = %d",((struct fstabentry*)arg)->options); 
 			      fsfat_lldbgwait("\n");
-			      			      
+#ifdef DYNAMIC_FSTAB
+			      
+			      // allocate memory for FATFS structure and store pointer in fstab
+			      pFatFs = (FATFS*)malloc(sizeof(FATFS));
+			      if(!pFatFs) { // errorhandling
+				  fsfat_dbg("error: no memory for pFatFs\n");
+				  return FR_NOT_ENOUGH_CORE;
+				}
+				
+			      ((struct fstabentry*)arg)->pfs = pFatFs;	
+#else  			      			      
 			      pFatFs = &FatFs[dn2vol(((struct fstabentry*)arg)->devname)];
+#endif			      
+			      
 			      pFatFs->pfstab = (struct fstabentry*)arg;				// add corresponding fstabentry to FatFs struct
 			      
 			      res = f_mount(pFatFs,  tmp, 1); // Mount immediately     
@@ -527,7 +547,8 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 //	BYTE	win[_MAX_SS];		/* Disk access window for Directory, FAT (and file data at tiny cfg) */
 //	//struct  blk_driver *blk_drv; 	/* Pointer to the block device driver */
 //} FATFS;
-
+#ifdef DYNAMIC_FSTAB
+#else			      
 			      for (n=0; n< _VOLUMES; n++){
 				printf("fs_fat.c| FatFs[%d]:\n",n);
 				printf("     drv:      %d\n",FatFs[n].drv);
@@ -535,15 +556,31 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 				printf("     database: 0x%x\n",FatFs[n].database);
 				fsfat_lldbgwait(" ....(KEY)\n");
 			      }
-			      
+#endif			      
 #endif
 			      break;
     // un-mount file system
     case FS_IOCTL_UMOUNT:
     case FAT_IOCTL_UMOUNT:  // args: NULL,FS_IOCTL_UMOUNT,arg = char* drivename 
+			      
+			      
+#ifdef DYNAMIC_FSTAB			      
+			      pFatFs = ((struct fstabentry*)arg)->pfs;
+			      
+			      if(pFatFs) {
+				fsfat_dbg("fs_fat.c|FAT_IOCTL_UMOUNT (%s)\n",((struct fstabentry*)arg)->devname);
+				sprintf(tmp, "%s:", ((struct fstabentry*)arg)->devname);
+				res = f_mount(NULL, tmp, 0);
+				free(pFatFs);
+				((struct fstabentry*)arg)->pfs = NULL;
+			      } else {
+				fsfat_dbg("fs_fat.c|FAT_IOCTL_UMOUNT pFatFS = NULL !! \n");
+			      }
+#else			      
 			      fsfat_dbg("fs_fat.c|FAT_IOCTL_UMOUNT (%s)\n",(char*)arg);
 			      sprintf(tmp, "%s:", (char*)arg);
 			      res = f_mount(NULL, tmp, 0);			      
+#endif			      
 			      //((struct ioctl_mount_fatfs*)arg)->drv === not used yet, we have only one physical drive 0
 			      // same information is in name => hda, hdb....
 			      // we implicitly assume there is no other drive than drive 0 => FIX !
@@ -606,6 +643,9 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 					   ((struct ioctl_mkfs*)arg)->sfd, 
 					   ((struct ioctl_mkfs*)arg)->au);			      
 			      break;    
+#ifdef DYNAMIC_FSTAB
+			      // this function is not needed here, for the filesystem can be retreived via fstab
+#else  			      
     // get FatFs structure
     case FAT_IOCTL_GET_FATFS: 
 			      fsfat_dbg(" fs_fat.c| FAT_IOCTL_GET_FATFS - \n");
@@ -615,7 +655,8 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 			      res = RES_OK;
 			      
 			      break;
-      
+#endif      
+			      
     case FAT_IOCTL_INFO:	
 			      printf("FatFs module (%s, CP:%u/%s) version %s , revision %d\n\n",
 					_USE_LFN ? "LFN" : "SFN",
@@ -623,7 +664,8 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 					_LFN_UNICODE ? "Unicode" : "ANSI",
 					_FAT_FS_VERSION,_FFCONF
 				    );
-			      
+#ifdef DYNAMIC_FSTAB
+#else
 			      #if _MULTI_PARTITION	
 			        UINT cnt;
 			      printf("Multiple partition feature is enabled.\nEach logical drive is tied to the partition as follows:\n");
@@ -635,7 +677,7 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 			      #else
 			      printf("\nMultiple partition feature is disabled.\nEach logical drive is tied to the same physical drive number.\n\n");
 			      #endif
-	
+#endif	
 			      break;   
 			      
     // Low Level FileSystem Services 200+ ==============================  

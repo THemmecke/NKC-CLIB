@@ -101,7 +101,11 @@ struct fstabentry
   char* devname;			/* devicename A, B ,HDA0 , HDB1... */   
   int pdrv;				/* physical drive number */  
   struct fs_driver	*pfsdrv;	/* pointer to file system driver */
-  struct blk_driver 	*pblkdrv;	/* pointer to block device driver */  
+  struct blk_driver 	*pblkdrv;	/* pointer to block device driver */ 
+#ifdef DYNAMIC_FSTAB  
+  int 			partition;	/* partition number (0...3) */
+  void			*pfs;		/* pointer to the file system FATFS for example, type can be retreived from pfsdrv->pname */
+#endif  
   unsigned char options;		/* mount options */
   struct fstabentry* next;		/* pointer to next fstab entry */
 };
@@ -114,7 +118,11 @@ FRESULT remove_fstabentry(char* devicename);
 FRESULT mountfs(char *devicename, char* fsname, unsigned char options);
 FRESULT umountfs(char *devicename);
 
+#ifdef DYNAMIC_FSTAB 
+int dn2part(char* devicename);
+#else
 int dn2vol(char* devicename);
+#endif
 int dn2pdrv(char* devicename);
 
 /* fs_registerdriver.c ******************************************************/

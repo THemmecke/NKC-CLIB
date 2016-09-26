@@ -67,8 +67,8 @@
 #define FAT_IOCTL_MKFS 				115
 // siehe auch FS_IOCTL_GETCWD.....fix !
 #define FAT_IOCTL_GETCWD 			116
-// get FatFs structure
-#define FAT_IOCTL_GET_FATFS 			117
+//// get FatFs structure
+//#define FAT_IOCTL_GET_FATFS 			117
 // rename a file/directory
 #define FAT_IOCTL_RENAME			118
 // change physical drive
@@ -205,10 +205,14 @@ struct ioctl_mkptable {
   void* work;			/* Pointer to the working buffer */
 };
 
+#ifdef DYNAMIC_FSTAB
+// this function is not needed here, for the filesystem can be retreived via fstab
+#else  
 struct ioctl_getfatfs {
   unsigned char vol;
   FATFS **ppfs;
 };
+#endif
 
 struct ioctl_mount_fs {
   char *devicename;   		/* devicename (HDA0, SDB1, A, B, 1, 2, ... */

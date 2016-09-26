@@ -21,8 +21,10 @@
 
 
 /* Character code support macros */
+#define IsChar(c)	
 #define IsUpper(c)	(((c)>='A')&&((c)<='Z'))
 #define IsLower(c)	(((c)>='a')&&((c)<='z'))
+#define IsChar(c)	(IsUpper(c) || IsLower(c))
 #define IsDigit(c)	(((c)>='0')&&((c)<='9'))
 
 /*******************************************************************************
@@ -243,7 +245,50 @@ struct fs_driver* get_driver(char *name)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+#ifdef DYNAMIC_FSTAB
+int dn2pdrv(char* devicename) { /* convert devicename to physical drive number */
 
+   int drive = -1;
+   char c;
+   /*
+    * drivename: xxyzz   xx=HD,SD ... is the device type, y=A,B,C... is the physical drive, zz = 0....n is the logical partition
+    * 
+    */ 
+   
+   
+   if(strlen(devicename) > 3) {
+     c=devicename[2];
+     if (IsLower(c)) c -= 0x20;
+     drive = c - 0x41;
+   }
+   
+   fsfat_dbg(" dn2pdrv(%s)=%d\n",devicename,drive);
+   
+   return drive;
+ }
+ 
+ int dn2part(char* devicename) { /* convert devicename to physical drive number 0:auto, 1st partition = 1 ... */
+
+   int partition = -1;
+   char pstring[4];
+   char *c = devicename;
+   char *tc = pstring;
+   /*
+    * drivename: xxyzz   xx=HD,SD ... is the device type, y=A,B,C... is the physical drive, zz = 0....n is the logical partition
+    * 
+    */ 
+   
+   while( IsChar(*c) ) c++; 		/* skip characters */
+   while( IsDigit(*c )) *tc++ = *c++; 	/* copy partition number */
+   *tc=0;				/* terminate string */
+     
+   partition = atoi( pstring ) + 1;		/* convert to integer */
+   
+   fsfat_dbg(" dn2part(%s)=%d\n",devicename,partition);
+   
+   return partition;
+ }
+#else
  
  int dn2vol(char* devicename) { /* convert devicename to volume number */
    /* Find string drive id */
@@ -303,6 +348,8 @@ struct fs_driver* get_driver(char *name)
    
    return drive;
  }
+
+#endif
 
 unsigned char checkfp(char* fp, struct fpinfo *pfpinfo)
 {
