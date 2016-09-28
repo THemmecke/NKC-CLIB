@@ -124,8 +124,8 @@ DWORD get_fattime (void)
     tmnow = localtime(&tnow);
 
   /* Pack date and time into a DWORD variable */
-  return    ((DWORD)(tmnow->tm_year - 1980) << 25)
-      | ((DWORD)tmnow->tm_mon << 21)
+  return    ((DWORD)(tmnow->tm_year - 1980 - 20) << 25)         // with -20 
+      | ((DWORD)(tmnow->tm_mon +1) << 21)			// +1 month correction
       | ((DWORD)tmnow->tm_mday << 16)
       | (WORD)(tmnow->tm_hour << 11)
       | (WORD)(tmnow->tm_min << 5)
@@ -489,6 +489,10 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 			      fsfat_dbg("  phydrv  = %d\n",((struct fstabentry*)arg)->pdrv);
 			      fsfat_dbg("  fsdrv   = 0x%x\n",((struct fstabentry*)arg)->pfsdrv);
 			      fsfat_dbg("  blkdrv  = 0x%x\n",((struct fstabentry*)arg)->pblkdrv);
+#ifdef DYNAMIC_FSTAB
+			      fsfat_dbg("  part    = %d\n",((struct fstabentry*)arg)->partition);
+			      fsfat_dbg("  pFATFS  = 0x%x\n",((struct fstabentry*)arg)->pfs);
+#endif 	  			      
 			      fsfat_dbg("  options = %d",((struct fstabentry*)arg)->options); 
 			      fsfat_lldbgwait("\n");
 #ifdef DYNAMIC_FSTAB
@@ -500,7 +504,12 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 				  return FR_NOT_ENOUGH_CORE;
 				}
 				
+			      memset(pFatFs,0,sizeof(FATFS)); // reset all values....	
+				    
 			      ((struct fstabentry*)arg)->pfs = pFatFs;	
+			      
+			      fsfat_dbg("  memory for FATFS object alocated (0x%x)",pFatFs);
+			      fsfat_lldbgwait("  (KEY)\n");
 #else  			      			      
 			      pFatFs = &FatFs[dn2vol(((struct fstabentry*)arg)->devname)];
 #endif			      
@@ -763,77 +772,22 @@ static int     fatfs_readdir(struct _file *filp, DIR *dir,FILINFO* finfo){
 
 
 void    fatfs_init_fs(void){
-
-        /* GIDE initialisieren und laufwerk mounten....*/
-
+     
         FRESULT res;
         WORD w;
         DWORD dw;
-        long p1; 
-	//struct _dev dev;
-	
-	//struct blk_driver* pblk_drv;
-
-	/*
-        printf("FatFs module (%s, CP:%u/%s)\n\n",
-            _USE_LFN ? "LFN" : "SFN",
-            _CODE_PAGE,
-            _LFN_UNICODE ? "Unicode" : "ANSI");
-	*/
-        
+        long p1; 	
 
         #if _USE_LFN
         Finfo.lfname = LFName;
         Finfo.lfsize = sizeof LFName;
         #endif
-
-      
-           
+  
         /* register driver within lib */
 	fsfat_dbg(" fileoperations at:\n");
 	fsfat_dbg("    fatfs_ioctl: 0x%0x\n",fatfs_ioctl);
-	
-	// register a FAT file system on GIDE drive -> später mit mount in fstab !!
-	//pblk_drv = get_blk_driver("HD");
-	//if(pblk_drv)
-	//{
-	  register_driver("FAT",&fat_file_operations); 	// general driver for gide disk a
-	  //register_driver("HDA0","FAT",&fat_file_operations, pblk_drv); 	// driver for disk 0 partition 0
-	  //register_driver("HDA1","FAT",&fat_file_operations, pblk_drv); 	// driver for disk 0 partition 1
-	//} else {
-	//   fsfat_dbg(" could not retreive block driver for HD !\n");
-	//}
-	
-	/*
-	// register a FAT file system on SD drive
-	pblk_drv = get_blk_driver("SD");
-	if(pblk_drv)
-	{
-	  register_driver("SDA","FAT",&fat_file_operations, pblk_drv); 		// general driver for sd disk a
-	  register_driver("SDA0","FAT",&fat_file_operations, pblk_drv); 	// driver for sd disk 0 partition 0
-	} else {
-	   fsfat_dbg(" could not retreive block driver for SD !\n");
-	}
-	*/
-	
-	// hat schon in hd_block_drv.c ==> hd_initialize() stattgefunden 
-	// init_ff(); /* initialize diskio.h */
-	// p1=0;      
-        // printf(" disk_initialize(%d) => (rc=%d)\n", (BYTE)p1, disk_initialize((BYTE)p1));    
-	
-	
-        /* mount 1st partition of disk #0 */  
-	// rewrite to pblk_drv->ioctl((BYTE)p1, GET_SECTOR_SIZE, &w) ...
-	// DEBUG!! res = f_mount(&FatFs[0], "0:", 1);
-	
-	// rewrite to pblk_drv->ioctl
-	#if 0
-        dev.pdrv = 1;
-        if (pblk_drv->blk_oper->ioctl(&dev, GET_SECTOR_SIZE, &w) == RES_OK)
-        printf(" Sector size = %u\n", w);
-	if (pblk_drv->blk_oper->ioctl(&dev, GET_SECTOR_COUNT, &dw) == RES_OK)
-        printf(" Number of sectors = %u\n", dw);
-        #endif
-	
+
+	register_driver("FAT",&fat_file_operations); 	// general driver for gide disk a
+
 }
 

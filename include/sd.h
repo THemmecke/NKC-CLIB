@@ -134,8 +134,13 @@ struct _sddriveinfo			//		(24)
 	};
 //}__attribute__ ((packed));
 
-char* const SDTYPE[] = {"MMC","SD","SDv2","SDHC"};	
 	
+// FIXME: should use compiler switch !	
+// old GP version
+char* const SDTYPE[] = {"SD/MMC","SDHC"};	
+// new GP version
+//char* const SDTYPE[] = {"MMC","SDv1","SDv2","SDHC"};
+
 //int sddisk(USHORT cmd,ULONG arg1,ULONG arg2,BYTE disk,void* pdata);
 struct _sddriveinfo* sdtest(BYTE disk);
 DRESULT lbamode(BYTE on, BYTE disk);

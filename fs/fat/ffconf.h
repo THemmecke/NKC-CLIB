@@ -140,6 +140,7 @@
  * 
  */ 
 #ifdef DYNAMIC_FSTAB
+#define _VOLUMES	9
 #else
 
 #define _VOLUMES	9

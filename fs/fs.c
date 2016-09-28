@@ -20,12 +20,12 @@
 #define NUM_OPENFILES 255
 
 
-/* Character code support macros */
-#define IsChar(c)	
+/* Character code support macros */	
 #define IsUpper(c)	(((c)>='A')&&((c)<='Z'))
 #define IsLower(c)	(((c)>='a')&&((c)<='z'))
 #define IsChar(c)	(IsUpper(c) || IsLower(c))
 #define IsDigit(c)	(((c)>='0')&&((c)<='9'))
+#define IsAlphaNum(c)   (IsChar(c) || IsDigit(c))
 
 /*******************************************************************************
  *   public variables   
@@ -1336,8 +1336,12 @@ FRESULT mountfs(char *devicename, char* fsname, unsigned char options)
 	fs_dbg("  phydrv  = %d\n",pfstab->pdrv);
 	fs_dbg("  fsdrv   = 0x%x\n",pfstab->pfsdrv);
 	fs_dbg("  blkdrv  = 0x%x\n",pfstab->pblkdrv);
+#ifdef DYNAMIC_FSTAB
+	fs_dbg("  part    = %d\n",pfstab->partition);
+	fs_dbg("  pFATFS  = 0x%x\n",pfstab->pfs);
+#endif 	  	
 	fs_dbg("  options = %d",pfstab->options);
-	fs_lldbgwait("\n");
+	fs_lldbgwait(" (KEY)\n");
 	
 	fres = pfsdriver->f_oper->ioctl(NULL,FS_IOCTL_MOUNT,pfstab);		// call fs device driver ioctl with fstabentry
 	
@@ -1410,6 +1414,8 @@ FRESULT umountfs(char *devicename)
 struct fstabentry* get_fstabentry(char* devname)
 {
   struct fstabentry *pcur;
+  char* tc;
+  int i=0;
 #ifdef USE_JADOS
   BOOL isJados = FALSE;
   char jadosdrv;
@@ -1417,20 +1423,28 @@ struct fstabentry* get_fstabentry(char* devname)
   			
   pcur = fstab;
   
-  fs_dbg(" fs.c|get_fstabentry: search for '%s'...\n",devname);
+  /* remove path information from given devname ... */
+  tc = malloc(sizeof(strlen(devname))+1);
+  if(!tc) return NULL;
+  strcpy(tc,devname);
+  while(IsAlphaNum(tc[i])) i++;
+  tc[i]=0;
+  
+  
+  fs_dbg(" fs.c|get_fstabentry: search for '%s'...\n",tc);
   
 #ifdef USE_JADOS
-  if(!devname[1]) { // JADOS drive
+  if(!tc[1]) { // JADOS drive
     isJados = TRUE;
-    jadosdrv = devname[0];
-    devname[0] = '*';
+    jadosdrv = tc[0];
+    tc[0] = '*';
   }
 #endif
   
   while(pcur)
   {
         fs_dbg("  current = '%s'\n",pcur->devname);
-  	if(!strcmp(pcur->devname,devname))
+  	if(!strcmp(pcur->devname,tc))
   	{ // found device 
 	  fs_dbg(" fs.c|get_fstabentry:  (SUCCESS) volume found.\n");
 	  
@@ -1440,13 +1454,18 @@ struct fstabentry* get_fstabentry(char* devname)
 	  fs_dbg("     (fs)drv = 0x%x, foper = 0x%x, open = 0x%x\n",pcur->pfsdrv,pcur->pfsdrv->f_oper,pcur->pfsdrv->f_oper->open);
 	  fs_dbg("     pblkdrv = 0x%x\n",pcur->pblkdrv);
 	  fs_dbg("     options = 0x%x\n",pcur->options);
+#ifdef DYNAMIC_FSTAB
+	  fs_dbg("     part    = %d\n",pcur->partition);
+	  fs_dbg("     pFATFS  = 0x%x\n",pcur->pfs);
+#endif 	  
 	  fs_dbg("     next    = 0x%x\n",pcur->next);
 	  fs_lldbgwait("           ....(KEY)\n");
 #ifdef USE_JADOS
 	  if(isJados){
-	    devname[0] = jadosdrv;
+	    tc[0] = jadosdrv;
 	  }
 #endif
+	  free(tc);
   	  return pcur;
   	}
   	
@@ -1455,11 +1474,12 @@ struct fstabentry* get_fstabentry(char* devname)
 
 #ifdef USE_JADOS
   if(isJados){
-	    devname[0] = jadosdrv;    
+	    tc[0] = jadosdrv;    
   }
 #endif
-
+   
   fs_dbg(" fs.c|get_fstabentry: (FAILED) volume not found\n");  
+  free(tc);
   return NULL; /* Invalid device specified  */
 }
 
@@ -1549,14 +1569,23 @@ FRESULT add_fstabentry(char *volume, char* fsname, unsigned char options)
     pfstab->options = options;
     pfstab->pdrv = dn2pdrv(volume);
     pfstab->next = NULL;
+#ifdef DYNAMIC_FSTAB
+    pfstab->partition = dn2part(volume);
+    pfstab->pfs = NULL;
+#endif    
     
     fs_dbg("pfstab->volume = %s\n",pfstab->devname);
     fs_dbg("pfstab->pfsdrv = 0x%x\n",pfstab->pfsdrv);
     fs_dbg("pfstab->pblkdrv = 0x%x\n",pfstab->pblkdrv);
     fs_dbg("pfstab->options = %d\n",pfstab->options);
     fs_dbg("pfstab->pdrv = %d\n",pfstab->pdrv);
+#ifdef DYNAMIC_FSTAB
+    fs_dbg("pfstab->partition = %d\n",pfstab->partition);
+    fs_dbg("pfstab->pfs = 0x%x\n",pfstab->pfs);
+#endif  
     
-    if(pfstab->pdrv == -1) {
+    
+    if(pfstab->pdrv == -1 && !isJados) {
       fs_dbg("error: invalid drive specified\n");
       free(pfstab);
       return FR_INVALID_DRIVE;
@@ -1572,7 +1601,7 @@ FRESULT add_fstabentry(char *volume, char* fsname, unsigned char options)
 	}
 	
 	
-    fs_lldbgwait("add_fstabentry: success\n");
+    fs_lldbgwait("add_fstabentry: success (KEY)\n");
     return FR_OK;
 }
 

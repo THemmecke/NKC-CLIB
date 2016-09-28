@@ -68,7 +68,10 @@
 // siehe auch FS_IOCTL_GETCWD.....fix !
 #define FAT_IOCTL_GETCWD 			116
 //// get FatFs structure
-//#define FAT_IOCTL_GET_FATFS 			117
+#ifdef DYNAMIC_FSTAB
+#else 
+#define FAT_IOCTL_GET_FATFS 			117
+#endif
 // rename a file/directory
 #define FAT_IOCTL_RENAME			118
 // change physical drive
