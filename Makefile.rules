@@ -47,7 +47,7 @@ CONFIG_USE_JADOS = 1
 ############# DEBUG configuration #################################################
 # #include <debug.h> in 
 # global switch to turn debugging on/off
-CONFIG_DEBUG = 1
+CONFIG_DEBUG = 0
 CONFIG_DEBUG_DISKIO = 0
 CONFIG_DEBUG_GIDE_C = 0
 CONFIG_DEBUG_GIDE_S = 0

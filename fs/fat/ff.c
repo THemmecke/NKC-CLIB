@@ -3204,7 +3204,7 @@ FRESULT f_chdrive (
 	struct fstabentry *pfstabentry;
 	FATFS *fs;
 	
-	ff_dbg(" ff.c: f_chdrive(%s) => %d\n",path);
+	ff_dbg(" ff.c: f_chdrive(%s)\n",path);
 	
 	if(pfstabentry = get_fstabentry(path)){ 
 	  fs = (FATFS*)pfstabentry->pfs; /* Get pointer to the file system object */

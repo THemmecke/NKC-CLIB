@@ -300,22 +300,6 @@ static UINT sd_write(struct _dev *devp, char *buffer, UINT start_sector, UINT nu
  *
  ****************************************************************************/
 
-//struct geometry
-//{
-//  BOOL   geo_available;    /* true: The device is vailable */
-//  BOOL   geo_mediachanged; /* true: The media has changed since last query */
-//  BOOL   geo_writeenabled; /* true: It is okay to write to this device */
-//  UINT   geo_nsectors;     /* Number of sectors on the device */
-//  UINT   geo_sectorsize;   /* Size of one sector */
-//};
-
-// struct _sddriveinfo			//		(24)
-// {
-// 	ULONG	size;			// +0  	(4)  size in sectors
-// 	USHORT	bpb;			// +4	(2)  bytes per block (512)
-// 	BYTE	type;			// +6	(2)  0=MMC, 1=SD, 2=SDv2, 3=SDHC	
-// 	char    sdname[17];	        // +8	(17) 16 chars zero terminated
-// 	};
 	
 static UINT sd_geometry(struct _dev *devp, struct geometry *geometry)
 {
@@ -338,13 +322,27 @@ static UINT sd_geometry(struct _dev *devp, struct geometry *geometry)
     
   pdi = sdtest(disk);
   
-  if(pdi == NULL) return ENODEV;
+  if(pdi == NULL){
+    geometry->available = FALSE;
+    return ENODEV;
+  }
  
-  geometry->geo_available = TRUE;
-  geometry->geo_mediachanged = FALSE;
-  geometry->geo_writeenabled = TRUE;
-  geometry->geo_nsectors = pdi->size; // sectors per card
-  geometry->geo_sectorsize = pdi->bpb;; // usually 512 Bytes per Sector
+  geometry->available = TRUE;
+  geometry->mediachanged = FALSE;
+  geometry->writeenabled = TRUE;
+  geometry->cylinders = 0;
+  geometry->heads = 0;
+  geometry->sptrack = 0;
+  geometry->nsectors = pdi->size; // sectors per card
+  geometry->sectorsize = pdi->bpb;; // usually 512 Bytes per Sector
+  
+  geometry->model = malloc(sizeof(strlen(pdi->sdname)+1));
+  if(geometry->model){
+    strcpy(geometry->model,pdi->sdname);
+  } else {
+  }
+  
+  return EZERO;
 }
 
 /****************************************************************************
@@ -492,8 +490,8 @@ int sd_initialize()
   
   init_ff();
   
-  disk_initialize (0);
-  disk_initialize (1);
+  //disk_initialize (0); (disk should be inizialized while mounting in open() )
+  //disk_initialize (1);
   
   register_blk_driver("SD",  &sd_bops);
 }

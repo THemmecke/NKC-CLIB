@@ -461,15 +461,6 @@ static DRESULT hd_write(struct _dev *devp, char *buffer, DWORD start_sector, DWO
  *
  ****************************************************************************/
 
-//struct geometry
-//{
-//  BOOL   geo_available;    /* true: The device is vailable */
-//  BOOL   geo_mediachanged; /* true: The media has changed since last query */
-//  BOOL   geo_writeenabled; /* true: It is okay to write to this device */
-//  UINT   geo_nsectors;     /* Number of sectors on the device */
-//  UINT   geo_sectorsize;   /* Size of one sector */
-//};
-
 static DRESULT hd_geometry(struct _dev *devp, struct geometry *geometry)
 {
   UINT result;
@@ -484,11 +475,24 @@ static DRESULT hd_geometry(struct _dev *devp, struct geometry *geometry)
   
   result = idetifyIDE(disk, &di); // direct call, no GP
  
-  geometry->geo_available = TRUE;
-  geometry->geo_mediachanged = FALSE;
-  geometry->geo_writeenabled = TRUE;
-  geometry->geo_nsectors = di.cylinders * di.heads *di.sptrack; // sectors per card
-  geometry->geo_sectorsize = di.bpsec; // usually 512 Bytes per Sector  
+  if(result){
+    geometry->available = FALSE;
+  } else {
+    geometry->available = TRUE;
+    geometry->mediachanged = FALSE;
+    geometry->writeenabled = TRUE;
+    geometry->cylinders = di.cylinders;
+    geometry->heads = di.heads;
+    geometry->sptrack = di.sptrack;
+    geometry->nsectors = di.cylinders * di.heads *di.sptrack; // sectors per card
+    geometry->sectorsize = di.bpsec; // usually 512 Bytes per Sector  
+    
+    geometry->model = malloc(sizeof(strlen(&di.modelnum)+1));
+    if(geometry->model){
+      strcpy(geometry->model,&di.modelnum);
+    } else {
+    }
+  }
   
   return IDEError2DRESULT(result);
   
@@ -643,7 +647,7 @@ DSTATUS hd_initialize()
   drvgide_lldbg("hd_initialize\n");
   
   init_ff();      // initialize diskio system
-  res = disk_initialize(0); // initialize GIDE, there is only one GIDE drive yet
+  //res = disk_initialize(0); // initialize GIDE, there is only one GIDE drive yet (disk should be inizialized while mounting in open() )
   
   register_blk_driver("HD",  &hd_bops);
   

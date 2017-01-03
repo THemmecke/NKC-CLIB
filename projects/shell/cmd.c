@@ -2347,7 +2347,7 @@ int cmd_dev(char* args)
   res = ioctl(NULL,FS_IOCTL_GETBLKDEV,&driver);
   line = 0;
   
-  printf(" DRIVE    BLKLDRV    BLKOPER\n\n");
+  printf(" Registered block device drivers:\n DRIVE    BLKLDRV    BLKOPER\n\n");
   
   while(driver)
   {		
@@ -2356,6 +2356,9 @@ int cmd_dev(char* args)
       
       driver = driver->next;
   }
+  
+  // fetch geometry of 1st and 2nd drive from each driver:
+  // look for partitions/partitiontype of each regular drive:
   
   return 0;
 }
