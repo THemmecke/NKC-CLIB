@@ -139,16 +139,9 @@
  * volume 4-7 => sdcard A partition 0-3
  * 
  */ 
-#ifdef DYNAMIC_FSTAB
-#define _VOLUMES	9
-#else
 
 #define _VOLUMES	9
-/* Number of volumes (logical drives) to be used. */
 
-#define _VOLUME_STRS	"HDA0","HDA1","HDA2","HDA3","SDA0","SDA1","SDA2","SDA3","SDB0"
-
-#endif
 
 #define _STR_VOLUME_ID	1	/* 0:Use only 0-9 for drive ID, 1:Use strings for drive ID */
 

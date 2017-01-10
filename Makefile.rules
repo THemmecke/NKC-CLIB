@@ -88,7 +88,7 @@ CONFIG_USE_CLIBS_MATH=0
 ######## c-compiler ################
 CC=m68k-uclinux-gcc
 ############## c-compiler flags ############################################
-CCFLAGS= -DDYNAMIC_FSTAB
+
 
 # ############# to use recursive functions disable the following flag #############
 #GCFLAGS+=NONRECURSIVE

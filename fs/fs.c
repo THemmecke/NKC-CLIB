@@ -237,7 +237,7 @@ struct fs_driver* get_driver(char *name)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-#ifdef DYNAMIC_FSTAB
+
 int dn2pdrv(char* devicename) { /* convert devicename to physical drive number */
 
    int drive = -1;
@@ -282,68 +282,7 @@ int dn2pdrv(char* devicename) { /* convert devicename to physical drive number *
    
    return partition;
  }
-#else
- 
- int dn2vol(char* devicename) { /* convert devicename to volume number */
-   /* Find string drive id */
-   static const char* const str[] = {_VOLUME_STRS};  // "HDA0","HDA1","HDA2","HDA3" ... in ffconf.h
-   const char *sp;
-   char c;
-   TCHAR tc;
-   const TCHAR *tp;
-   UINT i=0;
-   int vol = -1;
-      
-   
-   do {
-   	sp = str[i]; tp = devicename;
-   	do {	/* Compare a string drive id with devicename */
-   		c = *sp++; tc = *tp++;
-   		if (IsLower(tc)) tc -= 0x20;
-   	} while (c && (TCHAR)c == tc);	
-   // } while ((c && ( !tp || tp == ':')) && ++i < _VOLUMES);	/* Repeat for each id until pattern match */
-   } while ( !((!c && !tc) || (!c && tc == ':')) && ++i < _VOLUMES);	
-   
-   if (i < _VOLUMES  ) {	/* If a drive id is found, get the value and strip it */        
-   	vol = (int)i;
-   }
-   
-   fsfat_dbg(" dn2vol(%s)=%d\n",devicename,vol);
-   
-   return vol;
- }
- 
- 
- int dn2pdrv(char* devicename) { /* convert devicename to physical drive number */
-   /* Find string drive id */
-   static const char* const str[] = {_VOLUME_STRS};  // "HDA0","HDA1","HDA2","HDA3" ... in ffconf.h
-   const char *sp;
-   char c;
-   TCHAR tc;
-   const TCHAR *tp;
-   UINT i=0;
-   int drive = -1;
-   
-//   do {
-//   	sp = str[i]; tp = devicename;
-//   	do {	/* Compare a string drive id with devicename */
-//   		c = *sp++; tc = *tp++;
-//   		if (IsLower(tc)) tc -= 0x20; /* make tc uppercase */
-//   	} while (c > '9'  &&  (TCHAR)c == tc); /* while c is alpha and equal tc ... */
-//   } while ( !( c<='9' && c>='0') && ((TCHAR)c == tc || !tc) && ++i < _VOLUMES);	/* Repeat for each id until pattern match */
 
-   i = dn2vol(devicename);
-   
-   if (i < _VOLUMES ) {	/* If a drive id is found, get the value and strip it */
-   	drive = VolToPart[i].pd;
-   }      
-   
-   fsfat_dbg(" dn2pdrv(%s)=%d\n",devicename,drive);
-   
-   return drive;
- }
-
-#endif
 
 unsigned char checkfp(char* fp, struct fpinfo *pfpinfo)
 {
@@ -1331,10 +1270,8 @@ FRESULT mountfs(char *devicename, char* fsname, unsigned char options)
 	fs_dbg("  phydrv  = %d\n",pfstab->pdrv);
 	fs_dbg("  fsdrv   = 0x%x\n",pfstab->pfsdrv);
 	fs_dbg("  blkdrv  = 0x%x\n",pfstab->pblkdrv);
-#ifdef DYNAMIC_FSTAB
 	fs_dbg("  part    = %d\n",pfstab->partition);
-	fs_dbg("  pFATFS  = 0x%x\n",pfstab->pfs);
-#endif 	  	
+	fs_dbg("  pFATFS  = 0x%x\n",pfstab->pfs);	
 	fs_dbg("  options = %d",pfstab->options);
 	fs_lldbgwait(" (KEY)\n");
 	
@@ -1463,10 +1400,8 @@ struct fstabentry* get_fstabentry(char* devname)
 	  fs_dbg("     (fs)drv = 0x%x, foper = 0x%x, open = 0x%x\n",pcur->pfsdrv,pcur->pfsdrv->f_oper,pcur->pfsdrv->f_oper->open);
 	  fs_dbg("     pblkdrv = 0x%x\n",pcur->pblkdrv);
 	  fs_dbg("     options = 0x%x\n",pcur->options);
-#ifdef DYNAMIC_FSTAB
 	  fs_dbg("     part    = %d\n",pcur->partition);
 	  fs_dbg("     pFATFS  = 0x%x\n",pcur->pfs);
-#endif 	  
 	  fs_dbg("     next    = 0x%x\n",pcur->next);
 	  fs_lldbgwait("           ....(KEY)\n");
 #ifdef USE_JADOS
@@ -1578,20 +1513,16 @@ FRESULT add_fstabentry(char *volume, char* fsname, unsigned char options)
     pfstab->options = options;
     pfstab->pdrv = dn2pdrv(volume);
     pfstab->next = NULL;
-#ifdef DYNAMIC_FSTAB
     pfstab->partition = dn2part(volume);
     pfstab->pfs = NULL;
-#endif    
     
     fs_dbg("pfstab->volume = %s\n",pfstab->devname);
     fs_dbg("pfstab->pfsdrv = 0x%x\n",pfstab->pfsdrv);
     fs_dbg("pfstab->pblkdrv = 0x%x\n",pfstab->pblkdrv);
     fs_dbg("pfstab->options = %d\n",pfstab->options);
     fs_dbg("pfstab->pdrv = %d\n",pfstab->pdrv);
-#ifdef DYNAMIC_FSTAB
     fs_dbg("pfstab->partition = %d\n",pfstab->partition);
     fs_dbg("pfstab->pfs = 0x%x\n",pfstab->pfs);
-#endif  
     
     
     if(pfstab->pdrv == -1 

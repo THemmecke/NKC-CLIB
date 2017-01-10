@@ -1952,13 +1952,9 @@ int cmd_vstatus(char * args){
   char *pc;
   FATFS *pfs;
   FRESULT res;
-  
-#ifdef DYNAMIC_FSTAB
+
   struct fstabentry *pfstabentry;
-#else  
-  struct ioctl_getfatfs arg;
-  int vol;
-#endif  
+ 
   static const BYTE ft[] = {0, 12, 16, 32};
    
    printf("Volumes File System Status...\n");
@@ -1971,29 +1967,13 @@ int cmd_vstatus(char * args){
    while (*args == ' ') args++;  	// skip whitespace
   
    res=checkfp(args, &FPInfo);		// analyze argumennt
-   
-   //pc=args;  
-   //while(*pc){			// convert to uppercase
-   // *pc = toupper(*pc);
-   // pc++;
-   //}
-  
-#ifdef DYNAMIC_FSTAB
+
    if(pfstabentry = get_fstabentry(args)){ 
      pfs = (FATFS*)pfstabentry->pfs; /* Get pointer to the file system object */
    }else{
      printf(" error: volume not found in fstab\n");
      return 0;
    }
-#else     
-   arg.vol = dn2vol(FPInfo.psz_driveName);
-   printf("disk (%s) (volume %u):\n\n",FPInfo.psz_driveName,arg.vol);
-
-   arg.ppfs = &pfs;
-   res = ioctl(FPInfo.psz_driveName,FAT_IOCTL_GET_FATFS,&arg);
-   
-   if( res != RES_OK) { printf("drive not ready.\n"); return 0; }
-#endif
 
    if (!pfs->fs_type) { printf("Not mounted.\n"); return 0; }
    

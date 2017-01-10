@@ -493,32 +493,12 @@ typedef struct {
 /  compiler or start-up routine is out of ANSI-C standard.
 */
 
-#ifdef DYNAMIC_FSTAB
-#else  
-
-#if _VOLUMES >= 1 || _VOLUMES <= 10
-static
-FATFS *FatFs[_VOLUMES];		/* Pointer to the file system objects located in fs_fat.c */
-#else
- #error Number of volumes must be 1 to 10.
-#endif
-
-
-#endif
-
 static
 WORD Fsid;					/* File system mount ID */
 
-
-#ifdef DYNAMIC_FSTAB
 static
 struct fstabentry *pCurFs=NULL;		/* Pointer to current filesystem in fstab */
-#else 
-#if _FS_RPATH && _VOLUMES >= 2
-static                                               
-BYTE CurrVol;				/* Current logical volume (index into VolToPart[] in fs.c) */
-#endif
-#endif
+
 
 #if _FS_LOCK
 static
@@ -2153,20 +2133,15 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) and adjus
 	const TCHAR** path	/* Pointer to pointer to the path name */
 )
 {
-#ifdef DYNAMIC_FSTAB
 	const TCHAR *tp;
 	TCHAR *tt;
-#else  
-	const TCHAR *tp, *tt;
-#endif	
 	UINT i;
 	int vol = -1;
-#ifdef DYNAMIC_FSTAB
 	struct fstabentry *pfstabentry;
 	FATFS *fs;
 	
 	ff_dbg(" ff.c|get_ldnumber: 0 should be returend with DYNAMIC_FSTAB enabled.\nThe pathname will be adjusted to a path without drive name and pCurFs will point to the current active fs.\n");
-#endif	
+
   
 	ff_dbg(" ff.c|get_ldnumber: path=(%s)....\n",*path);
 
@@ -2184,7 +2159,6 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) and adjus
 				}
 			} else {	/* No numeric drive id, try string id */
 #if _STR_VOLUME_ID		/* Find string drive id */
-#ifdef DYNAMIC_FSTAB
 				*tt=0;
 				ff_dbg(" ff.c|get_ldnumber: fetch fstab entry for '%s'\n",*path);
 				if(pfstabentry = get_fstabentry(*path)){ 
@@ -2201,42 +2175,17 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) and adjus
 				  pCurFs = pfstabentry;
 				  ff_dbg(" ff.c|get_ldnumber: vol = 0, pCurFs = pfstabentry = 0x%x\n",pfstabentry);
 				}
-#else  			  
-				static const char* const str[] = {_VOLUME_STRS};  // "HDA0","HDA1","HDA2","HDA3" ... in ffconf.h
-				const char *sp;
-				char c;
-				TCHAR tc;
 
-				i = 0; tt++; /* tt now points to next char after ':' in the path */
-				do {
-					sp = str[i]; tp = *path;
-					do {	/* Compare a string drive id with path name */
-						c = *sp++; tc = *tp++;
-						if (IsLower(tc)) tc -= 0x20;
-					} while (c && (TCHAR)c == tc);
-				} while ((c || tp != tt) && ++i < _VOLUMES);	/* Repeat for each id until pattern match */
-				if (i < _VOLUMES) {	/* If a drive id is found, get the value and strip it */
-					vol = (int)i;
-					*path = tt;
-					
-					ff_dbg(" ff.c|get_ldnumber: (2)found vol %d, path %s\n", vol,*path);
-				}
-#endif
 #endif
 
 			}
 			return vol;
 		}
 		
-#if _FS_RPATH && _VOLUMES >= 2
-		 
- #ifdef DYNAMIC_FSTAB
+#if _FS_RPATH && _VOLUMES >= 2		 
 		vol = 0;
 		ff_dbg(" ff.c|get_ldnumber: vol = 0, fs = pCurFs->pfs = 0x%x\n",pCurFs->pfs);
- #else		
-		ff_dbg(" ff.c|get_ldnumber: vol = CurrVol\n");
-		vol = CurrVol;	/* Current drive */
- #endif		
+ 	
 #else
 		ff_dbg(" ff.c|get_ldnumber: vol = 0\n");
 		vol = 0;		/* Drive 0 */
@@ -2290,10 +2239,9 @@ BYTE check_fs (	/* 0:FAT boot sector, 1:Valid boot sector but not FAT, 2:Not a b
 /*-----------------------------------------------------------------------*/
 /* Find logical drive and check if the volume is mounted                 */
 /*-----------------------------------------------------------------------*/
-#ifdef DYNAMIC_FSTAB
 static
 int mounting = 0; /* flags if we are in a mounting operation */
-#endif
+
 
 static
 FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
@@ -2303,11 +2251,7 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 )
 {
 	BYTE fmt;
-#ifdef DYNAMIC_FSTAB
 	struct fstabentry *pfstabentry;
-#else 	
-	int vol;
-#endif	
 	DSTATUS stat;
 	DWORD bsect, fasize, tsect, sysect, nclst, szbfat;
 	WORD nrsv;
@@ -2316,8 +2260,6 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 
 	ff_dbg(" ff.c|find_volume....\n"); 
 
-	      
-#ifdef DYNAMIC_FSTAB	
 	if(mounting) { /* if mounting, we are called from f_mount and have to behave different */
 	  ff_dbg(" ff.c|find_volume: called by f_mount\n");
 	  fs = *rfs;   /* the file system in this case is given via prameter, only the mouonting should be done */
@@ -2345,33 +2287,13 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 	  
 	}
 	
-#else  	
-	*rfs = 0;
-	/* Get logical drive number from the path name */	
-	vol = get_ldnumber(path);
-
-	ff_dbg(" ff.c|find_volume: get_ldnumber = %d\n",vol);
-
-	if (vol < 0) return FR_INVALID_DRIVE;
-
-	/* Check if the file system object is valid or not */
-	fs = FatFs[vol]; /* Get pointer to the file system object */
-#endif	
 	if (!fs){
 
-#ifdef DYNAMIC_FSTAB
-	  ff_dbg(" ff.c|find_volume: fs not found \n");
-#else	  
-	 ff_dbg(" ff.c|find_volume: fs not found in FatFS[%d]\n",vol);
-#endif	 
+	  ff_dbg(" ff.c|find_volume: fs not found \n");	 
 
 	 return FR_NOT_ENABLED;		/* Is the file system object available? */
 	}
-#ifdef DYNAMIC_FSTAB
 	ff_dbg(" ff.c|find_volume: fs object found\n");
-#else
-	ff_dbg(" ff.c|find_volume: fs object found in FatFS[%d]\n",vol);
-#endif	
 	
 	ENTER_FF(fs);						/* Lock the volume */
 	*rfs = fs;						/* Return pointer to the file system object */
@@ -2386,34 +2308,24 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 				return FR_WRITE_PROTECTED;
 			}
 			ff_lldbgwait(" ff.c|find_volume: The file system object is valid\n");   // <--- !
-#ifdef DYNAMIC_FSTAB  			
+			
 			if(pfstabentry){
 			  pCurFs = pfstabentry;				/* current volume was changed */
 			  ff_dbg(" ff.c|find_volume: pCurFs (pointer in fstab) changed (0x%x)\n", pCurFs);
 			}
-#else			
-			CurrVol = vol; 				/* current volume was changed */
-#endif			
+
 			return FR_OK;				/* The file system object is valid */
 		}
 	}
 
 	/* The file system object is not valid. */
 	/* Following code attempts to mount the volume. (analyze BPB and initialize the fs object) */
-#ifdef DYNAMIC_FSTAB
+
 	ff_dbg(" ff.c|find_volume: fs object is not valid, trying to mount volume %s !\n",*path);
-#else
-	ff_dbg(" ff.c|find_volume: fs object is not valid, trying to mount volume %d !\n",vol);
-#endif	
+
 
 	fs->fs_type = 0;					/* Clear the file system object */
-#ifdef DYNAMIC_FSTAB
 	fs->drv = pfstabentry->pdrv;
-#else  	
-	fs->drv = LD2PD(vol);				/* Bind the logical drive and a physical drive */
-#endif	
-	
-	
 	
 	stat = disk_initialize(fs->pfstab);	/* Initialize the physical drive */
 	ff_dbg(" ff.c|find_volume: disk_initialize = %d", stat);
@@ -2447,11 +2359,7 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 	ff_dbg(" ff.c|find_volume: fmt = %d",fmt);
 	ff_lldbgwait(" (KEY)\n");
 	
-#ifdef DYNAMIC_FSTAB
 	if (fmt == 1 || (!fmt && (pfstabentry->partition))) {	/* Not an FAT boot sector or forced partition number */
-#else  	
-	if (fmt == 1 || (!fmt && (LD2PT(vol)))) {	/* Not an FAT boot sector or forced partition number */
-#endif	  
 		UINT i;
 		DWORD br[4];
 
@@ -2461,21 +2369,14 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 			
 			ff_dbg(" ff.c|find_volume: partition %d offset = 0x%x\n",i,br[i]);
 		}
-#ifdef DYNAMIC_FSTAB		
+	
 		i = pfstabentry->partition;						/* Partition number: 0:auto, 1-4:forced */
 		ff_dbg(" ff.c|find_volume: partition = %d\n",i);
-#else		
-		i = LD2PT(vol);						/* Partition number: 0:auto, 1-4:forced */
-#endif		
 		if (i) i--;
 		do {								/* Find an FAT volume */
 			bsect = br[i];
-			fmt = bsect ? check_fs(fs, bsect) : 2;	/* Check the partition */
-#ifdef DYNAMIC_FSTAB		
-		} while (!(pfstabentry->pdrv) && fmt && ++i < 4);
-#else
-		} while (!LD2PT(vol) && fmt && ++i < 4);
-#endif		
+			fmt = bsect ? check_fs(fs, bsect) : 2;	/* Check the partition */		
+		} while (!(pfstabentry->pdrv) && fmt && ++i < 4);	
 	}
 	if (fmt == 3) return FR_DISK_ERR;		/* An error occured in the disk I/O layer */
 	if (fmt){
@@ -2673,17 +2574,9 @@ FRESULT f_mount (
 	const TCHAR *rp = path;
 	
 	ff_dbg(" ff.c|f_mount: fs->0x%x, path=%s, opt=%d ...\n",fs,path,opt);
-#ifdef DYNAMIC_FSTAB
+
 	cfs = fs;				/* Pointer to fs object */
 	get_ldnumber(&rp);			/* adjust path information (remove drive info) */
-#else  	
-	vol = get_ldnumber(&rp); 			// translate HDA0 -> 0, HDA1 -> 1 ....SDA3 -> 7
-	if (vol < 0) {
-	  ff_lldbgwait(" ff.c|f_mount: FR_INVALID_DRIVE (KEY)...\n");
-	  return FR_INVALID_DRIVE;
-	}
-	cfs = FatFs[vol];					/* Pointer to fs object */
-#endif	
 
 	if (cfs) {
 #if _FS_LOCK
@@ -2708,10 +2601,6 @@ FRESULT f_mount (
 		}
 #endif
 	}
-#ifdef DYNAMIC_FSTAB
-#else	
-	FatFs[vol] = fs;					/* Register new fs object */
-#endif	
 
 	if (!fs || opt != 1){
 	  ff_lldbgwait(" ff.c|f_mount: FR_OK (mount later) (KEY)...\n");
@@ -2720,26 +2609,12 @@ FRESULT f_mount (
 
 	ff_lldbgwait(" ff.c|f_mount: try mount the fs (KEY)...\n");
 	
-#ifdef DYNAMIC_FSTAB
-	mounting = 1;
-#endif	
+	mounting = 1;	
 	res = find_volume(&fs, &path, 0);	/* Force mounted the volume */
 	
 	ff_dbg(" ff.c|f_mount: find_volume returned %d\n",res);
 	ff_dbg(" ff.c|f_mount: check: fs-> 0x%x, path = %s\n",fs,path);
 	ff_lldbgwait("  (KEY)...\n");
-	
-#ifdef CONFIG_DEBUG_FF
-#ifdef DYNAMIC_FSTAB
-#else		
-	int n;
-	for (n=0; n< _VOLUMES; n++){
-	  printf("ff.c| FatFs[%d] ->: 0x%x\n",n,FatFs[n]);   
-	}
-	ff_lldbgwait("  (KEY)...\n");
-#endif	
-#endif
-	
 	ff_dbg(" ff.c|f_mount: LEAVE_FF...\n");
 	LEAVE_FF(fs, res);
 }
@@ -3222,7 +3097,6 @@ FRESULT f_close (
 
 #if _FS_RPATH >= 1
 
-#ifdef DYNAMIC_FSTAB
 FRESULT f_chdrive (
 	const TCHAR* path		/* Drive number */
 )
@@ -3243,32 +3117,7 @@ FRESULT f_chdrive (
 	ff_dbg(" ff.c: res = FR_OK\n");
 	return FR_OK;
 }
-#else
-#if _VOLUMES >= 2
-FRESULT f_chdrive (
-	const TCHAR* path		/* Drive number */
-)
-{
-	int vol;
 
-	#ifdef CONFIG_DEBUG_FF
-	char tmp[10];	
-	strcpy(tmp,path);
-	#endif
-	
-	vol = get_ldnumber(&path); // path pointer changes ! 
-	
-	ff_dbg(" ff.c: f_chdrive(%s) => %d\n",tmp,vol);
-	
-	if (vol < 0) return FR_INVALID_DRIVE;
-
-	CurrVol = (BYTE)vol;
-	
-
-	return FR_OK;
-}
-#endif
-#endif
 
 FRESULT f_chdir (
 	const TCHAR* path	/* Pointer to the directory path */
@@ -3307,11 +3156,9 @@ FRESULT f_chdir (
 		  res = FR_NO_PATH;
 		}
 	}
-#ifdef DYNAMIC_FSTAB
+
 	ff_dbg("current fat volume changed");
-#else
-	ff_dbg("CurrVol=%d\n",CurrVol);
-#endif	
+
 	LEAVE_FF(dj.fs, res);
 }
 
@@ -3408,32 +3255,14 @@ FRESULT f_getcwd (
 #endif
 		tp = buff;
 		if (res == FR_OK) {
-		  
-#ifdef DYNAMIC_FSTAB			
+		  		
 			if(pCurFs){
 			  ff_dbg(" f_getcwd: add drive name (%s)\n",pCurFs->devname);
 			  strcat(tp,pCurFs->devname);
 			  tp += strlen(pCurFs->devname);
 			  *tp++ = ':';
 			}
-#else 		  
-  #if _VOLUMES >= 2
-    #if _STR_VOLUME_ID		
- 
-		  
-			static const char* const str[] = {_VOLUME_STRS};  // "HDA0","HDA1","HDA2","HDA3" ... in ffconf.h 
-			if(CurrVol < _VOLUMES) {
-			 strcat(tp,str[CurrVol]);
-			 tp += strlen(str[CurrVol]);
-			} else {
-			  *tp++ = '0' + CurrVol;
-			}
-    #else				
-			*tp++ = '0' + CurrVol;			/* Put drive number or put drive name id defined in ffconf.h*/
-    #endif			
-			*tp++ = ':';
-  #endif
-#endif
+
 			if (i == len) {					/* Root-directory */
 				*tp++ = '/';
 			} else {						/* Sub-directroy */
@@ -4476,11 +4305,9 @@ FRESULT f_mkfs (
 {
 	static const WORD vst[] = { 1024,   512,  256,  128,   64,    32,   16,    8,    4,    2,   0};
 	static const WORD cst[] = {32768, 16384, 8192, 4096, 2048, 16384, 8192, 4096, 2048, 1024, 512};
-#ifdef DYNAMIC_FSTAB
+
 	struct fstabentry *pfstabentry;
-#else 	
-	int vol;
-#endif	
+
 	BYTE fmt, md, sys, *tbl, pdrv, part, xpos,ypos;
 	DWORD n_clst, vs, n, wsect;
 	UINT i;
@@ -4493,19 +4320,13 @@ FRESULT f_mkfs (
 	ff_lldbgwait("KEY...\n");
 	
 	/* Check mounted drive and clear work area */
-#ifdef DYNAMIC_FSTAB
+
 	if(pfstabentry = get_fstabentry(path)){ 
 	  fs = (FATFS*)pfstabentry->pfs; /* Get pointer to the file system object */
 	}else{
 	  return FR_INVALID_DRIVE;
 	}
 	get_ldnumber(&path);			/* adjust path information (remove drive info) */
-#else  	
-	vol = get_ldnumber(&path);
-	fs = FatFs[vol];
-	if (!fs) return FR_NOT_ENABLED;
-	if (vol < 0) return FR_INVALID_DRIVE;
-#endif
 		
 	if (sfd > 1) return FR_INVALID_PARAMETER;
 	if (au & (au - 1)) return FR_INVALID_PARAMETER;
@@ -4514,13 +4335,8 @@ FRESULT f_mkfs (
 	
 	fs->fs_type = 0;
 	
-#ifdef DYNAMIC_FSTAB
 	pdrv = pfstabentry->pdrv;	/* Physical drive */
 	part = pfstabentry->partition;	/* Partition (0:auto detect, 1-4:get from partition table)*/
-#else	
-	pdrv = LD2PD(vol);	/* Physical drive */
-	part = LD2PT(vol);	/* Partition (0:auto detect, 1-4:get from partition table)*/
-#endif	
 
 	/* Get disk statics */
 	stat = disk_initialize(fs->pfstab);

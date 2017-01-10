@@ -33,30 +33,6 @@ extern "C" {
 #endif
 
 
-
-/* Definitions of volume management */
-#ifdef DYNAMIC_FSTAB
-#else
-#if _MULTI_PARTITION		/* Multiple partition configuration */
-typedef struct {
-	BYTE pd;	/* Physical drive number */
-	BYTE pt;	/* Partition: 0:Auto detect, 1-4:Forced partition) */
-} PARTITION;
-
-extern PARTITION VolToPart[];	/* Volume - Partition resolution table */
-extern char* const drvstr[];
-
-#define LD2PD(vol) (VolToPart[vol].pd)	/* Get physical drive number (mapping defined in fs/fs.c)) */
-#define LD2PT(vol) (VolToPart[vol].pt)	/* Get partition index */
-
-#else							/* Single partition configuration */
-#define LD2PD(vol) (BYTE)(vol)	/* Each logical drive is bound to the same physical drive number */
-#define LD2PT(vol) 0			/* Find first valid partition or in SFD */
-
-#endif
-
-#endif
-
 /* Type of path name strings on FatFs API */
 
 #if _LFN_UNICODE			/* Unicode string */
