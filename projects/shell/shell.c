@@ -230,7 +230,7 @@ void getcommand(char* Line){
     Line[cpos] = c;
     
     do{
-    c = nkc_getchar();
+    c = gp_getchar();
     
       switch(c) {
 	  case 0x05:	// UP (go back in history)
@@ -247,14 +247,14 @@ void getcommand(char* Line){
 	      if(histLEVEL < 0) histLEVEL = MAX_HISTORY;
 	      
 					  // delete current Line ....
-	      nkc_getxy(&x,&y);
-	      nkc_setxy(x-cpos,y);             	// goto Pos1
+	      gp_getxy(&x,&y);
+	      gp_setxy(x-cpos,y);             	// goto Pos1
 	      i = 0;
 	      while(i<cpos){		       	// erase all characters
-	        nkc_setxy(x-cpos+i++,y);
-	        nkc_putchar(' ');
+	        gp_setxy(x-cpos+i++,y);
+	        gp_putchar(' ');
 	      }		
-	      nkc_setxy(x-cpos,y);             	// goto Pos1		      
+	      gp_setxy(x-cpos,y);             	// goto Pos1		      
 	      
 	      *Line = 0;	      		// print line from history buffer
 	      strcat(Line,HistoryBuffer[histLEVEL]);
@@ -267,14 +267,14 @@ void getcommand(char* Line){
 	      if(histLEVEL > MAX_HISTORY) histLEVEL = 0;
 	      
 	                                    // delete current Line ....
-	      nkc_getxy(&x,&y);
-	      nkc_setxy(x-cpos,y);             	// goto Pos1
+	      gp_getxy(&x,&y);
+	      gp_setxy(x-cpos,y);             	// goto Pos1
 	      i = 0;
 	      while(i<cpos){		       	// erase all characters
-	        nkc_setxy(x-cpos+i++,y);
-	        nkc_putchar(' ');
+	        gp_setxy(x-cpos+i++,y);
+	        gp_putchar(' ');
 	      }		
-	      nkc_setxy(x-cpos,y);             	// goto Pos1		      
+	      gp_setxy(x-cpos,y);             	// goto Pos1		      
 	      
 	      *Line = 0;	      		// print line from history buffer
 	      strcat(Line,HistoryBuffer[histLEVEL]);
@@ -283,19 +283,19 @@ void getcommand(char* Line){
 	    break;
 	  case 0x13:	// Arrow Left
 	      if(!cpos) break;
-	      nkc_getxy(&x,&y);
+	      gp_getxy(&x,&y);
 	      cpos--; x--;
-	      nkc_setxy(x,y);
+	      gp_setxy(x,y);
 	    break;
 	  case 0x04:	// Arrow Right	
 	      if(cpos >= MAX_CHAR || cpos >= cmax) break;
-	      nkc_getxy(&x,&y);
+	      gp_getxy(&x,&y);
 	      cpos++; x++;
-	      nkc_setxy(x,y);
+	      gp_setxy(x,y);
 	    break;	  
 	  case 0x01:	// Ctrtl-A POS1
-	      nkc_getxy(&x,&y);
-	      nkc_setxy(x-cpos,y);
+	      gp_getxy(&x,&y);
+	      gp_setxy(x-cpos,y);
 	      cpos=0;
 	    break;
 	  //case 0x05:	// Ctrtl-E	(duplicate with Arrow Up) evtl. END ?
@@ -333,43 +333,43 @@ void getcommand(char* Line){
 	    
 	    // ------------------------
 	    
-	    nkc_getxy(&x,&y);
-	    nkc_setxy(x+cmax-cpos,y);
-	    //nkc_putchar(0x0D);
-	    //nkc_putchar(0x0A);
+	    gp_getxy(&x,&y);
+	    gp_setxy(x+cmax-cpos,y);
+	    //gp_putchar(0x0D);
+	    //gp_putchar(0x0A);
 	    printf("\n");
 	    cr = 1;	    
 	    break;
 	  case 0x7F:	// BSPACE
 	    if(!cpos) break;
 	    
-	    nkc_getxy(&x,&y);
+	    gp_getxy(&x,&y);
 	    cpos--; x--; cmax--;
 	    
 	    for(i=0; i< cmax-cpos;i++){
-	      nkc_setxy(x+i,y);
-	      nkc_putchar(Line[cpos+i+1]);
+	      gp_setxy(x+i,y);
+	      gp_putchar(Line[cpos+i+1]);
 	      Line[cpos+i] = Line[cpos+i+1];
 	    }
-	    nkc_setxy(x+i,y);
-	    nkc_putchar(' ');
-	    nkc_setxy(x,y);
+	    gp_setxy(x+i,y);
+	    gp_putchar(' ');
+	    gp_setxy(x,y);
 	      
 	    break;
 	  case 0x07:	// Del
 	    if(cpos == cmax) break;
 	    
-	    nkc_getxy(&x,&y);
+	    gp_getxy(&x,&y);
 	    cmax--;
 	    
 	    for(i=0; i< cmax-cpos;i++){
-	      nkc_setxy(x+i,y);
-	      nkc_putchar(Line[cpos+i+1]);
+	      gp_setxy(x+i,y);
+	      gp_putchar(Line[cpos+i+1]);
 	      Line[cpos+i] = Line[cpos+i+1];
 	    }
-	    nkc_setxy(x+i,y);
-	    nkc_putchar(' ');
-	    nkc_setxy(x,y);
+	    gp_setxy(x+i,y);
+	    gp_putchar(' ');
+	    gp_setxy(x,y);
 	    
 	    break;
 	  case 0x16:	// Insert  
@@ -380,21 +380,21 @@ void getcommand(char* Line){
 	  default:	// other character  
 	    if(!insmode || cpos == cmax){
 	      Line[cpos] = c;
-	      nkc_putchar(c); // echo char	    
+	      gp_putchar(c); // echo char	    
 	      cpos++;
 	      if(cpos > cmax) cmax = cpos;
 	    } else {				// insert mode...
-	      nkc_getxy(&x,&y);
+	      gp_getxy(&x,&y);
 	      
 	      for(i=0; i<= cmax-cpos;i++){
 		cc = Line[cpos+i];		
-		nkc_putchar(' ');		
-		nkc_setxy(x+i,y);
+		gp_putchar(' ');		
+		gp_setxy(x+i,y);
 		Line[cpos+i] = c;
-		nkc_putchar(c);
+		gp_putchar(c);
 		c = cc;
 	      }	
-	      nkc_setxy(x+1,y);	      
+	      gp_setxy(x+1,y);	      
 	      cpos++; cmax++;	      
 	    }
 	    break;

@@ -2,16 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
-
-//#define NKC_DEBUG
-
-#ifdef NKC_DEBUG
+#ifdef CONFIG_DEBUG_TIME
 #include "../nkc/llnkc.h"
-void nkc_write(char* msg);
-void nkc_write_hex2(unsigned char val);
-void nkc_write_hex8(unsigned int val);
-void nkc_write_dec_dw(unsigned int val);
-char nkc_getchar(void);
 #endif
 
 static char *_days[7] = { "Sun", "Mon","Tue","Wed","Thu","Fri","Sat" };
@@ -54,15 +46,12 @@ static int pnum(char *str, int num, int fwidth, int maxsize, int *cursize)
 {
 	char buf[11],*p = &buf[9];
 	int i;
-	//#ifdef NKC_DEBUG
-	//nkc_write("pnum...\n"); nkc_write_dec_dw(num); nkc_write("\n");
-	//#endif
+
 	for (i=0; i < 10; i++)
 		buf[i] = '0';
 	buf[10] = 0;
 	while (num) {
 		*p-- = (char)(num %10)+'0';
-		//num = (char)(num / 10);
 		num = (num / 10);
 	}
 	return(pstr(str,buf+10-fwidth,maxsize,cursize));
@@ -72,8 +61,8 @@ size_t strftime(char *str, size_t maxsize, const char *format_string,
 {
 	int i,rv = 0;
 	
-	#ifdef NKC_DEBUG
-	nkc_write("strftime...\n");
+	#ifdef CONFIG_DEBUG_TIME
+	gp_write("strftime...\n");
 	#endif
 	
 	for (i=0; i < strlen(format_string); i++) {

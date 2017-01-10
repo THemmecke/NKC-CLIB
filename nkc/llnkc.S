@@ -7,10 +7,16 @@
 
  --------------------------------------------------- Hier folgend GrundProgramm- und JADOS-Aufrufe, die könnten noch in ein eigenes File ---------------------------------------------------
 
+ Note:
+ 
+ native calls are prefixed nkc_
+ gp calls are prefixed gp_
+ jados calls are prefixed jd_
+ 
 */ 
 
 
-/* ------------- Aufrufe NATIV ohne GP ----------------- */
+/* ------------- native calls, no GP no JADOS ----------------- */
 
 
 /*
@@ -89,13 +95,13 @@ nkc_wait_ser1_tx_empty:
 	beq nkc_wait_ser1_tx_empty
 	rts
 	
-/*    --------- AUFRUFE IN's GRUNDPROGRAMM ----------  */
+/*    --------- calls to GP (trap #1) ----------  */
 
 /*
-void nkc_ser1_write_dec_dw(unsigned int val); 
+void gp_ser1_write_dec_dw(unsigned int val); 
 */
 
-nkc_ser1_write_dec_dw: .global nkc_ser1_write_dec_dw
+gp_ser1_write_dec_dw: .global gp_ser1_write_dec_dw
 	move.l 4(%sp),%d0
 #ifdef M68000
 	LEA32A0 buffer
@@ -115,10 +121,10 @@ nkc_ser1_write_dec_dw: .global nkc_ser1_write_dec_dw
 	rts	
 
 /*
- void nkc_ser1_write_hex8(unsigned int val)
+ void gp_ser1_write_hex8(unsigned int val)
  
 */	  	  
-nkc_ser1_write_hex8: .global nkc_ser1_write_hex8
+gp_ser1_write_hex8: .global gp_ser1_write_hex8
 	move.l 4(%sp),%d0
 #ifdef M68000
 	LEA32A0 buffer
@@ -140,23 +146,23 @@ nkc_ser1_write_hex8: .global nkc_ser1_write_hex8
 
  	
 /*
-void nkc_clrscr(void);
+void gp_clrscr(void);
 */ 	
-nkc_clrscr: .global nkc_clrscr
+gp_clrscr: .global gp_clrscr
 	clrscr
 	rts
 
 /*
-unsigned char nkc_kbhit(void);
+unsigned char gp_kbhit(void);
 */	
-nkc_kbhit: .global nkc_kbhit
+gp_kbhit: .global gp_kbhit
 	moveq #_CSTS,%d7
 	trap #1
 	rts
 /*
- void nkc_write(char* message)
+ void gp_write(char* message)
 */
-nkc_write: .global nkc_write
+gp_write: .global gp_write
 
 	
 	movem.l %a0-%a6/%d0-%d7,-(%a7)      
@@ -180,9 +186,9 @@ nkc_write: .global nkc_write
 	rts 	
 
 /*
- void nkc_read(unsigned char x, unsigned char y, char* buffer)
+ void gp_read(unsigned char x, unsigned char y, char* buffer)
 */
-nkc_read: .global nkc_read
+gp_read: .global gp_read
 
 	
 	movem.l %a0-%a6/%d0-%d7,-(%a7) 
@@ -207,9 +213,9 @@ TRAP #1
 RTS
 */
 /*
- void nkc_getxy(unsigned char *x, unsigned char *y)
+ void gp_getxy(unsigned char *x, unsigned char *y)
 */
-nkc_getxy: .global nkc_getxy
+gp_getxy: .global gp_getxy
 
 	
 	movem.l %a0-%a6/%d0-%d7,-(%a7)      
@@ -223,9 +229,9 @@ nkc_getxy: .global nkc_getxy
 	rts 
 	
 /*
- void nkc_setxy(unsigned char x, unsigned char y)
+ void gp_setxy(unsigned char x, unsigned char y)
 */
-nkc_setxy: .global nkc_setxy
+gp_setxy: .global gp_setxy
 	
 	movem.l %a0-%a6/%d0-%d7,-(%a7)      
 	move.b 67(%sp),%d1	/* x */
@@ -237,9 +243,9 @@ nkc_setxy: .global nkc_setxy
 
 	
 /*
- void nkc_write_hex2(unsigned char val)
+ void gp_write_hex2(unsigned char val)
 */	  
-nkc_write_hex2: .global nkc_write_hex2
+gp_write_hex2: .global gp_write_hex2
 	move.b 7(%sp),%d0
 #ifdef M68000
 	LEA32A0 buffer
@@ -255,10 +261,10 @@ nkc_write_hex2: .global nkc_write_hex2
 #endif
 	rts	
 /*
- void nkc_write_hex8(unsigned int val)
+ void gp_write_hex8(unsigned int val)
  
 */	  	  
-nkc_write_hex8: .global nkc_write_hex8
+gp_write_hex8: .global gp_write_hex8
 	move.l 4(%sp),%d0
 #ifdef M68000
 	LEA32A0 buffer
@@ -275,9 +281,9 @@ nkc_write_hex8: .global nkc_write_hex8
 	rts	
 	
 /*
- void nkc_write_dec_dw(unsigned int val)
+ void gp_write_dec_dw(unsigned int val)
 */	  
-nkc_write_dec_dw: .global nkc_write_dec_dw
+gp_write_dec_dw: .global gp_write_dec_dw
 	move.l 4(%sp),%d0
 #ifdef M68000
 	LEA32A0 buffer
@@ -294,9 +300,9 @@ nkc_write_dec_dw: .global nkc_write_dec_dw
 	rts	
 			  
 /*
-char nkc_getchar(void);
+char gp_getchar(void);
 */
-nkc_getchar: .global nkc_getchar
+gp_getchar: .global gp_getchar
 	movem.l %a0-%a6/%d1-%d7,-(%a7)
         moveq #_CI,%d7
         trap #1       
@@ -304,9 +310,9 @@ nkc_getchar: .global nkc_getchar
 	rts
 
 /*
- void nkc_putchar(char c)
+ void gp_putchar(char c)
 */
-nkc_putchar: .global nkc_putchar
+gp_putchar: .global gp_putchar
 
 	move.b 7(%sp),%d0	  
 
@@ -326,25 +332,25 @@ nkc_putchar: .global nkc_putchar
 	  rts 	
 
 /*
- void nkc_curoff(void)
+ void gp_curoff(void)
 */
-nkc_curoff: .global nkc_curoff
+gp_curoff: .global gp_curoff
 	moveq #_CUROFF,%d7 /* Cursor ausschalten */
 	trap #1
 	rts
 
 /*
- void nkc_curon(void)
+ void gp_curon(void)
 */
-nkc_curon: .global nkc_curon
+gp_curon: .global gp_curon
 	moveq #_CURON,%d7 /* Cursor einschalten */
 	trap #1
 	rts	
 
 /*
- void nkc_setflip(unsigned char flip2pages, unsigned char flip4pages)
+ void gp_setflip(unsigned char flip2pages, unsigned char flip4pages)
 */
-nkc_setflip: .global nkc_setflip
+gp_setflip: .global gp_setflip
 	clr.l %d0
 	clr.l %d1
     move.b 7(%sp),%d0   /* Blinkrate für 2-Seiten-Umschaltung */
@@ -354,9 +360,9 @@ nkc_setflip: .global nkc_setflip
 	rts	
 
 /*
- void nkc_setpage(unsigned char writepage, unsigned char viewpage)
+ void gp_setpage(unsigned char writepage, unsigned char viewpage)
 */
-nkc_setpage: .global nkc_setpage
+gp_setpage: .global gp_setpage
 	clr.l %d0
 	clr.l %d1
     move.b 7(%sp),%d0   /* writepage */
@@ -367,12 +373,12 @@ nkc_setpage: .global nkc_setpage
 
 	  
 #ifdef USE_JADOS
-/*  -------------------------- JADOS FUNKTIONEN ------------------------------- */ 	
+/*  -------------------------- calls to JADOS (trap #6) ------------------------------- */ 	
 /*
- UCHAR _nkc_fillfcb(struct fcb *FCB,char *name)
+ UCHAR jd_fillfcb(struct fcb *FCB,char *name)
  returns 0 if successful
 */	
-_nkc_fillfcb: .global _nkc_fillfcb 	
+jd_fillfcb: .global jd_fillfcb 	
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 12(%sp),%a0  	/* *name */
 	moveq #__uppercas, %d7	/* Dateinamen immer in Großbuchstaben */
@@ -385,10 +391,10 @@ _nkc_fillfcb: .global _nkc_fillfcb
 	rts
 
 /*
- UCHAR _nkc_open(struct fcb *FCB)
+ UCHAR jd_open(struct fcb *FCB)
  returns 0 if successful
 */	
-_nkc_open: .global _nkc_open 	
+jd_open: .global jd_open 	
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	moveq #__open,%d7
@@ -397,10 +403,10 @@ _nkc_open: .global _nkc_open
 	rts
 	
 /*
- UCHAR _nkc_create(struct fcb *FCB)
+ UCHAR jd_create(struct fcb *FCB)
  returns 0 if successful
 */	
-_nkc_create: .global _nkc_create 	
+jd_create: .global jd_create 	
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	moveq #__create,%d7
@@ -409,9 +415,9 @@ _nkc_create: .global _nkc_create
 	rts	
 
 /*
- void _nkc_close(struct fcb *FCB)
+ void jd_close(struct fcb *FCB)
 */	
-_nkc_close: .global _nkc_close 	
+jd_close: .global jd_close 	
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	moveq #__close,%d7
@@ -420,7 +426,7 @@ _nkc_close: .global _nkc_close
 	rts
 	
 /*
- UCHAR _nkc_erase(struct fcb *FCB)
+ UCHAR jd_erase(struct fcb *FCB)
  
  result	Bedeutung
 		0	Datei gelöscht
@@ -430,7 +436,7 @@ _nkc_close: .global _nkc_close
 		Achtung: falls die Datei schon existiert, wird sie lediglich geöffnet !
 		
 */	
-_nkc_erase: .global _nkc_erase 	
+jd_erase: .global jd_erase 	
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	moveq #__erase,%d7
@@ -439,13 +445,13 @@ _nkc_erase: .global _nkc_erase
 	rts			
 
 /*
- UCHAR _nkc_readrec(struct fcb *FCB)
+ UCHAR jd_readrec(struct fcb *FCB)
  returns 	   0 - if successful
  		   1 - EOF
  		  99 - end of memory
  		0xFF - access error 
 */	
-_nkc_readrec: .global _nkc_readrec
+jd_readrec: .global jd_readrec
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	moveq #__readrec,%d7
@@ -454,12 +460,12 @@ _nkc_readrec: .global _nkc_readrec
 	rts		
 
 /*
- UCHAR _nkc_writerec(struct fcb *FCB)
+ UCHAR jd_writerec(struct fcb *FCB)
  returns 	   0 - if successful
  		   5 - disk full
  		0xFF - access error 
 */	
-_nkc_writerec: .global _nkc_writerec
+jd_writerec: .global jd_writerec
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	moveq #__writerec,%d7
@@ -468,12 +474,12 @@ _nkc_writerec: .global _nkc_writerec
 	rts		
 
 /*
- UCHAR _nkc_setrec(struct fcb *FCB, int sector)
+ UCHAR jd_setrec(struct fcb *FCB, int sector)
  returns 	   0 - if successful
  		   1 - EOF
  		0xFF - access error 
 */	
-_nkc_setrec: .global _nkc_setrec	
+jd_setrec: .global jd_setrec	
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	move.l 12(%sp),%d1 	/* sector  */
@@ -483,9 +489,9 @@ _nkc_setrec: .global _nkc_setrec
 	rts		
 	
 /*
- void _nkc_setdta(struct fcb *FCB, void* buffer)
+ void jd_setdta(struct fcb *FCB, void* buffer)
 */	
-_nkc_setdta: .global _nkc_setdta
+jd_setdta: .global jd_setdta
 	movem.l %a6,-(%a7)	/* used by jados frame-pointer */
 	movea.l 8(%sp),%a1 	/* *fcb  */
 	movea.l 12(%sp),%a0 	/* buffer  */	
@@ -499,10 +505,10 @@ _nkc_setdta: .global _nkc_setdta
 	rts	
 
 /*****************************************************************************
- * int _nkc_remove(char *name)
+ * int jd_remove(char *name)
   * delete file
  *****************************************************************************/                                       
-_nkc_remove: .global _nkc_remove
+jd_remove: .global jd_remove
 	movem.l %d7/%a6,-(%sp)	/* used by jados frame-pointer */
 	movea.l 12(%sp),%a0  	/* *name */
 	moveq #__uppercas, %d7	/* Dateinamen immer in Großbuchstaben */
@@ -527,11 +533,11 @@ _nkc_remove: .global _nkc_remove
 	
 	
 /*****************************************************************************
- * int _nkc_rename(char *old , char *new)
+ * int jd_rename(char *old , char *new)
  * Rename a file (DOS function 56h,Int21)
  * z.B. rename C:/Mydir/myfile.dat c:/newdir/otherfile.dat
  *****************************************************************************/                                      
-_nkc_rename: .global _nkc_rename
+jd_rename: .global jd_rename
 	movem.l %d7/%a2/%a6,-(%sp)	/* used by jados frame-pointer */
 	movea.l 20(%sp),%a0  	/* *newname */
 	moveq #__uppercas, %d7	/* Dateinamen immer in Großbuchstaben */
@@ -563,14 +569,14 @@ _nkc_rename: .global _nkc_rename
 	rts
 
 /*****************************************************************************
- * int _nkc_get_drive();
+ * int jd_get_drive();
  *
  * Return vaules:
  * 	0 		= ramdisk
  *	1..4 	= disk 1..4
  *  5..30 	= harddisk partition A..Z
  *****************************************************************************/ 
-_nkc_get_drive: .global _nkc_get_drive
+jd_get_drive: .global jd_get_drive
 	movem.l %d7/%a2/%a6,-(%sp)	/* used by jados frame-pointer */
 	clr.l %d0
 	moveq #__getdrive,%d7		/* call jados */
@@ -578,14 +584,14 @@ _nkc_get_drive: .global _nkc_get_drive
 	movem.l (%sp)+, %d7/%a2/%a6
 	rts
 /*****************************************************************************
- * void _nkc_set_drive(int drive);
+ * void jd_set_drive(int drive);
  *
  * input:
  * 	0 		= ramdisk
  *	1..4 	= disk 1..4
  *  5..30 	= harddisk partition A..Z
  *****************************************************************************/  	
-_nkc_set_drive: .global _nkc_set_drive
+jd_set_drive: .global jd_set_drive
 	movem.l %d7/%a2/%a6,-(%sp)	/* used by jados frame-pointer */
 	move.l 16(%sp),%d0  		/* drive */
 	moveq #__setdrive,%d7		/* call jados */
@@ -594,7 +600,7 @@ _nkc_set_drive: .global _nkc_set_drive
 	rts 
 
 /*****************************************************************************
- * BYTE _nkc_directory(void* pbuf, void* ppattern, BYTE attrib, WORD columns, WORD size);
+ * BYTE jd_directory(void* pbuf, void* ppattern, BYTE attrib, WORD columns, WORD size);
  *
  * input:
  *      pbuf		pointer output buffer
@@ -620,7 +626,7 @@ _nkc_set_drive: .global _nkc_set_drive
  *		0x0004	 4	saved registers
  *	sp--->	0x0000	 0	---"---
  *****************************************************************************/
-_nkc_directory: .global _nkc_directory
+jd_directory: .global jd_directory
         movem.l %d7/%a2/%a6,-(%sp)      /* used by jados frame-pointer */
 	movem.l %d2/%d3,-(%sp)		/* save used regs (%a0,%a1,%d0,%d1 are scratch regs) */
 
@@ -637,7 +643,7 @@ _nkc_directory: .global _nkc_directory
         movem.l (%sp)+, %d7/%a2/%a6	/* restore jados frame-pointer */
         rts
 
- _nkc_directory_test: .global _nkc_directory_test
+ jd_directory_test: .global jd_directory_test
         movem.l %d7/%a2/%a6,-(%sp)      /* used by jados frame-pointer */
 	movem.l %d2/%d3,-(%sp)		/* save used regs (%a0,%a1,%d0,%d1 are scratch regs) */
 	
@@ -672,12 +678,12 @@ _nkc_directory: .global _nkc_directory
         movem.l (%sp)+, %d7/%a2/%a6	/* restore jados frame-pointer */
         rts
 /*****************************************************************************
- * void* _nkc_get_ramtop(void);
+ * void* jd_get_ramtop(void);
  *
  * get end of user space from JAODS 
  *
  *****************************************************************************/  	
-_nkc_get_ramtop: .global _nkc_get_ramtop
+jd_get_ramtop: .global jd_get_ramtop
 	movem.l %d7/%a2/%a6,-(%sp)	/* used by jados frame-pointer */	
 	moveq #__ramtop,%d7		/* call jados */
 	trap #6
@@ -685,12 +691,12 @@ _nkc_get_ramtop: .global _nkc_get_ramtop
 	rts 
 	
 /*****************************************************************************
- * void* _nkc_get_gp(void);
+ * void* jd_get_gp(void);
  *
  * get start address of GP from JADOS 
  *
  *****************************************************************************/  	
-_nkc_get_gp: .global _nkc_get_gp
+jd_get_gp: .global jd_get_gp
 	movem.l %d7/%a2/%a6,-(%sp)	/* used by jados frame-pointer */	
 	moveq #__getgrund,%d7		/* call jados */
 	trap #6
@@ -698,12 +704,12 @@ _nkc_get_gp: .global _nkc_get_gp
 	rts 	
 	
 /*****************************************************************************
- * void* _nkc_get_laddr(void);
+ * void* jd_get_laddr(void);
  *
  * get start address of user space from JADOS 
  *
  *****************************************************************************/  	
-_nkc_get_laddr: .global _nkc_get_laddr
+jd_get_laddr: .global jd_get_laddr
 	movem.l %d7/%a2/%a6,-(%sp)	/* used by jados frame-pointer */	
 	moveq #__getladdr,%d7		/* call jados */
 	trap #6
@@ -759,5 +765,5 @@ nkc_cmos_read: .global nkc_cmos_read
 .data
 
 buffer:		ds.b 255 	
-msg001:	.ascii "_nkc_directory_test:" 	
+msg001:	.ascii "jd_directory_test:" 	
 	.byte 0x0d,0x0a,0x00	

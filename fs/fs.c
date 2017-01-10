@@ -1865,7 +1865,7 @@ int _ll_open(char *name, int flags)             // open a file (nkc/llopenc.c)
    	
    	if(fd == 255) /* no more free handle ! */
 	{	
-		nkc_write("fs.c: _ll_open:  no more free file handles in _ll_open\n");
+		gp_write("fs.c: _ll_open:  no more free file handles in _ll_open\n");
 		free_handle(fd);		
 		return 0;
 	}
@@ -1879,7 +1879,7 @@ int _ll_open(char *name, int flags)             // open a file (nkc/llopenc.c)
 	
 	if( !pfile || !pname)
 	{
-		nkc_write(" error malloc in fs.c: _ll_open\n");
+		gp_write(" error malloc in fs.c: _ll_open\n");
 		free(pfile);
 		free(pname);
 		free_handle(fd);
@@ -1892,7 +1892,7 @@ int _ll_open(char *name, int flags)             // open a file (nkc/llopenc.c)
 	
 	if(	!strcpy(pname,tmp) )
 	{
-		nkc_write(" error strcpy in fs.c: _ll_open\n");
+		gp_write(" error strcpy in fs.c: _ll_open\n");
 		free(pfile);
 		free(pname);
 		free_handle(fd);
@@ -1995,7 +1995,7 @@ void _ll_close(int fd)				// close a file (nkc/llopenc.c)
 	
 	if(res != EZERO)
 	{
-		nkc_write("fs.c:  error f_ops-close() in _ll_lose\n");
+		gp_write("fs.c:  error f_ops-close() in _ll_lose\n");
 	}
    	
    	pname = pfile->pname;
@@ -2240,7 +2240,7 @@ int _ll_rename(char *old , char *new)		// (nkc/llstd.S)
    	
    	if(fd == 255) /* no more free handle ! */
 	{	
-		nkc_write(" no more free file handles in _ll_rename\n");
+		gp_write(" no more free file handles in _ll_rename\n");
 		free_handle(fd);
 		res = EMFILE;
 		goto __LL_RENAME_END;		
@@ -2255,7 +2255,7 @@ int _ll_rename(char *old , char *new)		// (nkc/llstd.S)
 	
 	if( !pfile || !pname)
 	{
-		nkc_write(" error malloc in _ll_rename\n");
+		gp_write(" error malloc in _ll_rename\n");
 		free(pfile);
 		free(pname);
 		free_handle(fd);
@@ -2270,7 +2270,7 @@ int _ll_rename(char *old , char *new)		// (nkc/llstd.S)
 	
 	if(	!strcpy(pname,old) )
 	{
-		nkc_write(" error strcpy in _ll_rename\n");
+		gp_write(" error strcpy in _ll_rename\n");
 		free(pfile);
 		free(pname);
 		free_handle(fd);
@@ -2292,7 +2292,7 @@ int _ll_rename(char *old , char *new)		// (nkc/llstd.S)
 	
 	if(res != EZERO)
 	{
-		nkc_write(" error renaming file\n");
+		gp_write(" error renaming file\n");
 	}
 
 	
@@ -2382,7 +2382,7 @@ int _ll_remove(char *name)			// (nkc/llstd.S)
    	
    	if(fd == 255) /* no more free handle ! */
 	{	
-		nkc_write("fs.c|_ll_remove:  no more free file handles\n");
+		gp_write("fs.c|_ll_remove:  no more free file handles\n");
 		free_handle(fd);		
 		return EMFILE;
 	}
@@ -2395,7 +2395,7 @@ int _ll_remove(char *name)			// (nkc/llstd.S)
 	
 	if( !pfile || !pname)
 	{
-		nkc_write("fs.c|_ll_remove: error malloc\n");
+		gp_write("fs.c|_ll_remove: error malloc\n");
 		free(pfile);
 		free(pname);
 		free_handle(fd);
@@ -2408,7 +2408,7 @@ int _ll_remove(char *name)			// (nkc/llstd.S)
 	
 	if(	!strcpy(pname,name) )
 	{
-		nkc_write("fs.c|_ll_remove: error strcpy\n");
+		gp_write("fs.c|_ll_remove: error strcpy\n");
 		free(pfile);
 		free(pname);
 		free_handle(fd);
@@ -2428,7 +2428,7 @@ int _ll_remove(char *name)			// (nkc/llstd.S)
 	
 	if(fres != FR_OK)
 	{
-		nkc_write(" error removing file\n");
+		gp_write(" error removing file\n");
 	}
 	
 	switch(fres) {

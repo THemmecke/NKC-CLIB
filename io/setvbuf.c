@@ -1,24 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-
-//#define NKC_DEBUG
-
-#ifdef NKC_DEBUG
-#include "../nkc/llnkc.h"
-#endif
+#include <debug.h>
 
 int setvbuf(FILE *stream, char *buf, int mode, size_t size)
 {
 
-	#ifdef NKC_DEBUG
-	nkc_write("setvbuf...\n");
-	#endif
+	clio_dbg("setvbuf...\n");
 	if (stream->token != FILTOK)
 	{
-		#ifdef NKC_DEBUG
-		nkc_write("...setvbuf(1)\n");
-		#endif
+		clio_dbg("...setvbuf(1)\n");
+	
 		return 1;
 	}
 	switch (mode) 
@@ -28,16 +19,14 @@ int setvbuf(FILE *stream, char *buf, int mode, size_t size)
 		case _IONBF:
 			break;
 		default:
-			#ifdef NKC_DEBUG
-			nkc_write("...setvbuf(2)\n");
-			#endif
+			clio_dbg("...setvbuf(2)\n");
+			
 			return 1;
 	}
 	if (fflush(stream))
 	{
-		#ifdef NKC_DEBUG
-		nkc_write("...setvbuf(3)\n");
-		#endif
+		clio_dbg("...setvbuf(3)\n");
+		
 		return 1;
 	}
 	if (stream->flags & _F_BUF)
@@ -57,15 +46,13 @@ int setvbuf(FILE *stream, char *buf, int mode, size_t size)
 			stream->bsize = 0;
 			break;
 		default:
-			#ifdef NKC_DEBUG
-			nkc_write("...setvbuf(4)\n");
-			#endif
+			clio_dbg("...setvbuf(4)\n");
+			
 			return 1;
 	}
 	
-	#ifdef NKC_DEBUG
-	nkc_write("...setvbuf\n");
-	#endif
+	clio_dbg("...setvbuf\n");
+	
 	return 0;
 	
 }

@@ -192,7 +192,7 @@ procont/signal.c:#pragma startup siginit 128
 */
 #ifdef USE_JADOS
 	clr.l %d0
-	bsr.l _nkc_get_drive
+	bsr.l jd_get_drive
 	lea _DRIVE(%pc),%a0
 	move.b %d0,(%a0)
 #endif

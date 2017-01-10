@@ -5,9 +5,9 @@
 #define ULONG unsigned 
 
 
-void nkc_write(char* msg);
-void nkc_write_hex2(unsigned char val);
-void nkc_write_hex8(unsigned int val);
+void gp_write(char* msg);
+void gp_write_hex2(unsigned char val);
+void gp_write_hex8(unsigned int val);
 
 
 
@@ -77,9 +77,7 @@ void *_ll_malloc(ULONG size)
 	location->next = next;							/* link new allocated region to new block */
 	location->free = 0;							/* mark region as allocated               */
 	location->size = size;							/* store size of region */
-	
-	//nkc_write(" start=0x"); nkc_write_hex8(location->start); nkc_write(" size=0x"); nkc_write_hex8(location->size); nkc_write("\n");
-	
+
 	if(location->start == 0)
 	{
 	    mm_lldbg(" _ll_malloc: location->start = 0x0 !\n");
@@ -174,21 +172,12 @@ void mm_init(void)
 	mm_lldbghex(" _RAM_TOP = 0x",_RAM_TOP);
 	mm_lldbghex(" _HEAP = 0x",_HEAP);
 	mm_lldbghex(" _ram_size = 0x",_ram_size);
-	/*
-	_heap = malloc(_ram_size); 
-	*/
 	
 	((struct block_header*)_HEAP)->start = (ULONG)(_HEAP + (ULONG)sizeof(struct block_header));
 	((struct block_header*)_HEAP)->size = _ram_size - (ULONG)sizeof(struct block_header);
 	((struct block_header*)_HEAP)->next = 0;
 	((struct block_header*)_HEAP)->free = 1;
-	
-	/*
-	nkc_write(" mm_init: start=0x"); nkc_write_hex8(((struct block_header*)_HEAP)->start);
-	nkc_write(", size=0x"); nkc_write_hex8(((struct block_header*)_HEAP)->size); nkc_write("\n");	
-	nkc_write(" _HEAP = 0x"); nkc_write_hex8(_HEAP); 
-	nkc_write(", sizeof(struct block_header)=0x"); nkc_write_hex8(sizeof(struct block_header)); nkc_write("\n");
-	*/
+
 		
 	#ifdef CONFIG_DEBUG_MM
 	dbg_walk_heap();
@@ -237,28 +226,28 @@ void walk_heap(void)
 	int i = 0;
 	int j = 0;
 
-	nkc_write("\n memory map: \n\n");
+	gp_write("\n memory map: \n\n");
 	
-	nkc_write(" block  ##     start          size         next hdr      free\n\n");
+	gp_write(" block  ##     start          size         next hdr      free\n\n");
 	
 	while(location != 0)
 	{
 	  while(location != 0 && i < 5)
 	  {
-		nkc_write("      "); nkc_write_hex8(j);nkc_write("     0x"); nkc_write_hex8(location->start);
-		nkc_write("     0x"); nkc_write_hex8(location->size); nkc_write("    0x"); 
-		nkc_write_hex8((ULONG)location->next);
-		nkc_write("   "); nkc_write_hex2(location->free); nkc_write("\n");		
+		gp_write("      "); gp_write_hex8(j);gp_write("     0x"); gp_write_hex8(location->start);
+		gp_write("     0x"); gp_write_hex8(location->size); gp_write("    0x"); 
+		gp_write_hex8((ULONG)location->next);
+		gp_write("   "); gp_write_hex2(location->free); gp_write("\n");		
 		
 		location = (struct block_header*)location->next;
 		
 		i++; j++;
 	  };
-	  nkc_getchar();
+	  gp_getchar();
 	  i=0;
 	};
 	
-	nkc_write("\n");	
+	gp_write("\n");	
 }
 
 /*

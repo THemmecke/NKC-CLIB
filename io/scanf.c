@@ -3,21 +3,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libp.h>
-
-
-//#define NKC_DEBUG 
-#ifdef NKC_DEBUG
-#include "../nkc/llnkc.h"
-#endif
+#include <debug.h>
 
 
 int scanf(const char *format, ...)
 {
 	char buf[512];
 	
-	#ifdef NKC_DEBUG
-	nkc_write("scanf...\n");
-	#endif
+	clio_lldbg("scanf...\n");
+
 
 
 	if (!gets(buf))

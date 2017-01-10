@@ -84,7 +84,7 @@ void MATH_TEST()
 	
 	l3 = l1 / l2,
 	
-	nkc_write("done...");
+	gp_write("done...");
 	printf(" l1 = 0x%llx, l2= 0x%llx, l3 = 0x%llx\n",l1,l2,l3);
 	return;
 
@@ -249,11 +249,11 @@ void FILEIO_TEST()
 	unsigned int bytes;
 	
 	#ifdef NKC_DEBUG
-	nkc_write("\n\n FILEIO_TEST:\n\n");
+	gp_write("\n\n FILEIO_TEST:\n\n");
 	#endif
 	
-	nkc_write(" writing into text file.....................................\n");
-	nkc_getchar();
+	gp_write(" writing into text file.....................................\n");
+	gp_getchar();
 	pf1 = fopen("hda0:TEST1.TXT","w+");
 
 	if(!pf1)
@@ -262,41 +262,41 @@ void FILEIO_TEST()
 		return;
 	}
 	
-	nkc_write(" zeile 1:\n"); nkc_getchar(); fprintf(pf1," Dies ist Zeile 1\n");
-	nkc_write(" zeile 2:\n"); nkc_getchar(); fprintf(pf1," Dies ist Zeile 2\n");
-	nkc_write(" zeile 3:\n"); nkc_getchar(); fprintf(pf1," Dies ist Zeile 3\n");	
-	nkc_write(" zeile 4:\n"); nkc_getchar(); fprintf(pf1," Dies ist Zeile 4\n");
-	nkc_write(" zeile 5:\n"); nkc_getchar(); fprintf(pf1," Dies ist Zeile 5\n");
-	nkc_write(" zeile 6:\n"); nkc_getchar(); fprintf(pf1," Dies ist Zeile 6\n");
-	nkc_write(" zeile 7:\n"); nkc_getchar(); fprintf(pf1," Dies ist Zeile 7\n");
-	nkc_write(" zeile 8:\n"); nkc_getchar(); fprintf(pf1," Dies ist Zeile 8\n");
+	gp_write(" zeile 1:\n"); gp_getchar(); fprintf(pf1," Dies ist Zeile 1\n");
+	gp_write(" zeile 2:\n"); gp_getchar(); fprintf(pf1," Dies ist Zeile 2\n");
+	gp_write(" zeile 3:\n"); gp_getchar(); fprintf(pf1," Dies ist Zeile 3\n");	
+	gp_write(" zeile 4:\n"); gp_getchar(); fprintf(pf1," Dies ist Zeile 4\n");
+	gp_write(" zeile 5:\n"); gp_getchar(); fprintf(pf1," Dies ist Zeile 5\n");
+	gp_write(" zeile 6:\n"); gp_getchar(); fprintf(pf1," Dies ist Zeile 6\n");
+	gp_write(" zeile 7:\n"); gp_getchar(); fprintf(pf1," Dies ist Zeile 7\n");
+	gp_write(" zeile 8:\n"); gp_getchar(); fprintf(pf1," Dies ist Zeile 8\n");
 		
-	nkc_write(" closing input file\n"); nkc_getchar();
+	gp_write(" closing input file\n"); gp_getchar();
 	fclose(pf1);
 	return;
 	
-	nkc_write("seeking to start of file......................................\n");
-	nkc_getchar();	
+	gp_write("seeking to start of file......................................\n");
+	gp_getchar();	
 	
 	fseek(pf1,0,SEEK_SET);
 	
 	buffer[9]=0;
 	
 	fgets(buffer,9,pf1);
-	nkc_write(buffer);
+	gp_write(buffer);
 	
 	while(!feof(pf1))
 	{		
 		fgets(buffer,9,pf1);
-		nkc_write(buffer);
+		gp_write(buffer);
 	}
 
-	nkc_write(" closing input file\n"); nkc_getchar();
+	gp_write(" closing input file\n"); gp_getchar();
 	fclose(pf1);
 		
-	nkc_write(" Next..."); nkc_getchar(); nkc_write("\n");
+	gp_write(" Next..."); gp_getchar(); gp_write("\n");
 	
-	nkc_write(" copy text file..........................................\n");
+	gp_write(" copy text file..........................................\n");
 	
 	pf1 = fopen("hda0:TEST1.TXT","r");
 	pf2 = fopen("hda0:TEST2.TXT","w");
@@ -304,21 +304,21 @@ void FILEIO_TEST()
 	while(!feof(pf1))
 	{
 		fgets(buffer,9,pf1);
-		nkc_write(buffer); nkc_getchar();
+		gp_write(buffer); gp_getchar();
 		fprintf(pf2,"%s",buffer);
 	}
 
 	fclose(pf1);
 	fclose(pf2);	
 	
-	nkc_write(" Next..."); nkc_getchar(); nkc_write("\n");
+	gp_write(" Next..."); gp_getchar(); gp_write("\n");
 	
 	
 	
-	nkc_write(" copy text file (binary)...............................\n");
+	gp_write(" copy text file (binary)...............................\n");
 
 	pf1 = fopen("hda0:TEST1.TXT","rb");		
-	nkc_write(" flags=0x"); nkc_write_hex8(pf1->flags); nkc_write("\n");
+	gp_write(" flags=0x"); gp_write_hex8(pf1->flags); gp_write("\n");
 	
 	pf2 = fopen("hda0:TEST3.TXT","wb");
 	
@@ -327,7 +327,7 @@ void FILEIO_TEST()
 	while(!feof(pf1))  // schlägt nicht an ....
 	{
 		#ifdef NKC_DEBUG
-		nkc_write("("); nkc_write_dec_dw(bytes); nkc_write(" -  "); nkc_write_hex8(pf1->fd); nkc_write(" : "); nkc_write_hex8(pf2->fd);	nkc_write(") next:"); nkc_getchar(); nkc_write("\n");
+		gp_write("("); gp_write_dec_dw(bytes); gp_write(" -  "); gp_write_hex8(pf1->fd); gp_write(" : "); gp_write_hex8(pf2->fd);	gp_write(") next:"); gp_getchar(); gp_write("\n");
 		#endif
 		if(fread(buffer,2,4,pf1))
 		{
@@ -337,13 +337,13 @@ void FILEIO_TEST()
 	}
 
 	#ifdef NKC_DEBUG
-	nkc_write("\nclose input file:\n");
-	nkc_write(" flags=0x"); nkc_write_hex8(pf1->flags); nkc_write("\n");
+	gp_write("\nclose input file:\n");
+	gp_write(" flags=0x"); gp_write_hex8(pf1->flags); gp_write("\n");
 	#endif
 	fclose(pf1); // ruft write_sector obwohl read-only geöffnet !!
 	#ifdef NKC_DEBUG
-	nkc_write("\nclose output file:\n");	
-	nkc_write(" flags=0x"); nkc_write_hex8(pf2->flags); nkc_write("\n");
+	gp_write("\nclose output file:\n");	
+	gp_write(" flags=0x"); gp_write_hex8(pf2->flags); gp_write("\n");
 	#endif
 	fclose(pf2);	
 		

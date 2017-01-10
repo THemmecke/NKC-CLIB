@@ -68,7 +68,7 @@ static DRESULT read_sector(struct jdfileinfo *pfi)
 	}
 	
 	pbuffer = pfi->pfcb->pbuffer; 		// save sector buffer address
-	result = _nkc_readrec(pfi->pfcb);	// read sector
+	result = jd_readrec(pfi->pfcb);	// read sector
 	
 	switch(result)
 	{
@@ -105,7 +105,7 @@ static DRESULT write_sector(struct jdfileinfo *pfi)
 	}
 		    	
 	pbuffer = pfi->pfcb->pbuffer; 		// save sector buffer address
-	result = _nkc_writerec(pfi->pfcb);	// write sector
+	result = jd_writerec(pfi->pfcb);	// write sector
 	
 	switch(result)
 	{
@@ -303,7 +303,7 @@ static int nkcfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
       fsnkc_dbg("fs_nkc.c: - FS_IOCTL_GETCWD -\n"); 
       
 #ifdef USE_JADOS
-      current_jados_drive = _nkc_get_drive(); // call jados
+      current_jados_drive = jd_get_drive(); // call jados
 #endif
       cdrive[1] = 0;      
       if(current_jados_drive >= 0 && current_jados_drive <= 4) /* is it a ramdisk(0) or floppy drive(1..4) ? */
@@ -333,7 +333,7 @@ static int nkcfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 	current_jados_drive = (*(char*)((struct fstabentry*)arg)->devname) + 5 - 'A';
       }            
 #ifdef USE_JADOS
-      _nkc_set_drive(current_jados_drive); // call jados
+      jd_set_drive(current_jados_drive); // call jados
 #endif
       res = 0;
       break;
@@ -363,7 +363,7 @@ static int nkcfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
       
       if(!arg){
 	res = FR_INVALID_PARAMETER;
-	fsnkc_lldbgwait(" error: invalid parameter arg=NULL !\n");
+	fsnkc_lldbgwait("fs_nkc: error: invalid parameter arg=NULL !\n");
 	break;
       }
 	
@@ -371,13 +371,13 @@ static int nkcfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 	
       if( (*((struct fstabentry*)arg)->devname) >= '0' && (*((struct fstabentry*)arg)->devname) <= '4' ){ /* is it a ramdisk(0) or floppy drive(1..4) ? */
 	((struct fstabentry*)arg)->pdrv = (*((struct fstabentry*)arg)->devname) - '0';	
-	fsnkc_dbg("phydrv(1) %d\n",((struct fstabentry*)arg)->pdrv); 
+	fsnkc_dbg("fs_nkc: phydrv(1) %d\n",((struct fstabentry*)arg)->pdrv); 
       }      
       else if( (*((struct fstabentry*)arg)->devname) >= 'A' && (*((struct fstabentry*)arg)->devname) <= 'Z' ){ /* is it a hard disk drive (5..30) ? */	
 	((struct fstabentry*)arg)->pdrv = (*((struct fstabentry*)arg)->devname) + 5 - 'A';
-	fsnkc_dbg("phydrv(2) %d \n",((struct fstabentry*)arg)->pdrv); 
+	fsnkc_dbg("fs_nkc: phydrv(2) %d \n",((struct fstabentry*)arg)->pdrv); 
       }
-      else fsnkc_dbg("...ERROR\n"); 
+      else fsnkc_dbg("fs_nkc: ...ERROR\n"); 
       res = FR_OK;
       
       break;			      
@@ -395,7 +395,7 @@ static int nkcfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
       }
       
 #ifdef USE_JADOS
-      res = _nkc_directory( (void*)((struct ioctl_nkc_dir*)arg)->pbuf,
+      res = jd_directory( (void*)((struct ioctl_nkc_dir*)arg)->pbuf,
 			       (void*)((struct ioctl_nkc_dir*)arg)->ppattern,
 			       (BYTE)((struct ioctl_nkc_dir*)arg)->attrib,
 			       (WORD)((struct ioctl_nkc_dir*)arg)->cols,
@@ -457,7 +457,7 @@ static int nkcfs_open(struct _file *filp)
 	
 		
 #ifdef USE_JADOS
-	result = _nkc_fillfcb(pfcb,pfilename);
+	result = jd_fillfcb(pfcb,pfilename);
 #else	
 	// call NKC_IOCTL_FILLFCB (geht noch nicht, dieser Call muss von hier gemacht werden)	
 	//UINT call_blk_ioctl(struct jdfcb *pfcb, NKC_IOCTL_FILLFCB, unsigned long arg)
@@ -471,7 +471,7 @@ static int nkcfs_open(struct _file *filp)
 	*/
 	if(result)
 	{
-		nkc_write(" error fillfcb: not a filename\n");
+		gp_write(" error fillfcb: not a filename\n");
 		free(pfcb);
 		free(pfi);
 		free(pbuffer);
@@ -487,7 +487,7 @@ static int nkcfs_open(struct _file *filp)
 			OK, try to create the file
 		*/
 #ifdef USE_JADOS
-		result = _nkc_erase(pfcb); 	// first we try to erase the file if it exists 
+		result = jd_erase(pfcb); 	// first we try to erase the file if it exists 
 #else		
 		//result = call_blk_ioctl(pfcb, NKC_IOCTL_ERASE, NULL); // OK
 #endif
@@ -500,7 +500,7 @@ static int nkcfs_open(struct _file *filp)
 				
 		*/
 #ifdef USE_JADOS
-		result = _nkc_create(pfcb);	// create new file 
+		result = jd_create(pfcb);	// create new file 
 #else
 		//result = call_blk_ioctl(pfcb, NKC_IOCTL_CREATE, NULL); // OK
 #endif		
@@ -522,7 +522,7 @@ static int nkcfs_open(struct _file *filp)
 			OK, try to open the file
 		*/
 #ifdef USE_JADOS
-		result = _nkc_open(pfcb); 
+		result = jd_open(pfcb); 
 #else
 		//result = call_blk_ioctl(pfcb, NKC_IOCTL_OPEN, NULL); // OK
 #endif		
@@ -622,7 +622,7 @@ static int nkcfs_close(struct _file *filp)
 	    	
 	/* close file on media */ 
 #ifdef USE_JADOS
-	_nkc_close(pfi->pfcb); 
+	jd_close(pfi->pfcb); 
 #else
 	//result =  call_blk_ioctl(pfi->pfcb, NKC_IOCTL_CLOSE, NULL); // OK
 #endif	
@@ -828,7 +828,7 @@ static int  nkcfs_seek(struct _file *filp, int offset, int whence)
 	if(divresult.quot != pfi->pfcb->length) // did we seek into another sector ?
 	{
 #ifdef USE_JADOS
-		res = _nkc_setrec(pfi->pfcb, (int)divresult.quot); // set new record ... 
+		res = jd_setrec(pfi->pfcb, (int)divresult.quot); // set new record ... 
 #else
 	  
 		//args.arg1 = pfi->pfcb;
@@ -900,7 +900,7 @@ static int  nkcfs_remove(struct _file *filp)
 	}
 	*pc2=0;
 #ifdef USE_JADOS
-	_nkc_remove(pfilename); 
+	jd_remove(pfilename); 
 #else
 	//args.arg1 = filp->private->pfi->pfcb:
 	//args.arg2 = pfilename;
@@ -928,7 +928,7 @@ static int  nkcfs_getpos(struct _file *filp)
 static int  nkcfs_rename(struct _file *filp, const char *oldrelpath, const char *newrelpath)
 {	
 #ifdef USE_JADOS
-	_nkc_rename(oldrelpath,newrelpath);
+	jd_rename(oldrelpath,newrelpath);
 #else
 	//UINT call_blk_ioctl(pfi->pfcb, NKC_IOCTL_REMOVE, arg) 
 #endif	

@@ -10,8 +10,6 @@ char **_env_arr;
 */
 
 
-void nkc_write(char* msg);
-
 void envset(void)
 {
 	int count = _ll_getenv(0,0),i;

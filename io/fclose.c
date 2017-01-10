@@ -2,13 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <libp.h>
-
-
-//#define NKC_DEBUG
-
-#ifdef NKC_DEBUG
-#include "../nkc/llnkc.h"
-#endif
+#include <debug.h>
 
 extern int _abterm;
 
@@ -48,9 +42,7 @@ int _basefclose(FILE *stream,int release)
 {
 	int rv,i;
 	
-	#ifdef NKC_DEBUG
-	nkc_write("_basefclose...\n");
-	#endif
+	clio_lldbg("_basefclose...\n");
 	
 	if (stream->token == FILTOK && maxfiles) 
 	{
@@ -93,29 +85,22 @@ int _basefclose(FILE *stream,int release)
 		
 		if (!rv)
 		{	
-			#ifdef NKC_DEBUG 
-			nkc_write("..._basefclose\n"); nkc_getchar();
-			#endif
+			
+			clio_lldbgwait("..._basefclose\n");			
 			return 0;
 		}
 		else {
-			#ifdef NKC_DEBUG 
-			nkc_write("..._basefclose(EOF1)\n"); nkc_getchar();
-			#endif			
+			clio_lldbgwait("..._basefclose(EOF1)\n"); 
 			return EOF;
 		}
 	}
 	else 
 	{	
-		#ifdef NKC_DEBUG 
-		nkc_write("..._basefclose(EOF2)\n"); nkc_getchar();
-		#endif
+		clio_lldbgwait("..._basefclose(EOF2)\n");
 		return EOF;
 	}
 	
-	#ifdef NKC_DEBUG 
-	nkc_write("..._basefclose(1)\n"); nkc_getchar();
-	#endif
+	clio_lldbgwait("..._basefclose(1)\n"); 
 }
 int fclose(FILE *stream)
 {

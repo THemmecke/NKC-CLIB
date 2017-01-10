@@ -787,7 +787,7 @@ int checkargs(char* args, char* fullpath1, char* fullpath2)
 // ****************** high level filesystem (fat) commands.... *************************************
 
 int cmd_cls (void){
-  nkc_clrscr();
+  gp_clrscr();
   return 0;
 }
 
@@ -2391,9 +2391,9 @@ int cmd_meminfo(char* args)
   }
     
 #ifdef USE_JADOS
-  printf(" JADOS User-Start : 0x%x\n",_nkc_get_laddr() );  
-  printf(" JADOS RAMTOP     : 0x%x\n",_nkc_get_ramtop() );
-  printf(" JADOS GP-Start   : 0x%x\n",_nkc_get_gp() );
+  printf(" JADOS User-Start : 0x%x\n",jd_get_laddr() );  
+  printf(" JADOS RAMTOP     : 0x%x\n",jd_get_ramtop() );
+  printf(" JADOS GP-Start   : 0x%x\n",jd_get_gp() );
 #else
   printf(" no JADOS !\n");  
 #endif

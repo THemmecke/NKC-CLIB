@@ -25,11 +25,12 @@ static char debugbuf[255];
 
 #define lldbgdec(format,value) \
 	nkc_ser1_write(format); \
-	nkc_ser1_write_dec_dw(value); 
+	gp_ser1_write_dec_dw(value); \
+	nkc_ser1_write("\n");	 
 		
 #define lldbghex(format,value) \
 	nkc_ser1_write(format); \
-	nkc_ser1_write_hex8(value); \
+	gp_ser1_write_hex8(value); \
 	nkc_ser1_write("\n");		
 	
 /* -------------- output inline ---------------- */
@@ -45,7 +46,7 @@ static char debugbuf[255];
 	
 #define lldbgwait(format) \
 	nkc_write(format); \
-	nkc_getchar(); 
+	gp_getchar(); 
 
 #define lldbgdec(format,value) \
 	nkc_write(format); \
@@ -73,10 +74,14 @@ static char debugbuf[255];
 # define clio_dbg(format,arg...)    dbg(format,##arg)
 # define clio_lldbg(format)	   lldbg(format) 
 # define clio_lldbgwait(format)	   lldbgwait(format) 
+# define clio_lldbgdec(format,value)	lldbgdec(format,value)
+# define clio_lldbghex(format,value) lldbghex(format,value)
 #else
 # define clio_dbg(x...)
 # define clio_lldbg(x...)
 # define clio_lldbgwait(x...)	
+# define clio_lldbgdec(format,value)
+# define clio_lldbghex(format,value)
 #endif
 
 #ifdef CONFIG_DEBUG_DISKIO
@@ -194,6 +199,18 @@ static char debugbuf[255];
 # define mm_lldbgwait(x...)
 # define mm_lldbgdec(format,value)
 # define mm_lldbghex(format,value)
+#endif
+
+#ifdef CONFIG_DEBUG_XXPRINTF
+# define xxprintf_lldbg(format)	   lldbg(format) 
+# define xxprintf_lldbgwait(format)	   lldbgwait(format)
+# define xxprintf_lldbgdec(format,value)	lldbgdec(format,value)
+# define xxprintf_lldbghex(format,value) lldbghex(format,value)
+#else
+# define xxprintf_lldbg(x...)
+# define xxprintf_lldbgwait(x...)
+# define xxprintf_lldbgdec(format,value)
+# define xxprintf_lldbghex(format,value)
 #endif
 
 #endif
