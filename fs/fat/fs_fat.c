@@ -433,7 +433,7 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 			      fsfat_lldbgwait("(KEY)\n");
 			      strcpy(tmp,((struct fstabentry*)arg)->devname); strcat(tmp,":");
     			      res = f_chdrive((char*)tmp); // changes volume given in arg ...
-			      fsfat_dbg("res = %d\n",res);			      
+			      fsfat_dbg("res(f_chdrive) = %d\n",res);			      
 			      break;
     // FAT change file mode
     case FS_IOCTL_CHMOD:			      

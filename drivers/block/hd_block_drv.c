@@ -487,7 +487,7 @@ static DRESULT hd_geometry(struct _dev *devp, struct geometry *geometry)
     geometry->nsectors = di.cylinders * di.heads *di.sptrack; // sectors per card
     geometry->sectorsize = di.bpsec; // usually 512 Bytes per Sector  
     
-    geometry->model = malloc(sizeof(strlen(&di.modelnum)+1));
+    geometry->model = malloc(strlen(&di.modelnum)+1);
     if(geometry->model){
       strcpy(geometry->model,&di.modelnum);
     } else {
@@ -526,7 +526,7 @@ static DRESULT hd_ioctl(struct _dev *devp, int cmd, unsigned long arg)
   }
   disk = devp->pdrv;
   
-  if (Stat[disk].status & STA_NOINIT) {
+  if ((Stat[disk].status & STA_NOINIT) && (cmd != FS_IOCTL_DISK_INIT)) {
     drvgide_lldbg(" error: device not ready\n");
     return RES_NOTRDY;
   }
@@ -602,6 +602,8 @@ static DRESULT hd_ioctl(struct _dev *devp, int cmd, unsigned long arg)
     case FS_IOCTL_GET_DISK_DRIVE_STATUS:  
       drvgide_lldbg(" ->FS_IOCTL_GET_DISK_DRIVE_STATUS\n");
       // args: struct _dev *devp<=phydrv, int cmd<=FS_IOCTL_GET_DISK_DRIVE_STATUS, unsigned long arg <=pointer to struct _deviceinfo            
+      
+      memset((struct _deviceinfo *)arg,0, sizeof(struct _deviceinfo));
   
       result = idetifyIDE(devp->pdrv+1, (struct _deviceinfo *)arg );
       

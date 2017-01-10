@@ -46,20 +46,6 @@ typedef struct _LARGE_INTEGER {
 		    DWORD HighPart;
 		    DWORD LowPart;
 	} LARGE_INTEGER, *PLARGE_INTEGER;
-/*	
-typedef union _LARGE_INTEGER {
-  struct {
-    DWORD LowPart;
-    LONG  HighPart;
-  };
-  struct {
-    DWORD LowPart;
-    LONG  HighPart;
-  } u;
-  LONGLONG QuadPart;
-} LARGE_INTEGER, *PLARGE_INTEGER;
-	
-*/
 #endif
 
 /* other definitions */

@@ -7,10 +7,137 @@
 
  --------------------------------------------------- Hier folgend GrundProgramm- und JADOS-Aufrufe, die könnten noch in ein eigenes File ---------------------------------------------------
 
-*/ 	
+*/ 
 
 
+/* ------------- Aufrufe NATIV ohne GP ----------------- */
+
+
+/*
+void nkc_init_ser1(unsigned char control, unsigned char command);
+*/
+
+nkc_init_ser1: .global nkc_init_ser1 
+	clr.l %d0
+	clr.l %d1
+	move.b 7(%sp),%d0	/* control */
+        move.b 11(%sp),%d1	/* command */
+        move.b %d0,NKC_SER1_CTRL
+        move.b %d1,NKC_SER1_CMD                       
+	rts 
+/*
+char nkc_ser1_getchar(void);	
+
+  wait for user input on serial line 
+  returns input with echo on serial line
+
+*/
+
+nkc_ser1_getchar: .global nkc_ser1_getchar
+	btst.b #3,NKC_SER1_STAT
+	beq nkc_ser1_getchar
+	move.b	NKC_SER1_RX,%d0
+	bsr nkc_wait_ser1_tx_empty
+	move.b %d0,NKC_SER1_TX
+	rts
+
+	
+/*
+void nkc_se1r_putchar(char c);
+*/
+
+nkc_ser1_putchar: .global nkc_ser1_putchar			
+	clr.l %d0
+	move.b 7(%sp),%d0	
+	cmp.b #0x0a,%d0				/* insert CR before LF */
+	bne.s nkc_ser1_putchar_1
+	bsr nkc_wait_ser1_tx_empty
+	move.b #0x0d,NKC_SER1_TX
+	move.b 7(%sp),%d0
+nkc_ser1_putchar_1:	
+        bsr nkc_wait_ser1_tx_empty
+	move.b %d0,NKC_SER1_TX
+	rts
+	
+/*
+void nkc_ser1_write(char *str);
+*/
+
+nkc_ser1_write: .global nkc_ser1_write	
+	movea.l 4(%sp),%a0
+	bsr nkc_wait_ser1_tx_empty
+nkc_ser1_write_1:	
+	move.b (%a0)+,%d0
+	cmp.b #0x0a,%d0		/* ist it a LF ? */
+	bne.s nkc_ser1_write_2
+	move.l %d0,-(%sp)       /* yes, let putchar handle this */
+	bsr nkc_ser1_putchar
+	add.l #4,%sp
+	bsr nkc_wait_ser1_tx_empty
+	bra nkc_ser1_write_1
+nkc_ser1_write_2:        
+	move.b %d0,NKC_SER1_TX
+	beq.s nkc_ser1_write_end
+	bsr nkc_wait_ser1_tx_empty
+	bra nkc_ser1_write_1
+nkc_ser1_write_end:	
+	rts
+
+
+nkc_wait_ser1_tx_empty:	
+	btst.b #4,NKC_SER1_STAT
+	beq nkc_wait_ser1_tx_empty
+	rts
+	
 /*    --------- AUFRUFE IN's GRUNDPROGRAMM ----------  */
+
+/*
+void nkc_ser1_write_dec_dw(unsigned int val); 
+*/
+
+nkc_ser1_write_dec_dw: .global nkc_ser1_write_dec_dw
+	move.l 4(%sp),%d0
+#ifdef M68000
+	LEA32A0 buffer
+#else
+	lea buffer(%pc),%a0
+#endif
+        moveq #_PRINT8D,%d7
+        trap #1
+#ifdef M68000
+	LEA32A0 buffer        
+#else
+	lea buffer(%pc),%a0
+#endif
+	move.l %a0,-(%sp)
+	bsr nkc_ser1_write
+	add.l #4,%sp		/* Stack aufräumen */
+	rts	
+
+/*
+ void nkc_ser1_write_hex8(unsigned int val)
+ 
+*/	  	  
+nkc_ser1_write_hex8: .global nkc_ser1_write_hex8
+	move.l 4(%sp),%d0
+#ifdef M68000
+	LEA32A0 buffer
+#else
+	lea buffer(%pc),%a0
+#endif
+        moveq #_PRINT8X,%d7
+        trap #1
+#ifdef M68000
+	LEA32A0 buffer        
+#else
+	lea buffer(%pc),%a0
+#endif
+	move.l %a0,-(%sp)
+	bsr nkc_ser1_write
+	add.l #4,%sp		/* Stack aufräumen */
+	rts	
+	
+
  	
 /*
 void nkc_clrscr(void);

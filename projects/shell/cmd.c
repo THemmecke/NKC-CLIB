@@ -7,6 +7,8 @@
 #include <ff.h>
 #include <gide.h>
 
+#include <debug.h>
+
 #include "cmd.h"
 #include "shell.h"
 
@@ -62,7 +64,8 @@
 #define TEXT_CMDHELP_MEMINFO		41
 #define TEXT_CMDHELP_HISTORY		42
 
-#define TEXT_CMDHELP                    43
+#define TEXT_CMDHELP_TEST		43
+#define TEXT_CMDHELP                    44
 
 // Help text ... 
 struct CMDHLP hlptxt[] =
@@ -130,7 +133,7 @@ struct CMDHLP hlptxt[] =
 {TEXT_CMDHELP_DI,
 	    "DINIT <d#>: initialize a disk\n",
             "dinit <disc name>\n"\
-            "  disc name is HDA, HDB, SDA, SDB ... without':' !\n"},
+            "  disc name is HDA, HDB, SDA, SDB ... \n"},
 {TEXT_CMDHELP_DD,
 	    "DDUMP [<d#> <sec#>]: dump sector\n",
             "ddump [<d#> <sec#>]\n"\
@@ -247,7 +250,10 @@ struct CMDHLP hlptxt[] =
                         "quit\n"},    
 {TEXT_CMDHELP_HISTORY,             
                         "HISTORY: show command history\n",
-                        "history\n"},			
+                        "history\n"},	
+{TEXT_CMDHELP_TEST,             
+                        "TEST: test function\n",
+                        "test\n"},			
 {TEXT_CMDHELP,
 			"type cmd /? for more information on cmd\n",""},        
         {0,"",""}
@@ -305,12 +311,28 @@ struct CMD internalCommands[] =
   {"EXIT"       , cmd_quit      , TEXT_CMDHELP_QUIT},
   {"HISTORY"    , cmd_history   , TEXT_CMDHELP_HISTORY},
   {"HIST"       , cmd_history   , TEXT_CMDHELP_HISTORY},
+  {"TEST"       , cmd_test   	, TEXT_CMDHELP_TEST},
+  {"T"      	, cmd_test   	, TEXT_CMDHELP_TEST},
   {"?"          , showcmds      , TEXT_CMDHELP_QUESTION},
   
   {0,0,0}
 };
 
 
+/*---------------------------------------------------------*/
+/* external variables                                      */
+/*---------------------------------------------------------*/
+
+
+extern void* _RAM_TOP;
+extern void* _HEAP;
+
+struct block_header{
+			ULONG start;	// block start
+			ULONG size;	// block size
+			void *next;	// next memory block in chain
+			ULONG free;	//for allocated or not (0 if allocated)					
+};
 
 /*---------------------------------------------------------*/
 /* Work Area                                               */
@@ -625,29 +647,28 @@ int checkargs(char* args, char* fullpath1, char* fullpath2)
    else *arg2++ = 0;		// terminate 1st par and increment pointer to next char
    while (*arg2 == ' ') arg2++; // skip whitespace   
    
-#ifdef CONFIG_DEBUG
-   printf(" arg1 = %s, arg2 = %s\n\n", arg1, arg2);
-#endif   
+
+   dbg("checkargs: arg1 = %s, arg2 = %s\n\n", arg1, arg2);
+ 
    strcpy(FPInfo1.psz_cdrive,FPInfo.psz_cdrive);
    strcpy(FPInfo1.psz_cpath,FPInfo.psz_cpath);
     
      
    res = checkfp(arg1, &FPInfo1);
-#ifdef CONFIG_DEBUG         
-   printf("\nFPINFO1:\n");
-   printf(" psz_driveName:  [%s]\n",FPInfo1.psz_driveName );
-   printf(" psz_deviceID:   [%s]\n",FPInfo1.psz_deviceID );
-   printf(" c_deviceNO:     [%c]\n",FPInfo1.c_deviceNO );
-   printf(" n_partition:    [%d]\n",FPInfo1.n_partition );
-   printf(" psz_path:       [%s]\n",FPInfo1.psz_path );
-   printf(" psz_filename:   [%s]\n",FPInfo1.psz_filename );
-   printf(" c_separator:    [%c]\n",FPInfo1.c_separator );
-   printf(" psz_fileext:    [%s]\n",FPInfo1.psz_fileext );
-   printf(" psz_cdrive:     [%s]\n",FPInfo1.psz_cdrive );
-   printf(" psz_cpath:      [%s]\n",FPInfo1.psz_cpath );
-   printf("\nres = %d (KEY)\n",res);
-   getchar();
-#endif   
+       
+   dbg("\nFPINFO1:\n");
+   dbg(" psz_driveName:  [%s]\n",FPInfo1.psz_driveName );
+   dbg(" psz_deviceID:   [%s]\n",FPInfo1.psz_deviceID );
+   dbg(" c_deviceNO:     [%c]\n",FPInfo1.c_deviceNO );
+   dbg(" n_partition:    [%d]\n",FPInfo1.n_partition );
+   dbg(" psz_path:       [%s]\n",FPInfo1.psz_path );
+   dbg(" psz_filename:   [%s]\n",FPInfo1.psz_filename );
+   dbg(" c_separator:    [%c]\n",FPInfo1.c_separator );
+   dbg(" psz_fileext:    [%s]\n",FPInfo1.psz_fileext );
+   dbg(" psz_cdrive:     [%s]\n",FPInfo1.psz_cdrive );
+   dbg(" psz_cpath:      [%s]\n",FPInfo1.psz_cpath );
+   dbg("\nres = %d\n",res);
+ 
    
    if(fullpath2) {          
      strcpy(FPInfo2.psz_cdrive,FPInfo.psz_cdrive);
@@ -669,21 +690,20 @@ int checkargs(char* args, char* fullpath1, char* fullpath2)
        strcpy(FPInfo2.psz_fileext,FPInfo1.psz_fileext);
      }
      
-#ifdef CONFIG_DEBUG     
-     printf("\nFPINFO2:\n");
-     printf(" psz_driveName:  [%s]\n",FPInfo2.psz_driveName );
-     printf(" psz_deviceID:   [%s]\n",FPInfo2.psz_deviceID );
-     printf(" c_deviceNO:     [%c]\n",FPInfo2.c_deviceNO );
-     printf(" n_partition:    [%d]\n",FPInfo2.n_partition );
-     printf(" psz_path:       [%s]\n",FPInfo2.psz_path );
-     printf(" psz_filename:   [%s]\n",FPInfo2.psz_filename );
-     printf(" c_separator:    [%c]\n",FPInfo2.c_separator );
-     printf(" psz_fileext:    [%s]\n",FPInfo2.psz_fileext );
-     printf(" psz_cdrive:     [%s]\n",FPInfo2.psz_cdrive );
-     printf(" psz_cpath:      [%s]\n",FPInfo2.psz_cpath );
-     printf("\nres = %d (KEY)\n",res);
-     getchar();
-#endif     
+    
+     dbg("\nFPINFO2:\n");
+     dbg(" psz_driveName:  [%s]\n",FPInfo2.psz_driveName );
+     dbg(" psz_deviceID:   [%s]\n",FPInfo2.psz_deviceID );
+     dbg(" c_deviceNO:     [%c]\n",FPInfo2.c_deviceNO );
+     dbg(" n_partition:    [%d]\n",FPInfo2.n_partition );
+     dbg(" psz_path:       [%s]\n",FPInfo2.psz_path );
+     dbg(" psz_filename:   [%s]\n",FPInfo2.psz_filename );
+     dbg(" c_separator:    [%c]\n",FPInfo2.c_separator );
+     dbg(" psz_fileext:    [%s]\n",FPInfo2.psz_fileext );
+     dbg(" psz_cdrive:     [%s]\n",FPInfo2.psz_cdrive );
+     dbg(" psz_cpath:      [%s]\n",FPInfo2.psz_cpath );
+     dbg("\nres = %d\n",res);
+
    }
    
    // build fullpath  (1)
@@ -695,14 +715,14 @@ int checkargs(char* args, char* fullpath1, char* fullpath2)
    strcat(fullpath1,":");
                                                   
     if(arg1[0] == '/') { 			// absolute path given as argument -> superseds current path !
-#ifdef CONFIG_DEBUG      
-      printf(" absolute path argument '%s'\n",arg1);
-#endif      
+     
+      dbg(" absolute path argument (1) '%s'\n",arg1);
+     
       strcat(fullpath1,arg1);
     } else { // relative path, append args to current path...
-#ifdef CONFIG_DEBUG      
-     printf(" relative path argument '%s'\n",arg1); 
-#endif     
+    
+     dbg(" relative path argument (1) '%s'\n",arg1); 
+    
      if(FPInfo1.psz_cpath[0] != '/') strcat(fullpath1,"/");          
      //strcat(fullpath,FPInfo.psz_cpath);  
      if(!FPInfo1.psz_driveName[0] || !strcmp(FPInfo1.psz_driveName,FPInfo1.psz_cdrive)) strcat(fullpath1,FPInfo1.psz_cpath);  // append current path only, if no drive given or given drive equal to current drive !
@@ -733,14 +753,14 @@ int checkargs(char* args, char* fullpath1, char* fullpath2)
        strcat(fullpath2,":");
                                                       
         if(arg2[0] == '/') { 			// absolute path given as argument -> superseds current path !
-#ifdef CONFIG_DEBUG	  
-          printf(" absolute path argument '%s'\n",arg2);
-#endif	  
+  
+          dbg(" absolute path argument (2) '%s'\n",arg2);
+	  
           strcat(fullpath2,FPInfo2.psz_path);
         } else { // relative path, append args to current path...
-#ifdef CONFIG_DEBUG	  
-         printf(" relative path argument '%s'\n",arg2); 
-#endif	 
+  
+         dbg(" relative path argument (2) '%s'\n",arg2); 
+	 
          if(FPInfo2.psz_cpath[0] != '/') strcat(fullpath2,"/");          
          if(!FPInfo2.psz_driveName[0] || !strcmp(FPInfo2.psz_driveName,FPInfo2.psz_cdrive)) strcat(fullpath2,FPInfo2.psz_cpath);  // append current path only, if no drive given or given drive equal to current drive !
         }
@@ -929,14 +949,14 @@ int cmd_dir(char *args) // ...
   
   while (*args == ' ') args++;
   
-#ifdef CONFIG_DEBUG  
-  printf("cmd_dir(%s) ...\n",args);
-#endif
+
+  dbg("cmd_dir(%s) ...\n",args);
+
   res = checkargs(args, fullpath1, NULL);
   res = checkfp(fullpath1, &FPInfo1);
-#ifdef CONFIG_DEBUG
-  printf(" dir [%s] ... \n",fullpath1);
-#endif
+
+  dbg(" dir [%s] ... \n",fullpath1);
+
   printf(" directory of %s is:\n",fullpath1);
 
   
@@ -1118,15 +1138,15 @@ int cmd_mkdir(char *args)
   
   while (*args == ' ') args++;
   
-#ifdef CONFIG_DEBUG  
-  printf(" cmd_mkdir(%s)\n",args);
-#endif
+ 
+  dbg(" cmd_mkdir(%s)\n",args);
+
        
   res = checkargs(args, fullpath1, NULL);
   res = checkfp(fullpath1, &FPInfo1);
-#ifdef CONFIG_DEBUG   
-  printf(" mkdir [%s] ... \n",args);
-#endif
+ 
+  dbg(" mkdir [%s] ... \n",args);
+
       
   res = ioctl(FPInfo1.psz_driveName,FS_IOCTL_MKDIR,fullpath1);  
   
@@ -1140,9 +1160,9 @@ int cmd_rmdir(char *args)
   
    FRESULT res;    
    char fullpath1[_MAX_PATH];
-#ifdef CONFIG_DEBUG  
-   printf(" RMDIR (%s) ...\n", args);
-#endif
+
+   dbg(" RMDIR (%s) ...\n", args);
+
    
    if(!args) {
 	printf(" usage: rmdir [dirpath]\n\n");
@@ -1193,9 +1213,9 @@ int cmd_del(char *args) {
    while (*args == ' ') args++;
    
    checkargs(args, fullpath1, NULL);
-#ifdef CONFIG_DEBUG   
-   printf(" cmd_del( %s )\n",fullpath1);
-#endif
+ 
+   dbg(" cmd_del( %s )\n",fullpath1);
+
    
    res = ioctl(NULL,FS_IOCTL_DEL,&fullpath1);
    if(res) put_rc(res);
@@ -1220,18 +1240,17 @@ int cmd_copy(char *args)
  
   
   
-#ifdef CONFIG_DEBUG   
-   printf("cmd_copy(%s):\n",args);
-#endif
+  
+   dbg("cmd_copy(%s):\n",args);
+
    
    checkargs(args, fullpath1, fullpath2);
-#ifdef CONFIG_DEBUG      
-   printf(" copy [%s -> %s]\n",fullpath1,fullpath2);
-#endif
-   
-#ifdef CONFIG_DEBUG
-   printf("Opening \"%s\"\n", fullpath1);
-#endif
+    
+   dbg("cmd_copy: copy [%s -> %s]\n",fullpath1,fullpath2);
+
+
+   dbg("cmd_copy: Opening \"%s\"\n", fullpath1);
+
    //                                0x00		0x01
    //res = f_open(&file[0], args, FA_OPEN_EXISTING | FA_READ);
    file[0] = fopen(fullpath1,"rb");
@@ -1241,9 +1260,9 @@ int cmd_copy(char *args)
 
       return 0;
    }
-#ifdef CONFIG_DEBUG
-   printf("Creating \"%s\"\n", fullpath2); getchar();
-#endif
+
+   dbg("cmd_copy: Creating \"%s\"\n", fullpath2); getchar();
+
    //                                  0x08		0x02
    //res = f_open(&file[1], ptr2, FA_CREATE_ALWAYS | FA_WRITE);
    file[1] = fopen(fullpath2,"wb");
@@ -1464,6 +1483,11 @@ int cmd_dinit  (char * args){
    p1=args;
    
    while(*p1) { *p1 = toupper( *p1 );  p1++; } // convert to uppercase
+   
+   p1=args;
+   
+   while( isalnum( *p1 ) ) p1++;	// cut non-alphanumeric characters
+   *p1 = 0;
 
 #ifdef CONFIG_DEBUG   
    printf("DINIT[%s]\n",args);
@@ -1474,6 +1498,11 @@ int cmd_dinit  (char * args){
 #ifdef CONFIG_DEBUG     
    put_rc(res);
 #endif
+   
+   if(res != FR_OK) {
+     printf(" no device\n");
+     return 0;
+   }
    
    cmd_dstatus(args);
   
@@ -1512,7 +1541,7 @@ int cmd_dstatus(char * args){
    }
 			
    printf(" Model       : %s\n",di.modelnum);
-   printf(" Serial      : %d\n",di.serial);
+   printf(" Serial      : %s\n",di.serial);
    printf("   Cylinders      : %u\n",di.cylinders);
    printf("   Cylinders (CL) : %u\n",di.ccylinder);
    printf("   Heads          : %u\n",di.heads);
@@ -2143,7 +2172,7 @@ int cmd_vlabel (char * args){
      return 0;   
    }
    
-   xatos(&args, label,9); // fetch labe (emtpty => clear label if op = w(rite)
+   xatos(&args, label,9); // fetch label (emtpty => clear label if op = w(rite)
    
    p1=volume; while(*p1) { *p1 = toupper( *p1 );  p1++; } // convert to uppercase   
    
@@ -2267,29 +2296,7 @@ int cmd_quit(char *args)
 
 int cmd_fstab(char* args)  // wird auch durch mount ohne argumente aufgerufen (= eingehängte file systems)
 {
-    //  struct fs_driver
-    //{
-    //	char 				*pname;		/* name of filesystem (FAT,FAT32,NKC...) */
-    //	struct file_operations 		*f_oper;	/* file operations */
-    //	struct fs_driver			*next;		/* pointer to next driver in driverlist */
-    //};
   
-    //  struct blk_driver
-    //{
-    //	char				*pdrive;	/* name of drive, i.e. A, B... ,HD, SD... */
-    //	struct block_operations 	*blk_oper;	/* block operations */
-    //	struct blk_driver		*next;		/* pointer to next driver in driverlist */
-    //};
-  
-    //  struct fstabentry
-    //{
-    //  char* devicename;				/* devicename A, B ,HDA0 , HDB1... */
-    //  char* fsname;					/* file system name FAT32, JADOS ... */
-    //  struct fs_driver	*pfsdrv;			/* pointer to file system driver */
-    //  struct blk_driver *pblkdrv;			/* pointer to block device driver */
-    //  unsigned char options;			/* mount options */
-    //  struct fstabentry* next;			/* pointer to next fstab entry */
-    //};
   int res, line; 
   struct fstabentry *fstab;
   
@@ -2366,15 +2373,46 @@ int cmd_dev(char* args)
 int cmd_meminfo(char* args)
 {
   int res, line; 
- 
-  walk_heap();  // /nkc/first
+  struct block_header *location = (struct block_header*)_HEAP,*next;
+  UINT allocated_ram = 0, free_ram = 0, biggest_free_junk = 0,free_blocks = 0, allocated_blocks = 0;
   
+  while (location != 0)
+  {
+    if(location->free == 1) {
+      free_blocks++;
+      free_ram += location->size;
+      if(biggest_free_junk < location->size) biggest_free_junk = location->size;
+    } else {
+      allocated_blocks++;
+      allocated_ram += location->size;
+    }
+    
+    location = location->next;
+  }
+    
 #ifdef USE_JADOS
   printf(" JADOS User-Start : 0x%x\n",_nkc_get_laddr() );  
   printf(" JADOS RAMTOP     : 0x%x\n",_nkc_get_ramtop() );
   printf(" JADOS GP-Start   : 0x%x\n",_nkc_get_gp() );
+#else
+  printf(" no JADOS !\n");  
 #endif
     
+  printf("\n");
+  printf(" _HEAP starts at  :  0x%08x\n", _HEAP);
+  printf(" _STACK starts at :  0x%08x\n", _RAM_TOP);
+  printf(" dynamic memory   :  0x%08x (%.3f KB)\n", _RAM_TOP - _HEAP, (_RAM_TOP - _HEAP)/1024.0 );
+  printf(" allocated memory :  0x%08x (%.3f KB)\n", allocated_ram, allocated_ram/1024.0);
+  printf(" free memory      :  0x%08x (%.3f KB)\n", free_ram, free_ram/1024.0);
+  printf(" blocks           :  %d (%d free, %d allocated)\n", free_blocks + allocated_blocks, free_blocks, allocated_blocks);
+  printf(" biggest free junk:  0x%08x\n", biggest_free_junk);
+  printf("    fractionation :  %.2f%%\n", free_blocks * 100.0 / allocated_blocks);
+  
+  
+  
+  walk_heap();  // /nkc/first
+  
+  
   return 0;
 }
 
@@ -2393,6 +2431,67 @@ int cmd_history(char* args)
     
     if(!(++line % 10)) getchar();     
   }
+  
+  return 0;
+}
+
+int cmd_test(char* args)
+{
+  // test function
+ void *mem[100],*p; // array of memory
+ 
+ printf(" strlen(\"%s\") = %d\n",args,strlen(args));
+ 
+ return 0;
+
+  printf(" Start MALLOC Test: (KEY)"); getchar(); printf("\n\n");
+
+  mem[0] = malloc(10000);  // 0x02710
+  mem[1] = malloc(500);	 // 0x001F4
+  mem[2] = malloc(200000); // 0x30D40
+  mem[3] = malloc(10);	 // 0xA
+  mem[4] = malloc(100);	 // 0x64
+  mem[5] = malloc(500000); // 0x7A120
+  
+  walk_heap(); getchar();
+  
+  free(mem[1]); 
+  free(mem[3]);
+  free(mem[4]);
+  
+  walk_heap(); getchar();
+  
+  mem[1] = malloc(450);
+  
+  walk_heap(); getchar();
+  
+  mem[3] = malloc(105);
+  
+  walk_heap(); getchar();
+  
+  free(mem[2]);
+  
+  walk_heap(); getchar();
+  
+  mem[2] = malloc(200010);
+    
+  walk_heap(); getchar();
+  
+  mem[4] = malloc(200010);
+    
+  walk_heap(); getchar();
+  
+  free(mem[0]);
+  free(mem[1]);
+  free(mem[2]);
+  free(mem[3]);
+  free(mem[4]);
+  free(mem[5]);
+  
+  walk_heap(); getchar();
+  
+  printf("Ready !\n");
+
   
   return 0;
 }

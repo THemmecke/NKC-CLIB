@@ -65,11 +65,19 @@
 #endif
 1:
         move.b (%a0)+,%d0
-        beq 2f
+        beq 3f
+        
+        cmp.b #0x0a,%d0				/* insert CR before LF */
+	bne 2f
+	move.b #0x0d,%d0
+	moveq #_CO2,%d7
+	trap #1
+	move.b #0x0a,%d0
+2:	
         moveq #_CO2,%d7
         trap #1
         bra 1b
-2:
+3:
         movem.l (%a7)+,%a0-%a6/%d0-%d7
 .endm
 

@@ -41,16 +41,25 @@ CONFIG_USE_GP = 1
 #	in start*.S the top of ram for stack must be set
 #	in start*.S the command line cannot be retreived using JADOS
 #	if set to 0 FS_NKC should not be used (yet there are JADOS calls used for file control...) !!
-CONFIG_USE_JADOS = 1
+CONFIG_USE_JADOS = 0
 
 
 ############# DEBUG configuration #################################################
 # #include <debug.h> in 
 # global switch to turn debugging on/off
-CONFIG_DEBUG = 0
-CONFIG_DEBUG_DISKIO = 0
+CONFIG_DEBUG = 1
+# output debug to serial IO (PORT+BAUD+8N1)
+CONFIG_DEBUG_SIO_OUT = 1
+# define port and speed for serial debug output (default: Port 1, 9600 Baud, 8N1)
+CONFIG_DEBUG_SIO_PORT_2 = 0
+CONFIG_DEBUG_SIO_BAUD_115200 = 1
+# ------------------------------
+# disk i/o debug
+CONFIG_DEBUG_DISKIO = 1
+# debug GIDE C-files, ASM/S-files
 CONFIG_DEBUG_GIDE_C = 0
 CONFIG_DEBUG_GIDE_S = 0
+# debug extended printf 
 CONFIG_DEBUG_XXPRINTF = 0
 # clib io debug
 CONFIG_DEBUG_CLIB_IO=0
@@ -63,9 +72,11 @@ CONFIG_DEBUG_FS_FAT = 1
 CONFIG_DEBUG_FF = 1
 # Driver Subsystem
 CONFIG_DEBUG_DRV = 1
-CONFIG_DEBUG_DRV_GIDE = 0
+CONFIG_DEBUG_DRV_GIDE = 1
 CONFIG_DEBUG_DRV_SD = 1
 CONFIG_DEBUG_DRV_JD = 0
+# Memory Management
+CONFIG_DEBUG_MM = 0
 
 ############## tell if internal math lib should be used (/math) ############################
 # 0 = no internal, use libgcc routines, 1 = use internal math, needs FPU !
@@ -132,9 +143,28 @@ CCFLAGS += -DUSE_JADOS
 endif
 
 # DEBUG options ####################
+
+# ----------- turn debugging globaly on/off ------------
 ifeq ($(CONFIG_DEBUG),1)
 CCFLAGS += -DCONFIG_DEBUG
 
+
+# ----------- output debug info to serial port -------
+ifeq ($(CONFIG_DEBUG_SIO_OUT),1)
+CCFLAGS += -DCONFIG_DEBUG_SIO_OUT
+
+ifeq ($(CONFIG_DEBUG_SIO_PORT_2),1)
+CCFLAGS += -DCONFIG_DEBUG_SIO_PORT_2
+endif
+
+ifeq ($(CONFIG_DEBUG_SIO_BAUD_115200),1)
+CCFLAGS += -DCONFIG_DEBUG_SIO_BAUD_115200
+endif
+
+endif
+
+
+# ------ debugging info ---------------------
 ifeq ($(CONFIG_DEBUG_CLIB_IO),1)
 CCFLAGS += -DCONFIG_DEBUG_CLIB_IO
 endif
@@ -185,6 +215,10 @@ endif
 
 ifeq ($(CONFIG_DEBUG_DRV_JD),1)
 CCFLAGS += -DCONFIG_DEBUG_DRV_JD
+endif
+
+ifeq ($(CONFIG_DEBUG_MM),1)
+CCFLAGS += -DCONFIG_DEBUG_MM
 endif
 
 endif
@@ -276,8 +310,26 @@ endif
 # ######### debug configuration ###############
 ifeq ($(CONFIG_DEBUG),1)
 
+ifeq ($(CONFIG_DEBUG_SIO_OUT),1)
+AFLAGS += -DCONFIG_DEBUG_SIO_OUT
+
+
+ifeq ($(CONFIG_DEBUG_SIO_PORT_2),1)
+AFLAGS += -DCONFIG_DEBUG_SIO_PORT_2
+endif
+
+ifeq ($(CONFIG_DEBUG_SIO_BAUD_115200),1)
+AFLAGS += -DCONFIG_DEBUG_SIO_BAUD_115200
+endif
+
+endif
+
 ifeq ($(CONFIG_DEBUG_GIDE_S),1)
 AFLAGS += -DCONFIG_DEBUG_GIDE_S
+endif
+
+ifeq ($(CONFIG_DEBUG_MM),1)
+AFLAGS += -DCONFIG_DEBUG_MM
 endif
 
 endif

@@ -23,6 +23,14 @@ void nkc_setpage(unsigned char writepage, unsigned char viewpage);
 void nkc_read(unsigned char x, unsigned char y, char* buffer);
 
 
+void nkc_init_ser1(unsigned char control, unsigned char command);
+char nkc_ser1_getchar(void);
+void nkc_ser1_putchar(char c);
+void nkc_ser1_write(char *str);
+
+void nkc_ser1_write_dec_dw(unsigned int val); 
+void nkc_ser1_write_write_hex8(unsigned int val);
+
 /* -------- AUFRUFE NACH JADOS --------------------------------*/
 
 /* FCB */

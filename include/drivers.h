@@ -18,7 +18,8 @@ struct geometry
   UINT	 sptrack;
   UINT   nsectors;     /* Number of sectors on the device */
   UINT   sectorsize;   /* Size of one sector */
-  char*  model;
+  USHORT type;	       /* device type */
+  char*  model;	       /* model name */
 };
 
 

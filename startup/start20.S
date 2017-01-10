@@ -7,7 +7,7 @@
 	.text
 	.global _start,__rexit,__main,__getErrno
 	
-	.equ _STACK         , 0x100000   /* define stack origin (if JADOS is not used) */
+	.equ _STACK         , 0x300000   /* define stack origin (if JADOS is not used), the stack grows decreasing addresses */
 /*	
 ;
 ; Main program
@@ -15,30 +15,11 @@
 */
 _start:
 
-	// save old stackvalue
+/* save old stackvalue, will be restored if program ends */
 	
         lea _OLDSTACK(%pc),%a0
 	move.l %sp,(%a0)	
-/*
-       writeln msg00(%pc)
-       
-       writeln msg08(%pc)
-       lea _start(%pc),%a0
-       prthex8 %a0
-       writeln buffer(%pc)
-       crlf
-       writeln msg09(%pc)
-       lea _sbss(%pc),%a0                 
-       prthex8 %a0
-       writeln buffer(%pc)
-       crlf
-       writeln msg24(%pc)
-       lea _ebss(%pc),%a0      
-       prthex8 %a0
-       writeln buffer(%pc)
-       crlf	
-       waitcr
- */
+
      
 /* Clear errno system variable */
 	lea errno(%pc),%a0
@@ -58,17 +39,7 @@ _start:
 		
 	lea _sbss(%pc),%a0            
         lea _ebss(%pc),%a1      
-       
-       /* 
-        writeln msg09(%pc)
-        prthex8 %a0
-        writeln buffer(%pc)
-        crlf
-        prthex8 %a1
-        writeln buffer(%pc)
-        crlf
-        waitcr
-        */
+              
 LD2:
 	movel	#0, (%a0)+
 	cmpal	%a0, %a1
@@ -92,10 +63,71 @@ LD2:
         trap #6
         move.l %a0,%d0
 #else
-	move.l #_STACK,%d0	
+	move.l #_STACK,%d0	/* use _STACK var if no JADOS */
 #endif
         lea _RAM_TOP(%pc),%a0
         move.l %d0,(%a0)
+        
+        
+#ifdef CONFIG_DEBUG_MM   
+        crlf
+        crlf
+        writeln msg24(%pc)	/* Heap starts at ... */
+        lea _HEAP(%pc),%a1
+        move.l (%a1),%d0
+       	prthex8 (%d0)    
+       	crlf
+        writeln msg25(%pc)	/* Stack starts at ... */
+        lea _RAM_TOP(%pc),%a0
+        move.l (%a1),%d0
+       	prthex8 (%d0)
+       	crlf
+#endif       	
+       	
+        
+#ifdef  CONFIG_DEBUG_SIO_OUT
+       writeln dbgmsg00(%pc)         
+       
+#ifdef CONFIG_DEBUG_SIO_PORT_2
+       writeln dbgmsg03(%pc)  /* port 2 */
+#else
+       writeln dbgmsg02(%pc)  /* port 1 */
+#endif
+
+#ifdef CONFIG_DEBUG_SIO_BAUD_115200        
+       writeln dbgmsg05(%pc)  /* 8N1,115200 baud */
+#else
+       writeln dbgmsg04(%pc)  /* 8N1,9600 baud */
+#endif
+       
+       
+#ifdef CONFIG_DEBUG_SIO_PORT_2
+      /* insert code for port 2 initialisation */
+#else
+       move.l #0x0b,-(%sp)       
+#ifdef CONFIG_DEBUG_SIO_BAUD_115200              
+       move.l #0x13,-(%sp)	/* init serial 1 8N1, 115200 baud, no parity, no IRQ */	
+#else       
+       move.l #0x1e,-(%sp)	/* init serial 1 8N1, 9600 baud, no parity, no IRQ */
+#endif
+
+       bsr.l nkc_init_ser1	/* init serial 1 8N1, 9600 baud, no parity, no IRQ */
+       
+       crlf
+#endif
+
+
+       add.l #8,%sp		/* Stack aufräumen */                                   
+       
+       lea dbgmsg01(%pc),%a0
+       move.l %a0,-(%sp)
+       bsr.l nkc_ser1_write
+       add.l #4,%sp
+       
+       writeln dbgmsg01(%pc)   
+#endif
+
+
 /*       
        writeln msg25(%pc)       
        prthex8 %d0
@@ -464,7 +496,7 @@ msg23:	.ascii " __rexit ...."
 	.byte 0x0d,0x0a,0x00	
 msg24:	.ascii " bss ends (HEAP starts) at: 0x" 	
 	.byte 0x00
-msg25:	.ascii " RAM_TOP at: 0x" 	
+msg25:	.ascii " RAM_TOP (STACK starts) at: 0x" 	
 	.byte 0x00									
 
 msg26:	.ascii " Ty: 0x" 	
@@ -480,5 +512,31 @@ msg30:	.ascii " 0x"
 msg31:	.ascii " relocation info needed but not found !" 	
 	.byte 0x0d,0x0a,0x00	
 
-
+#ifdef  CONFIG_DEBUG_SIO_OUT
+dbgmsg00:
+        .byte 0x0a
+	.ascii "initializing serial debugging ..." 	
+	.byte 0x0a,0x00
+	
+dbgmsg01:
+	.ascii "serial debugging enabled"
+	.byte 0x0a,0x00
+	
+dbgmsg02:
+	.ascii "   - serial port: 1"
+	.byte 0x0a,0x00
+	
+dbgmsg03:
+	.ascii "   - serial port: 2"
+	.byte 0x0a,0x00	
+	
+dbgmsg04:
+	.ascii "   - 8N1, 9600 baud"
+	.byte 0x0a,0x00	
+	
+dbgmsg05:
+	.ascii "   - 8N1, 115200 baud"
+	.byte 0x0a,0x00		
+	
+#endif
 buffer:	ds.b 255		

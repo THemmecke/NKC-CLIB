@@ -2164,6 +2164,8 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) and adjus
 #ifdef DYNAMIC_FSTAB
 	struct fstabentry *pfstabentry;
 	FATFS *fs;
+	
+	ff_dbg(" ff.c|get_ldnumber: 0 should be returend with DYNAMIC_FSTAB enabled.\nThe pathname will be adjusted to a path without drive name and pCurFs will point to the current active fs.\n");
 #endif	
   
 	ff_dbg(" ff.c|get_ldnumber: path=(%s)....\n",*path);
@@ -2184,14 +2186,21 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) and adjus
 #if _STR_VOLUME_ID		/* Find string drive id */
 #ifdef DYNAMIC_FSTAB
 				*tt=0;
-				ff_dbg(" ff.c|get_ldnumber: fetch fstab entry for %s\n",*path);
+				ff_dbg(" ff.c|get_ldnumber: fetch fstab entry for '%s'\n",*path);
 				if(pfstabentry = get_fstabentry(*path)){ 
+				  ff_dbg(" ff.c|get_ldnumber: fstab entry = 0x%x, fs = 0x%x\n",pfstabentry,pfstabentry->pfs);
 				  fs = (FATFS*)pfstabentry->pfs; /* Get pointer to the file system object */
+				} else {
+				  ff_dbg(" ff.c|get_ldnumber: no fstab entry found. pCurFs = 0x%x\n",pCurFs);
 				}
-				pCurFs = fs;
 				
 				*path = ++tt;	/* return path (without drive) */
-				vol = 0;			
+				vol = 0;
+				
+				if(pfstabentry){
+				  pCurFs = pfstabentry;
+				  ff_dbg(" ff.c|get_ldnumber: vol = 0, pCurFs = pfstabentry = 0x%x\n",pfstabentry);
+				}
 #else  			  
 				static const char* const str[] = {_VOLUME_STRS};  // "HDA0","HDA1","HDA2","HDA3" ... in ffconf.h
 				const char *sp;
@@ -2220,9 +2229,12 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) and adjus
 		}
 		
 #if _FS_RPATH && _VOLUMES >= 2
-		ff_dbg(" ff.c|get_ldnumber: vol = CurrVol\n"); 
+		 
  #ifdef DYNAMIC_FSTAB
+		vol = 0;
+		ff_dbg(" ff.c|get_ldnumber: vol = 0, fs = pCurFs->pfs = 0x%x\n",pCurFs->pfs);
  #else		
+		ff_dbg(" ff.c|get_ldnumber: vol = CurrVol\n");
 		vol = CurrVol;	/* Current drive */
  #endif		
 #else
@@ -2316,8 +2328,18 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 	  fs = 0;
 	  pfstabentry = get_fstabentry(*path); /* in this case, the filesystem must be retreived from fstab */
 	  if(pfstabentry) {
+	    ff_dbg(" ff.c|find_volume: filesystem retreived from fstab\n");
 	    fs = pfstabentry->pfs;
-	  } 
+	  } else {
+	    ff_dbg(" ff.c|find_volume: filesystem (path=%s) can not be retreived from fstab\n",*path);
+	    if(pCurFs) {
+	      ff_dbg(" ff.c|find_volume: using pCurFs->fs\n");
+	      fs = pCurFs->pfs;			/* or take current fs if it cannot be retreived via path information */
+	    }else {
+	      ff_dbg(" ff.c|find_volume: FR_NO_FILESYSTEM\n");
+	      return FR_NO_FILESYSTEM;
+	    }
+	  }
 	  
 	  get_ldnumber(path); /* called to remove drive info from path ... */
 	  
@@ -2365,8 +2387,10 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 			}
 			ff_lldbgwait(" ff.c|find_volume: The file system object is valid\n");   // <--- !
 #ifdef DYNAMIC_FSTAB  			
-			pCurFs = fs;				/* current volume was changed */
-			ff_dbg(" ff.c|find_volume: current volume changed (0x%x)\n", pCurFs);
+			if(pfstabentry){
+			  pCurFs = pfstabentry;				/* current volume was changed */
+			  ff_dbg(" ff.c|find_volume: pCurFs (pointer in fstab) changed (0x%x)\n", pCurFs);
+			}
 #else			
 			CurrVol = vol; 				/* current volume was changed */
 #endif			
@@ -2435,11 +2459,11 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 			BYTE *pt = fs->win+MBR_Table + i * SZ_PTE;
 			br[i] = pt[4] ? LD_DWORD(&pt[8]) : 0;
 			
-			ff_dbg(" ff.c|find_volume: partition %d offset = 0x%x",i,br[i]);
+			ff_dbg(" ff.c|find_volume: partition %d offset = 0x%x\n",i,br[i]);
 		}
 #ifdef DYNAMIC_FSTAB		
 		i = pfstabentry->partition;						/* Partition number: 0:auto, 1-4:forced */
-		ff_dbg(" ff.c|find_volume: partition = %d",i);
+		ff_dbg(" ff.c|find_volume: partition = %d\n",i);
 #else		
 		i = LD2PT(vol);						/* Partition number: 0:auto, 1-4:forced */
 #endif		
@@ -2824,6 +2848,8 @@ FRESULT f_open (
 						res = FR_DENIED;
 					}
 				}
+			}else{
+			  ff_dbg("f_open: file does not exist.\n");
 			}
 		}
 		if (res == FR_OK) {
@@ -2870,7 +2896,7 @@ FRESULT f_open (
 		}
 	}
 
-	ff_dbg("f_open ends\n");
+	ff_dbg("f_open ends (res = %d)\n", res);
 	
 	LEAVE_FF(dj.fs, res);
 }
@@ -3212,8 +3238,9 @@ FRESULT f_chdrive (
 	  return FR_INVALID_DRIVE;
 	}
 	
-	pCurFs = fs;
+	pCurFs = pfstabentry;
 	
+	ff_dbg(" ff.c: res = FR_OK\n");
 	return FR_OK;
 }
 #else
@@ -3309,46 +3336,48 @@ FRESULT f_getcwd (
 	*buff = 0;
 
 	res = find_volume(&dj.fs, (const TCHAR**)&buff, 0);	/* Get current volume/directory path (find_path(DIR*,0,0) */
+	
+	
 	if (res == FR_OK) {
-		ff_dbg(" f_getcmd: find_volume returned FR_OK...\n");
+		ff_dbg(" f_getcwd: find_volume returned FR_OK...\n");
 		INIT_BUF(dj);
 		i = len;			/* Bottom of buffer (directory stack base) */
 		dj.sclust = dj.fs->cdir;			/* Start to follow upper directory from current directory */
 #ifdef CONFIG_DEBUG_FF
-		if(dj.sclust == 0) ff_dbg(" f_getcmd: it seems current dir is root dir ...\n");
+		if(dj.sclust == 0) ff_dbg(" f_getcwd: it seems current dir is root dir ...\n");
 #endif
 		while ((ccl = dj.sclust) != 0) {	/* Repeat while current directory is a sub-directory */
 			res = dir_sdi(&dj, 1);			/* Get parent directory */
 			if (res != FR_OK) {
-			  ff_lldbgwait(" f_getcmd: break(1)\n");
+			  ff_lldbgwait(" f_getcwd: break(1)\n");
 			  break;
 			}
 			res = dir_read(&dj, 0);
 			if (res != FR_OK) {
-			  ff_lldbgwait(" f_getcmd: break(2)\n");
+			  ff_lldbgwait(" f_getcwd: break(2)\n");
 			  break;
 			}
 			dj.sclust = ld_clust(dj.fs, dj.dir);	/* Goto parent directory */
 			res = dir_sdi(&dj, 0);
 			if (res != FR_OK) {
-			  ff_lldbgwait(" f_getcmd: break(3)\n");
+			  ff_lldbgwait(" f_getcwd: break(3)\n");
 			  break;
 			}
 			do {							/* Find the entry links to the child directory */
 				res = dir_read(&dj, 0);
 				if (res != FR_OK){
-				  ff_lldbgwait(" f_getcmd: break(4)\n");
+				  ff_lldbgwait(" f_getcwd: break(4)\n");
 				  break;
 				}
 				if (ccl == ld_clust(dj.fs, dj.dir)){
-				  ff_lldbgwait(" f_getcmd: found the entry ...\n");
+				  ff_lldbgwait(" f_getcwd: found the entry ...\n");
 				  break;	/* Found the entry */
 				}
 				res = dir_next(&dj, 0);	
 			} while (res == FR_OK);
 			if (res == FR_NO_FILE) res = FR_INT_ERR;/* It cannot be 'not found'. */
 			if (res != FR_OK){
-			  ff_lldbgwait(" f_getcmd: break(5)\n");
+			  ff_lldbgwait(" f_getcwd: break(5)\n");
 			  break;
 			}
 						
@@ -3373,14 +3402,20 @@ FRESULT f_getcwd (
 			buff[--i] = '/';
 		}
 		
-		ff_dbg(" f_getcwd: (2) buff=> %s\n",buff);
+#if CONFIG_DEBUG_FF
+		if(buff)		  
+		  ff_dbg(" f_getcwd: (2) buff=> %s\n",buff);
+#endif
 		tp = buff;
 		if (res == FR_OK) {
 		  
-#ifdef DYNAMIC_FSTAB
-			strcat(tp,pCurFs->devname);
-			tp += strlen(pCurFs->devname);
-			*tp++ = ':';
+#ifdef DYNAMIC_FSTAB			
+			if(pCurFs){
+			  ff_dbg(" f_getcwd: add drive name (%s)\n",pCurFs->devname);
+			  strcat(tp,pCurFs->devname);
+			  tp += strlen(pCurFs->devname);
+			  *tp++ = ':';
+			}
 #else 		  
   #if _VOLUMES >= 2
     #if _STR_VOLUME_ID		

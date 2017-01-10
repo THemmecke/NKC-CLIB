@@ -2,16 +2,44 @@
 #define __DEBUG_H
 
 
+/* -------------- enable debugging output ---------------- */
 #ifdef CONFIG_DEBUG
 
 
 static char debugbuf[255];
 
+/* -------------- output to serial port ---------------- */
+
+#ifdef CONFIG_DEBUG_SIO_OUT
+
+#define dbg(format,arg...) \
+        sprintf(debugbuf,format,##arg); \
+	nkc_ser1_write(debugbuf);
+	
+#define lldbg(format) \
+	nkc_ser1_write(format); 
+	
+#define lldbgwait(format) \
+	nkc_ser1_write(format);// \
+	//nkc_ser1_getchar(); 
+
+#define lldbgdec(format,value) \
+	nkc_ser1_write(format); \
+	nkc_ser1_write_dec_dw(value); 
+		
+#define lldbghex(format,value) \
+	nkc_ser1_write(format); \
+	nkc_ser1_write_hex8(value); \
+	nkc_ser1_write("\n");		
+	
+/* -------------- output inline ---------------- */
+	
+#else
+
 #define dbg(format,arg...) \
         sprintf(debugbuf,format,##arg); \
 	nkc_write(debugbuf);
-	
-	
+
 #define lldbg(format) \
 	nkc_write(format); 
 	
@@ -27,7 +55,10 @@ static char debugbuf[255];
 	nkc_write(format); \
 	nkc_write_write_hex8(value); \
 	nkc_write("\n");		
-	
+#endif
+
+/* -------------- disable debugging output ---------------- */
+
 #else
 #define dbg(x...)
 #define lldbg(x...)
@@ -149,6 +180,20 @@ static char debugbuf[255];
 # define drvjd_dbg(x...)
 # define drvjd_lldbg(x...)
 # define drvjd_lldbgwait(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_MM
+# define mm_dbg(format,arg...)    dbg(format,##arg)
+# define mm_lldbg(format)	   lldbg(format) 
+# define mm_lldbgwait(format)	   lldbgwait(format)
+# define mm_lldbgdec(format,value)	lldbgdec(format,value)
+# define mm_lldbghex(format,value) lldbghex(format,value)
+#else
+# define mm_dbg(x...)
+# define mm_lldbg(x...)
+# define mm_lldbgwait(x...)
+# define mm_lldbgdec(format,value)
+# define mm_lldbghex(format,value)
 #endif
 
 #endif

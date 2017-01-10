@@ -335,14 +335,44 @@ static UINT sd_geometry(struct _dev *devp, struct geometry *geometry)
   geometry->sptrack = 0;
   geometry->nsectors = pdi->size; // sectors per card
   geometry->sectorsize = pdi->bpb;; // usually 512 Bytes per Sector
-  
-  geometry->model = malloc(sizeof(strlen(pdi->sdname)+1));
+  geometry->type = pdi->type;
+  geometry->model = malloc(strlen(pdi->sdname)+1);
   if(geometry->model){
     strcpy(geometry->model,pdi->sdname);
   } else {
   }
   
   return EZERO;
+}
+
+
+/****************************************************************************
+ * Name: idetifySD
+ *
+ * Description: Return device information
+ * Note: this routine should be redefined in sdS.S 
+ *
+ ****************************************************************************/
+DRESULT idetifySD(BYTE disk, struct _deviceinfo *p){
+  struct geometry g;
+  struct _dev d;
+  
+  d.pdrv = disk;
+  
+  sd_geometry(&d, &g);  
+   
+  if( strlen(g.model) < 40 ) strcpy(p->modelnum,g.model);
+    
+  p->cylinders 	= g.cylinders;
+  p->heads	= g.heads;
+  p->sptrack	= g.sptrack;
+  p->spcard	= g.nsectors;
+  p->bpsec      = g.sectorsize;
+  
+  
+  if(g.model) free(g.model);
+  
+  
 }
 
 /****************************************************************************
@@ -367,7 +397,7 @@ static UINT sd_ioctl(struct _dev *devp, UINT cmd, unsigned long arg)
   }
   disk = devp->pdrv;
   
-  if (cmd != FS_IOCTL_DISK_INIT && Stat[disk].status & STA_NOINIT) {
+  if ((cmd != FS_IOCTL_DISK_INIT) && (Stat[disk].status & STA_NOINIT)) {
     drvsd_lldbg(" error: device not ready\n");
     return RES_NOTRDY;
   }
@@ -436,8 +466,11 @@ static UINT sd_ioctl(struct _dev *devp, UINT cmd, unsigned long arg)
       drvsd_lldbg(" ->FS_IOCTL_GET_DISK_DRIVE_STATUS\n");
       // args: struct _dev *devp<=phydrv, int cmd<=FS_IOCTL_GET_DISK_DRIVE_STATUS, unsigned long arg <=pointer to struct _deviceinfo            
   
-      //result = idetifySD(devp->pdrv+1, (struct _deviceinfo *)arg );      
-      result = Stat[devp->pdrv+1].status;
+      
+      memset((struct _deviceinfo *)arg,0, sizeof(struct _deviceinfo));
+      
+      result = idetifySD(devp->pdrv+1, (struct _deviceinfo *)arg );
+      //result = Stat[devp->pdrv+1].status;
       
       switch(result){ 
           case STA_NODISK:

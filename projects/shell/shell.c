@@ -79,7 +79,7 @@ void shell()
   ioctl(NULL,FS_IOCTL_GETDRV,FPInfo.psz_cdrive);
   
   
-  printf(" Test-Shell v 1.0\n\n"
+  printf("\n\n Test-Shell v 1.0\n\n"
          "   To access any drive, you have to mount it first.\n"
 	 "   Use the following commands:\n"
 	 "      fs    - to show available file systems\n"

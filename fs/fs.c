@@ -12,9 +12,6 @@
 
 #include "fs.h"
 
-#ifdef CONFIG_FS_NKC
-//#include "nkc/fs_nkc.h"
-#endif
 
 #define NUM_FILE_HANDLES 255
 #define NUM_OPENFILES 255
@@ -66,8 +63,8 @@ static struct _file *filelist[NUM_OPENFILES]; 			/* list of open files */
 
 static unsigned char HPOOL[NUM_FILE_HANDLES];		/* handle pool, handles 0...9 are reserved !! */
 
-static struct fs_driver *driverlist = NULL;		/* pointer to file system driver */
-extern struct blk_driver *blk_driverlist; 	/* pointer to block device driver */
+static struct fs_driver *driverlist = NULL;		/* pointer to file system driver list */
+extern struct blk_driver *blk_driverlist; 	/* pointer to block device driver list */
 
 #ifdef CONFIG_FS_NKC
 extern unsigned char _DRIVE; // drive where this program was started (startup/startXX.S)
@@ -104,20 +101,17 @@ FRESULT fdisk (
 
 	fs_lldbg("fs.c: fdisk() ...\n");
       
-	//stat = disk_initialize(pdrv); 
 	stat = blk_drv->blk_oper->open(&pdrv);
 	
 	
 	if (stat & STA_NOINIT) return FR_NOT_READY;
 	if (stat & STA_PROTECT) return FR_WRITE_PROTECTED;
 	
-	//if (disk_ioctl(pdrv, GET_SECTOR_COUNT, &sz_disk)) return FR_DISK_ERR;	
 	if ( res = blk_drv->blk_oper->ioctl(&pdrv,GET_SECTOR_COUNT,&sz_disk)) {
 	  fs_dbg("fs.c: GET_SECTOR_COUNT returned sz_disk = %d, res = %d ...\n",sz_disk,res);
 	  return FR_DISK_ERR;
 	}
 
-	//res = blk_drv->blk_oper->ioctl(&pdrv,GET_SECTOR_COUNT,&sz_disk);
 	fs_dbg("fs.c: GET_SECTOR_COUNT returned sz_disk = %d, res = %d ...\n",sz_disk,res);
 	
 	/* Determine CHS in the table regardless of the drive geometry */
@@ -128,7 +122,6 @@ FRESULT fdisk (
 	tot_cyl = sz_disk / sz_cyl;
 
 	/* Create partition table */
-	//mem_set(buf, 0, _MAX_SS);
 	memset(buf, 0, _MAX_SS);
 	p = buf + MBR_Table; b_cyl = 0;
 	for (i = 0; i < 4; i++, p += SZ_PTE) {
@@ -210,7 +203,6 @@ struct fs_driver* get_driver(char *name)
 {
       
 	fs_lldbg("fs.c|get_(fs)driver: ...\n"); 
-	//fs_lldbgwait("\n"); 
 	
 	struct fs_driver *pcur, *plast;
 	
@@ -254,15 +246,17 @@ int dn2pdrv(char* devicename) { /* convert devicename to physical drive number *
     * drivename: xxyzz   xx=HD,SD ... is the device type, y=A,B,C... is the physical drive, zz = 0....n is the logical partition
     * 
     */ 
+
+   fsfat_dbg("dn2pdrv: device = '%s'\n",devicename);
    
-   
-   if(strlen(devicename) > 3) {
+   if(strlen(devicename) > 2) {
      c=devicename[2];
-     if (IsLower(c)) c -= 0x20;
-     drive = c - 0x41;
+     fsfat_dbg("dn2pdrv: physical drive letter = '%c'\n",c);
+     
+     drive = toupper(c) - 'A';
    }
    
-   fsfat_dbg(" dn2pdrv(%s)=%d\n",devicename,drive);
+   fsfat_dbg("dn2pdrv: physical drive number => %d\n",drive);
    
    return drive;
  }
@@ -686,7 +680,7 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
 #endif
 	
 	res = pfsdriver->f_oper->ioctl(NULL,FS_IOCTL_CHDRIVE,pfstab);	// is ioctl valid ? -> call it
-	fs_dbg(" res = %d\n",res);
+	fs_dbg("fc.c:  res(FS_IOCTL_CHDRIVE) = %d\n",res);
 	
 #ifdef USE_JADOS
 	if(isJados) {
@@ -794,12 +788,12 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
       }     
           
       break;        
-    case FS_IOCTL_GETCWD: // ************************************* get currennt working directory and path
+    case FS_IOCTL_GETCWD: // ************************************* get current working directory and path
       // name=NULL, cmd=FS_IOCTL_GETCWD,arg =>  struct ioctl_get_cwd 
       fs_lldbgwait(" - FS_IOCTL_GETCWD - \n");
            
       if(FPInfo.psz_cdrive) { 					// paranoya check
-	// check if a drive is mounted in fstab !
+	// check if a drive (current drive) is mounted in fstab !
 	pfstab = get_fstabentry(FPInfo.psz_cdrive);
 	
       } else {
@@ -817,7 +811,7 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
 	  break;
       } 
       
-      pfsdriver = pfstab->pfsdrv;  		// pointer to file system driver
+      pfsdriver = pfstab->pfsdrv;  		// pointer to file system driver of current drive
       
       if(!pfsdriver) { 
 	fs_dbg(" no fs driver found for ID %s - giving up",FPInfo.psz_deviceID);
@@ -825,11 +819,12 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
 	res = ENODRV; break;  	
       }                                         // if no driver, exit...
       
-       if(pfsdriver->f_oper->ioctl) {
+      
+       if(pfsdriver->f_oper->ioctl) {		// ...otherwise check file systems current drive...
 	fs_lldbg(" calling drivers ioctl..."); 
 	fs_lldbgwait("...(KEY)\n");
 	
-	arg_get_cwd.cdrive = FPInfo.psz_cdrive;
+	arg_get_cwd.cdrive = FPInfo.psz_cdrive;	
 	arg_get_cwd.cpath  = FPInfo.psz_cpath;
 	arg_get_cwd.size   = _MAX_PATH;		// size of path buffer
 	  
@@ -1420,14 +1415,28 @@ struct fstabentry* get_fstabentry(char* devname)
   BOOL isJados = FALSE;
   char jadosdrv;
 #endif
-  			
+  
+  
+  fs_dbg(" fs.c|get_fstabentry: (%s)\n",devname);
+  
   pcur = fstab;
   
   /* remove path information from given devname ... */
-  tc = malloc(sizeof(strlen(devname))+1);
-  if(!tc) return NULL;
+  tc = malloc(strlen(devname)+1);
+  if(!tc) {
+    fs_dbg(" fs.c|get_fstabentry: error in malloc !!\n");    
+    return NULL;
+  }
+  
   strcpy(tc,devname);
-  while(IsAlphaNum(tc[i])) i++;
+  while(IsAlphaNum(tc[i])){
+    i++;
+    if(i > 255){
+      fs_dbg(" fs.c|get_fstabentry: error in devname !!\n");
+      free(tc);
+      return NULL;
+    }
+  }
   tc[i]=0;
   
   
@@ -1585,7 +1594,11 @@ FRESULT add_fstabentry(char *volume, char* fsname, unsigned char options)
 #endif  
     
     
-    if(pfstab->pdrv == -1 && !isJados) {
+    if(pfstab->pdrv == -1 
+#ifdef USE_JADOS      
+      && !isJados
+#endif      
+      ) {
       fs_dbg("error: invalid drive specified\n");
       free(pfstab);
       return FR_INVALID_DRIVE;
@@ -1699,6 +1712,7 @@ void _ll_init_fs(void)  			// initialize filesystems (nkc/llopenc.c)
 		{
 			FPInfo.psz_cdrive[0] = _DRIVE - 5 + 'A';
 		}
+			
 #else
         FPInfo.psz_cdrive[0] = '?';
 #endif		
@@ -1709,11 +1723,13 @@ void _ll_init_fs(void)  			// initialize filesystems (nkc/llopenc.c)
  	fs_dbg("fs.c:  FPInfo.psz_cdrive = %s",FPInfo.psz_cdrive); 
 	fs_lldbgwait("\n");	
 	
+ #ifdef USE_JADOS	
  	#ifdef CONFIG_FS_NKC
  	// initialize NKC/JADOS FileSystem
  	nkcfs_init_fs();
  	#endif 
- 	 
+#endif
+	
   	#ifdef CONFIG_FS_FAT
  	// initialize FAT FileSystem
  	fatfs_init_fs();
