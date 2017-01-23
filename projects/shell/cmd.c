@@ -483,7 +483,7 @@ FRESULT scan_fat_files (	/* used in cmd_lstatus */
 		//while (((res = ioctl(NULL,FAT_IOCTL_READ_DIR,&arg_readdir)) == FR_OK) && Finfo.fname[0]) {
 		  
 			dbg("scan_fat_files after readdir: ppath->'%s' ...\n",ppath);
-			lldbg(Finfo.fname);
+			dbg("%s -- DIR.index = %d\n",Finfo.fname,dir.index);
 			
 			if (_FS_RPATH && Finfo.fname[0] == '.') continue;
 #if _USE_LFN
