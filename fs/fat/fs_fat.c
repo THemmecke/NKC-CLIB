@@ -119,25 +119,16 @@ static int     fatfs_open(struct _file *filp){
 
    //res = f_open(pfil, filp->pname, filp->f_oflags);
    res = f_open(pfil, filp->pname, mode);
-   fsfat_dbg(" f_open(pfil, filp->pname, mode) retured %d\n",res);
-   
-   switch(res){
-     case FR_OK: break; // continue
-     case FR_NO_FILE: return ENOFILE;
-     case FR_NO_PATH: return ENOPATH;
-     case FR_INVALID_DRIVE: return ENXIO;
-     default:
-       return ENOFILE;
-   }
-   
+   fsfat_dbg(" f_open(pfil, filp->pname, mode) retured %d\n",res);   
 
    filp->private = (void*)pfil;
 
 
    fsfat_dbg("... fatfs_open ]\n");
-
    
-   return EZERO;
+   if(res < FRESULT_OFFSET && res != FR_OK)
+    return res + FRESULT_OFFSET;
+   else return res;
 }	
 
 static int     fatfs_close(struct _file *filp){
@@ -157,13 +148,11 @@ static int     fatfs_close(struct _file *filp){
 
   free(pfil);
 
-  if(res != FR_OK) { 
-    return ENOFILE;
-  }
-
   fsfat_dbg("fs_fat.c: ... fatfs_close ]\n");
    
-  return EZERO;
+  if(res < FRESULT_OFFSET && res != FR_OK)
+    return res + FRESULT_OFFSET;
+   else return res;
 }
 
 static int     fatfs_read(struct _file *filp, char *buffer, int buflen){
@@ -179,12 +168,6 @@ static int     fatfs_read(struct _file *filp, char *buffer, int buflen){
   }
 
   pfil = (FIL*)filp->private;
-
-//  FRESULT f_read (
-//  FIL* fp,    /* Pointer to the file object */
-//  void* buff,   /* Pointer to data buffer */
-//  UINT btr,   /* Number of bytes to read */
-//  UINT* br    /* Pointer to number of bytes read */
 
   res = f_read(pfil, buffer, buflen, &s2);
 
@@ -206,13 +189,6 @@ static int     fatfs_write(struct _file *filp, const char *buffer, int buflen){
   }
 
   pfil = (FIL*)filp->private;
-    
-// FRESULT f_write (
-//	FIL* fp,			/* Pointer to the file object */
-//	const void *buff,	/* Pointer to the data to be written */
-//	UINT btw,			/* Number of bytes to write */
-//	UINT* bw			/* Pointer to number of bytes written */
-//)
     
   res = f_write(pfil, buffer, buflen, &s2);
   
@@ -260,7 +236,9 @@ static int     fatfs_seek(struct _file *filp, int offset, int whence){
   
   fsfat_dbg("fs_fat.c: ... fatfs_seek ]\n");
   
-  return res;
+  if(res < FRESULT_OFFSET && res != FR_OK)
+    return res + FRESULT_OFFSET;
+   else return res;
 }
 
 static int     fatfs_remove(struct _file *filp){
@@ -278,14 +256,16 @@ static int     fatfs_remove(struct _file *filp){
   
   fsfat_dbg("fs_fat.c: ... fatfs_remove ]\n");
   
-  return res;
+  if(res < FRESULT_OFFSET && res != FR_OK)
+    return res + FRESULT_OFFSET;
+   else return res;
 }
 
 static int     fatfs_getpos(struct _file *filp){  
 
   fsfat_dbg("fs_fat.c: [ fatfs_getpos ...\n");
 
-  if(filp == NULL) return ENOFILE;
+  if(filp == NULL) return NULL;
   
   fsfat_dbg("fs_fat.c: ... fatfs_getpos ]\n");
 
@@ -299,7 +279,7 @@ static int     fatfs_rename(struct _file *filp, const char *oldrelpath, const ch
 
   fsfat_dbg("fs_fat.c: [ fatfs_rename ...\n");
 
-  if(filp == NULL) return ENOFILE;
+  if(filp == NULL) return NULL;
   
   pfil = (FIL*)filp->private;
   
@@ -307,7 +287,9 @@ static int     fatfs_rename(struct _file *filp, const char *oldrelpath, const ch
 
   fsfat_dbg("fs_fat.c: ... fatfs_rename ]\n");
   
-  return res;
+  if(res < FRESULT_OFFSET && res != FR_OK)
+    return res + FRESULT_OFFSET;
+   else return res;
 }
 
 
@@ -521,9 +503,11 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
     // Get Number of Free Clusters
     case FS_IOCTL_GET_FREE:		      
     case FAT_IOCTL_GET_FREE:
+			      fsfat_dbg(" FAT_IOCTL_GET_FREE (1): path = %s\n", ((struct ioctl_getfree*)arg)->path);
 			      res = f_getfree(((struct ioctl_getfree*)arg)->path,
 					      ((struct ioctl_getfree*)arg)->nclst,
 					      ((struct ioctl_getfree*)arg)->ppfatfs);  
+			      fsfat_dbg(" FAT_IOCTL_GET_FREE (2): path = %s\n", ((struct ioctl_getfree*)arg)->path);
 			      break;
     // create FAT file system
     case FAT_IOCTL_MKFS:
@@ -567,7 +551,9 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 
   fsfat_lldbgwait("fs_fat.c: ... fatfs_ioctl ] (KEY)\n");
 
-  return res;
+  if(res < FRESULT_OFFSET && res != FR_OK)
+    return res + FRESULT_OFFSET;
+   else return res;
 }
 
 static int     fatfs_mkdir(struct _file *filp, const char *relpath){
@@ -576,7 +562,9 @@ static int     fatfs_mkdir(struct _file *filp, const char *relpath){
   fsfat_dbg("fs_fat.c: [ fatfs_mkdir ...\n");
   res = f_mkdir(relpath);  
   fsfat_dbg("fs_fat.c: ... fatfs_mkdir ]\n");  
-  return res;
+  if(res < FRESULT_OFFSET && res != FR_OK)
+    return res + FRESULT_OFFSET;
+   else return res;
 }
 
 static int     fatfs_rmdir(struct _file *filp, const char *relpath){
@@ -585,7 +573,9 @@ static int     fatfs_rmdir(struct _file *filp, const char *relpath){
   fsfat_dbg("fs_fat.c: [ fatfs_rmdir ...\n");
   res = f_unlink(relpath);
   fsfat_dbg("fs_fat.c: ... fatfs_rmdir ]\n");
-  return res;
+  if(res < FRESULT_OFFSET && res != FR_OK)
+    return res + FRESULT_OFFSET;
+   else return res;
 }
 
 
@@ -597,7 +587,9 @@ static int     fatfs_opendir(struct _file *filp, const char *relpath, DIR *dir){
   if(relpath == NULL) return ENOFILE;
   res = f_opendir(dir,relpath);
   fsfat_dbg("fs_fat.c: ... fatfs_opendir ]\n");
-  return res;
+  if(res < FRESULT_OFFSET && res != FR_OK)
+    return res + FRESULT_OFFSET;
+   else return res;
 }
 
 
@@ -608,19 +600,23 @@ static int     fatfs_closedir(struct _file *filp, DIR *dir){
   if(dir == NULL) return ENOFILE;
   res = f_closedir(dir);
   fsfat_dbg("fs_fat.c: ... fatfs_closedir ]\n");
-  return res;
+  if(res < FRESULT_OFFSET && res != FR_OK)
+    return res + FRESULT_OFFSET;
+   else return res;
 }
 
 
 static int     fatfs_readdir(struct _file *filp, DIR *dir,FILINFO* finfo){
   FIL *pfil;
-  FRESULT res;
+  FRESULT res = 0;
   fsfat_dbg("fs_fat.c: [ fatfs_readdir ...\n");
   if(dir == NULL) return ENOFILE;
   if(finfo == NULL) return ENOFILE;
-  f_readdir(dir,finfo);
+  res = f_readdir(dir,finfo);
   fsfat_dbg("fs_fat.c: ... fatfs_readdir ]\n");
-  return res;
+  if(res < FRESULT_OFFSET && res != FR_OK)
+    return res + FRESULT_OFFSET;
+   else return res;
   
 }
 

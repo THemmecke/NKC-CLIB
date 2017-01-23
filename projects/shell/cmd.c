@@ -369,14 +369,14 @@ const char *p_fat_types =
 
 char* get_rc_string(FRESULT rc)
 {
-        FRESULT i;
-	char *p = p_rc_code;
-
-	for (i = 0; i != rc && *p; i++) {
-		while(*p++) ;
-	}
+	struct rc_code_struct *p_rc_code;
 	
-	return p;
+	for (p_rc_code = rc_codes
+        ; p_rc_code->rc_string && p_rc_code->rc != rc
+        ; p_rc_code++){
+        }
+	
+	return p_rc_code->rc_string;
 }
 
 char* get_fattype_string(UCHAR type)
@@ -394,7 +394,7 @@ char* get_fattype_string(UCHAR type)
 		
 void put_rc (FRESULT rc)
 {		
-	printf("rc=%u FR_%s\n", (UINT)rc, get_rc_string(rc));
+	printf("rc=%u '%s'\n", (UINT)rc, get_rc_string(rc));
 }
 
 void init_cmd(void) {
@@ -433,68 +433,89 @@ void exit_cmd(void) {
   free( FPInfo2.psz_cpath);
 }
 
+
+FILINFO Finfo;			/* File info object */
 FRESULT scan_fat_files (	/* used in cmd_lstatus */
 	char* ppath		/* Pointer to the path name working buffer */
 )
 {
 	DIR dir;
 	FRESULT res;
-	FILINFO Finfo;			/* File info object */
+	
 	int i;
 	char *fn;
 	struct ioctl_opendir arg_opendir;
 	struct ioctl_readdir arg_readdir;
 	
-	//split_filename(ppath, drive, path, filename, ext, fullname, filepath, fullpath, FPInfo.psz_cdrive, FPInfo.psz_cpath); // analyze args
-	res=checkfp(ppath, &FPInfo);
 	
-	//printf("scan_fat_files: path[%s] drive[%s] fullpath[%s]\n",ppath,drive,fullpath);
+	dbg("scan_fat_files(%s) ...\n",ppath);
+	
+	//res=checkfp(ppath, &FPInfo);	
     
 	// build fullpath
-	tmp[0]=NULL;
-	strcat(tmp,FPInfo.psz_driveName);
-	strcat(tmp,":");
-	strcat(tmp,FPInfo.psz_path);
-	strcat(tmp,FPInfo.psz_filename);
-	strncat(tmp,&FPInfo.c_separator,1);
-	strcat(tmp,FPInfo.psz_fileext);
+	//tmp[0]=NULL;
+	//strcat(tmp,FPInfo.psz_driveName);
+	//strcat(tmp,":");
+	//strcat(tmp,FPInfo.psz_path);
+	//strcat(tmp,FPInfo.psz_filename);
+	//strncat(tmp,&FPInfo.c_separator,1);
+	//strcat(tmp,FPInfo.psz_fileext);
+	//
+	//if( tmp[strlen(tmp)-1] == '/' ) tmp[strlen(tmp)-1] = 0;
 	
-	if( tmp[strlen(tmp)-1] == '/' ) tmp[strlen(tmp)-1] = 0;
-	
-	arg_opendir.path = tmp;
+	//arg_opendir.path = tmp;
+	arg_opendir.path = ppath;
 	arg_opendir.dp = &dir;		
 	arg_readdir.dp = &dir;
 	arg_readdir.fno = &Finfo;
+
 	
 	//printf("scan_fat_files: path[%s] drive[%s] fullpath[%s]\n",ppath,FPInfo.psz_driveName,tmp);
 	
 	if ((res = ioctl(FPInfo.psz_driveName,FAT_IOCTL_OPEN_DIR,&arg_opendir)) == FR_OK) {
-		i = strlen(tmp);
+	//if ((res = ioctl(NULL,FAT_IOCTL_OPEN_DIR,&arg_opendir)) == FR_OK) {
+		i = strlen(ppath);
+		
+		dbg("scan_fat_files after opendir: ppath->'%s' ...\n",ppath);
+		
 		
 		while (((res = ioctl(FPInfo.psz_driveName,FAT_IOCTL_READ_DIR,&arg_readdir)) == FR_OK) && Finfo.fname[0]) {
+		//while (((res = ioctl(NULL,FAT_IOCTL_READ_DIR,&arg_readdir)) == FR_OK) && Finfo.fname[0]) {
+		  
+			dbg("scan_fat_files after readdir: ppath->'%s' ...\n",ppath);
+			lldbg(Finfo.fname);
+			
 			if (_FS_RPATH && Finfo.fname[0] == '.') continue;
 #if _USE_LFN
 			fn = *Finfo.lfname ? Finfo.lfname : Finfo.fname;
 #else
 			fn = Finfo.fname;
-#endif
+#endif			
+			
 			if (Finfo.fattrib & AM_DIR) {
 				AccDirs++;
-				*(tmp+i) = '/'; strcpy(tmp+i+1, fn);
-				res = scan_fat_files(tmp);
-				*(tmp+i) = '\0';
+				//*(tmp+i) = '/'; strcpy(tmp+i+1, fn);
+				*(ppath+i) = '/'; strcpy(ppath+i+1, fn);
+				//res = scan_fat_files(tmp);
+				lldbg("scan_fat_files: recurse...\n");
+				res = scan_fat_files(ppath);
+				//*(tmp+i) = '\0';
+				*(ppath+i) = '\0';
 				if (res != FR_OK) break;
 			} else {
-//				printf("%s/%s\n", ppath, fn);
+				lldbg("scan_fat_files: AccFiles++; AccSize += Finfo.fsize\n");
+				printf("%s/%s\n", ppath, fn);
 				AccFiles++;
 				AccSize += Finfo.fsize;
 			}
 		}
+		lldbg("scan_fat_files: about to close dir...\n");
 		res = ioctl(FPInfo.psz_driveName,FAT_IOCTL_CLOSE_DIR,&dir);
-		//if(res) printf("error 0:%d in scan_fat_files\n",res);
-	} //else printf("error 1:%d in scan_fat_files\n",res);
+		//res = ioctl(NULL,FAT_IOCTL_CLOSE_DIR,&dir);
+		if(res) printf("error 0:%d in scan_fat_files\n",res);
+	} else printf("error 1:%d in scan_fat_files\n",res);
 
-	//printf("scan_fat_files => %d\n",res);
+	printf("scan_fat_files => %d\n",res);
 	return res;
 }
 
@@ -1928,7 +1949,7 @@ int cmd_mount (char * args){
 int cmd_umount (char * args){
    /* fmount <ld#>  - unmount drive ld#; arg = HDA1.....*/
    FRESULT res;
-   
+   char* pc;
  
    if (!args){
      printf(" error in args.\n");
@@ -1937,6 +1958,12 @@ int cmd_umount (char * args){
    
    while (*args == ' ') args++;
          
+   pc=args;
+   while(*pc){			// convert args to uppercase
+    *pc = toupper(*pc);
+    pc++;
+   }   
+   
    res = ioctl(args, FS_IOCTL_UMOUNT, 0);
    put_rc(res);
       
@@ -1964,9 +1991,16 @@ int cmd_vstatus(char * args){
      return 0;
    }   
    
+     
    while (*args == ' ') args++;  	// skip whitespace
   
-   res=checkfp(args, &FPInfo);		// analyze argumennt
+   pc=args;
+   while(*pc){			// convert args to uppercase
+    *pc = toupper(*pc);
+    pc++;
+   }   
+   
+   //res=checkfp(args, &FPInfo);		// analyze argumennt
 
    if(pfstabentry = get_fstabentry(args)){ 
      pfs = (FATFS*)pfstabentry->pfs; /* Get pointer to the file system object */
@@ -2010,6 +2044,7 @@ int cmd_lstatus(char *args) // ...
   
    
   printf(" lstatus [%s] ... \n",FPInfo.psz_driveName);
+  
 #ifdef USE_JADOS  
   if( !FPInfo.psz_driveName[1] ) { // one character drive name -> is it a JADOS drive ?
     if( (FPInfo.psz_driveName[0] >= 'A' && FPInfo.psz_driveName[0] <= 'Z') ||  // JADOS hard drive
@@ -2060,7 +2095,7 @@ int cmd_lstatus_fat(char * args){
   strcpy(tmp,args);
   strcat(tmp,":");
   
-  //printf("cmd_lstatus_fat [%s]\n",tmp);
+  printf("cmd_lstatus_fat [%s] (1)\n",tmp);
   
   ptr2 = args;
 #if _FS_READONLY 
@@ -2076,15 +2111,19 @@ int cmd_lstatus_fat(char * args){
      }
      return 0;
   }
+  printf("cmd_lstatus_fat [%s] (2)\n",tmp);
 #else      
   arg_getfree.path = tmp;
   arg_getfree.nclst = (DWORD*)&p1;
   arg_getfree.ppfatfs = &fs;   
-  res = ioctl(args,FAT_IOCTL_GET_FREE,&arg_getfree);
+  printf("cmd_lstatus_fat [%s] (3)\n",tmp);
+  res = ioctl(args,FAT_IOCTL_GET_FREE,&arg_getfree); // <<--- !!
+  printf("cmd_lstatus_fat [%s] (4)\n",tmp);
   if (res) { 
     printf(" Error GetFree: %d (%s)\n", res, get_rc_string(res));
     return 0;     
   }   
+  printf("cmd_lstatus_fat [%s] (5)\n",tmp);
 #endif
   
   printf("FAT type = FAT%u\nNumber of FATs = %u\n", ft[fs->fs_type & 3], fs->n_fats);
@@ -2110,8 +2149,14 @@ int cmd_lstatus_fat(char * args){
   printf("Volume S/N is %04X-%04X\n", dw >> 16, dw & 0xFFFF);
 #endif
   AccSize = AccFiles = AccDirs = 0;
-    
+      
+  printf("cmd_lstatus_fat [%s] (4)\n",tmp);
+  
+  strcpy(tmp,args);
+  strcat(tmp,":");
+  
   res = scan_fat_files(tmp);
+  
   if (res) { 
     printf(" Error ScanFatFiles: %d (%s)\n", res, get_rc_string(res));
     return 0;     
@@ -2369,7 +2414,7 @@ int cmd_meminfo(char* args)
     
     location = location->next;
   }
-    
+      
 #ifdef USE_JADOS
   printf(" JADOS User-Start : 0x%x\n",jd_get_laddr() );  
   printf(" JADOS RAMTOP     : 0x%x\n",jd_get_ramtop() );
@@ -2386,6 +2431,7 @@ int cmd_meminfo(char* args)
   printf(" free memory      :  0x%08x (%.3f KB)\n", free_ram, free_ram/1024.0);
   printf(" blocks           :  %d (%d free, %d allocated)\n", free_blocks + allocated_blocks, free_blocks, allocated_blocks);
   printf(" biggest free junk:  0x%08x\n", biggest_free_junk);
+  if(free_blocks > 0) free_blocks--;
   printf("    fractionation :  %.2f%%\n", free_blocks * 100.0 / allocated_blocks);
   
   

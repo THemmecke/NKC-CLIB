@@ -1,7 +1,7 @@
 #ifndef __INCLUDE_FS_H
 #define __INCLUDE_FS_H
 
-#include <types.h>
+#include <errno.h>
 #include "../fs/fat/ffconf.h"
 #include <drivers.h>
 

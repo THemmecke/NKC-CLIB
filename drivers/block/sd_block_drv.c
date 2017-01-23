@@ -212,7 +212,7 @@ static UINT sd_open(struct _dev *devp)
   
   pdi = sdtest(disk);
   
-  if(pdi == NULL) return ENODEV;
+  if(pdi == NULL) return EINVDRV;
   
   Stat[devp->pdrv].status = stat;	
   Stat[devp->pdrv].sz_sector = 512;
@@ -324,7 +324,7 @@ static UINT sd_geometry(struct _dev *devp, struct geometry *geometry)
   
   if(pdi == NULL){
     geometry->available = FALSE;
-    return ENODEV;
+    return EINVDRV;
   }
  
   geometry->available = TRUE;

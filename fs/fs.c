@@ -28,30 +28,7 @@
  *   public variables   
  *******************************************************************************/
 
-/* types.h: translate FRESULT codes (originaly from FAT file system) to system error codes */
-const int FRES2ERRNO[] =
-{ EZERO,	/* (0) Succeeded --> Error 0   (no error) */
-  EIO,		/* (1) A hard error occurred in the low level disk I/O layer --> Input/output error */
-  EFAULT,	/* (2) Assertion failed --> Unknown error */
-  EBUSY,	/* (3) The physical drive cannot work --> Resource busy */
-  ENOFILE,	/* (4) Could not find the file --> File not found */
-  ENOPATH,	/* (5) Could not find the path --> Path not found */
-  EINVFMT,	/* (6) The path name format is invalid --> Invalid format */
-  EACCES,	/* (7) Access denied due to prohibited access or directory full --> Permission denied  */
-  EACCES,	/* (8) Access denied due to prohibited access --> Permission denied  */
-  EINVAL,	/* (9) The file/directory object is invalid -->  Invalid argument */
-  EROFS,	/* (10) The physical drive is write protected --> Read-only file system */
-  EINVDRV,	/* (11) The logical drive number is invalid --> Invalid drive specified */
-  EINVENV,	/* (12) The volume has no work area --> Invalid environment */
-  ENOENT,	/* (13) There is no valid FAT volume -->  No such file or directory */
-  EINVAL,	/* (14) The f_mkfs() aborted due to any parameter error -->  Invalid argument */
-  EDEADLOCK,	/* (15) Could not get a grant to access the volume within defined period --> Locking violation */
-  EAGAIN,	/* (16) The operation is rejected according to the file sharing policy --> Resource temporarily unavailable */
-  ENOMEM,	/* (17) LFN working buffer could not be allocated --> Not enough core */
-  EMFILE,	/* (18) Number of open files > _FS_SHARE -->  Too many open files */
-  EINVAL	/* (19) Given parameter is invalid --> Invalid argument */
 
-};
 
 /*******************************************************************************
  *   private variables   
@@ -93,26 +70,26 @@ FRESULT fdisk (
 {
 	UINT i, n, sz_cyl, tot_cyl, b_cyl, e_cyl, p_cyl;
 	BYTE s_hd, e_hd, *p, *buf = (BYTE*)work;
-	DSTATUS stat;
-	DRESULT res;
+	DSTATUS dstat;
+	DRESULT dres;
 	DWORD sz_disk, sz_part, s_part;
 
 	struct ioctl_disk_rw rw_args;
 
 	fs_lldbg("fs.c: fdisk() ...\n");
       
-	stat = blk_drv->blk_oper->open(&pdrv);
+	dstat = blk_drv->blk_oper->open(&pdrv);
 	
 	
-	if (stat & STA_NOINIT) return FR_NOT_READY;
-	if (stat & STA_PROTECT) return FR_WRITE_PROTECTED;
+	if (dstat & STA_NOINIT) return dstat + DSTATUS_OFFSET;
+	if (dstat & STA_PROTECT) return dstat + DSTATUS_OFFSET;
 	
-	if ( res = blk_drv->blk_oper->ioctl(&pdrv,GET_SECTOR_COUNT,&sz_disk)) {
-	  fs_dbg("fs.c: GET_SECTOR_COUNT returned sz_disk = %d, res = %d ...\n",sz_disk,res);
-	  return FR_DISK_ERR;
+	if ( dres = blk_drv->blk_oper->ioctl(&pdrv,GET_SECTOR_COUNT,&sz_disk)) {
+	  fs_dbg("fs.c: GET_SECTOR_COUNT returned sz_disk = %d, dres = %d ...\n",sz_disk,dres);
+	  return dres + DRESULT_OFFSET;
 	}
 
-	fs_dbg("fs.c: GET_SECTOR_COUNT returned sz_disk = %d, res = %d ...\n",sz_disk,res);
+	fs_dbg("fs.c: GET_SECTOR_COUNT returned sz_disk = %d, dres = %d ...\n",sz_disk,dres);
 	
 	/* Determine CHS in the table regardless of the drive geometry */
 	for (n = 16; n < 256 && sz_disk / n / 63 > 1024; n *= 2) ;
@@ -136,7 +113,7 @@ FRESULT fdisk (
 			s_hd = 0;
 		}
 		e_cyl = b_cyl + p_cyl - 1;
-		if (e_cyl >= tot_cyl) return FR_INVALID_PARAMETER;
+		if (e_cyl >= tot_cyl) return EINVAL;
 
 		/* Set partition table */
 		p[1] = s_hd;				/* Start head */
@@ -163,10 +140,12 @@ FRESULT fdisk (
 	rw_args.sector = 0;
 	rw_args.count = 1;
 	
-	res = blk_drv->blk_oper->ioctl(&pdrv,FS_IOCTL_DISK_WRITE,&rw_args);
-	res = blk_drv->blk_oper->ioctl(&pdrv,CTRL_SYNC,NULL); 
+	dres = blk_drv->blk_oper->ioctl(&pdrv,FS_IOCTL_DISK_WRITE,&rw_args);
+	dres = blk_drv->blk_oper->ioctl(&pdrv,CTRL_SYNC,NULL); 
  
-	return res; // FIXME
+	if(dres < FRESULT_OFFSET && dres != RES_OK)
+	  return dres + DRESULT_OFFSET;
+	else return dres;
 }
 
  
@@ -247,16 +226,16 @@ int dn2pdrv(char* devicename) { /* convert devicename to physical drive number *
     * 
     */ 
 
-   fsfat_dbg("dn2pdrv: device = '%s'\n",devicename);
+   fs_dbg("dn2pdrv: device = '%s'\n",devicename);
    
    if(strlen(devicename) > 2) {
      c=devicename[2];
-     fsfat_dbg("dn2pdrv: physical drive letter = '%c'\n",c);
+     fs_dbg("dn2pdrv: physical drive letter = '%c'\n",c);
      
      drive = toupper(c) - 'A';
    }
    
-   fsfat_dbg("dn2pdrv: physical drive number => %d\n",drive);
+   fs_dbg("dn2pdrv: physical drive number => %d\n",drive);
    
    return drive;
  }
@@ -278,7 +257,7 @@ int dn2pdrv(char* devicename) { /* convert devicename to physical drive number *
      
    partition = atoi( pstring ) + 1;		/* convert to integer */
    
-   fsfat_dbg(" dn2part(%s)=%d\n",devicename,partition);
+   fs_dbg(" dn2part(%s)=%d\n",devicename,partition);
    
    return partition;
  }
@@ -292,7 +271,7 @@ unsigned char checkfp(char* fp, struct fpinfo *pfpinfo)
 	char tmp[255];
 	unsigned char res = 0;
 	
-	fsfat_dbg(" fs.c|checkfp: (%s) ...\n",fp);
+	fs_dbg(" fs.c|checkfp: (%s) ...\n",fp);
 	// initialize struct
 	*pfpinfo->psz_driveName = 0;
 	*pfpinfo->psz_deviceID = 0;
@@ -309,13 +288,14 @@ unsigned char checkfp(char* fp, struct fpinfo *pfpinfo)
 	
 	// ======================== DRIVE ====================================================================
 	// extract drive information	
-	p = strchr(pstr,':');        
+	p = strchr(pstr,':');   
+
         if(p){ // copy drive
 	  
 	  n=(unsigned int)(p-pstr); 	// length of drive name	  
 	  
 	  if(n==0 || n > _MAX_DRIVE_NAME){
-	    fsfat_lldbgwait(" fs.c|checkfp: fail(1) (EINDRV)\n");
+	    fs_lldbgwait(" fs.c|checkfp: fail(1) (EINDRV)\n");
 	    return EINVDRV; 
 	  }
 	  else
@@ -333,13 +313,13 @@ unsigned char checkfp(char* fp, struct fpinfo *pfpinfo)
 	    
 	    switch(n){	   	
 	      case 2: // jados drive name (0,1,2...A,B,C....)
-		fsfat_lldbgwait(" fs.c|checkfp: got a jados drive ...\n");
+		fs_lldbgwait(" fs.c|checkfp: got a jados drive ...\n");
 		pfpinfo->psz_deviceID = pfpinfo->psz_driveName;	// copy drive to psz_deviceID
 		pfpinfo->n_partition = pfpinfo->c_deviceNO = 0; // or: =  pfpinfo->psz_deviceID - (int)'A';
 		break;
 		// FIXME: handle floppy disks (FD0, FD1 ....)
 	      default:  // other drive name (HDA0,SDB1, ...)
-		fsfat_lldbgwait(" fs.c|checkfp: regular drive ...\n");				
+		fs_lldbgwait(" fs.c|checkfp: regular drive ...\n");				
 		strncpy(pfpinfo->psz_deviceID, pfpinfo->psz_driveName, 2);	// copy device ID to psz_deviceID (2 letters)
 		(pfpinfo->psz_deviceID)[2] = 0;					// terminating NULL		
 		pfpinfo->c_deviceNO = (pfpinfo->psz_driveName)[2];		// copy device 'number' to c_deviceNO (1 letter) if not floppy
@@ -360,7 +340,7 @@ unsigned char checkfp(char* fp, struct fpinfo *pfpinfo)
 	    }	    	    	  	  
 	   }
 	  }else{ // terminate
-	    fsfat_lldbgwait(" fs.c|checkfp: fail(3) (EINDRV)\n");
+	    fs_lldbgwait(" fs.c|checkfp: fail(3) (EINDRV)\n");
 	    res = EINVDRV; 	
 	  }		
 	
@@ -371,7 +351,7 @@ unsigned char checkfp(char* fp, struct fpinfo *pfpinfo)
 	  n=(unsigned int)(p-pstr);
 	  n++;
 	  if(n > _MAX_PATH){
-	    fsfat_lldbgwait(" fs.c|checkfp: fail(4) (ENOPATH)\n");
+	    fs_lldbgwait(" fs.c|checkfp: fail(4) (ENOPATH)\n");
 	    return ENOPATH;
 	  }
 	  strncpy(pfpinfo->psz_path,pstr,n);
@@ -400,7 +380,7 @@ unsigned char checkfp(char* fp, struct fpinfo *pfpinfo)
         // ======================== FILENAME.EXT ====================================================================	
         
         if(_STRLEN(pstr) > _MAX_FILENAME) {
-	  fsfat_lldbgwait(" fs.c|checkfp: fail(6) (ENOFILE)\n");
+	  fs_lldbgwait(" fs.c|checkfp: fail(6) (ENOFILE)\n");
 	  return ENOFILE; 
 	}
 	
@@ -415,29 +395,29 @@ unsigned char checkfp(char* fp, struct fpinfo *pfpinfo)
 	  pstr+=n+1;		      
 	  // rest has to be fileextension
 	  if(_STRLEN(pstr) > _MAX_FILEEXT) {
-	    fsfat_lldbgwait(" fs.c|checkfp: fail(7) (ENOFILE)\n");
+	    fs_lldbgwait(" fs.c|checkfp: fail(7) (ENOFILE)\n");
 	    return ENOFILE;
 	  }
 	  strcpy(pfpinfo->psz_fileext,pstr);  	  			
 	}
 
 	if((pfpinfo->psz_filename)[0] == 0) {
-	  fsfat_lldbgwait(" fs.c|checkfp: fail(8) (ENOFILE)\n");
+	  fs_lldbgwait(" fs.c|checkfp: fail(8) (ENOFILE)\n");
 	  return ENOFILE;
 	}				
 
-	fsfat_dbg(" fs.c|checkfp: SUCCESS...\n");
-	fsfat_dbg("     psz_driveName = %s\n",pfpinfo->psz_driveName);
-	fsfat_dbg("     psz_deviceID  = %s\n",pfpinfo->psz_deviceID);
-	fsfat_dbg("     c_deviceNO    = %c\n",pfpinfo->c_deviceNO);
-	fsfat_dbg("     n_partition   = %d\n",pfpinfo->n_partition);
-	fsfat_dbg("     psz_path      = %s\n",pfpinfo->psz_path);
-	fsfat_dbg("     psz_filename  = %s\n",pfpinfo->psz_filename);
-	fsfat_dbg("     c_separator   = %c\n",pfpinfo->c_separator);
-	fsfat_dbg("     psz_fileext   = %s\n",pfpinfo->psz_fileext);
-	fsfat_dbg("     psz_cdrive    = %s\n",pfpinfo->psz_cdrive);
-	fsfat_dbg("     psz_cpath     = %s\n",pfpinfo->psz_cpath);
-	fsfat_lldbgwait("... (KEY)\n");
+	fs_dbg(" fs.c|checkfp: SUCCESS...\n");
+	fs_dbg("     psz_driveName = %s\n",pfpinfo->psz_driveName);
+	fs_dbg("     psz_deviceID  = %s\n",pfpinfo->psz_deviceID);
+	fs_dbg("     c_deviceNO    = %c\n",pfpinfo->c_deviceNO);
+	fs_dbg("     n_partition   = %d\n",pfpinfo->n_partition);
+	fs_dbg("     psz_path      = %s\n",pfpinfo->psz_path);
+	fs_dbg("     psz_filename  = %s\n",pfpinfo->psz_filename);
+	fs_dbg("     c_separator   = %c\n",pfpinfo->c_separator);
+	fs_dbg("     psz_fileext   = %s\n",pfpinfo->psz_fileext);
+	fs_dbg("     psz_cdrive    = %s\n",pfpinfo->psz_cdrive);
+	fs_dbg("     psz_cpath     = %s\n",pfpinfo->psz_cpath);
+	fs_lldbgwait("... (KEY)\n");
 			
 	return res;
 }
@@ -492,14 +472,17 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
     case FS_IOCTL_GETFSTAB: // ************************************* return pointer to file system table *************************************
         fs_lldbg(" - FS_IOCTL_GETFSTAB - \n");
 	*((struct fstabentry **)arg) = fstab;
+	res = EZERO;
 	break;
     case FS_IOCTL_GETFSDRIVER: // ************************************* return pointer to registered file system driver list *************************************
         fs_lldbg(" - FS_IOCTL_GETFSDRIVER - \n");
 	*((struct fs_driver **)arg) = driverlist;
+	res = EZERO;
 	break;
     case FS_IOCTL_GETBLKDEV: // ************************************* return pointer to registered block devices *************************************
         fs_lldbg(" - FS_IOCTL_GETBLKDEV - \n");
 	*((struct blk_driver **)arg) = blk_driverlist;
+	res = EZERO;
 	break;	
 	
     case FS_IOCTL_MOUNT: // ************************************* mount a drive *************************************  
@@ -507,7 +490,7 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
             
         fs_lldbg(" - FS_IOCTL_MOUNT - \n");
       
-	if (!arg) { res = ENODEV; break; }     // no args ? -> exit
+	if (!arg) { res = EINVDRV; break; }     // no args ? -> exit
       
       
         fs_dbg("device = %s\n",((struct ioctl_mount_fs *)arg)->devicename);
@@ -545,7 +528,7 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
         // args = (char *name = HDA0:...., FS_IOCTL_MOUNT, NULL)
         fs_lldbg("fs.c: - FS_IOCTL_UMOUNT - \n");
       
-	if (!name) { res = ENODEV; break; }     // no name ? -> exit
+	if (!name) { res = EINVDRV; break; }     // no name ? -> exit
       
         res=checkfp((char*)name, &FPInfo); // analyze drive name      
         if(res == EINVDRV) break;		// no device info ? -> exit              
@@ -574,18 +557,18 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
     case FS_IOCTL_GETDRVLIST: // ************************************* get pointer to driverlist *************************************
       fs_dbg(" - FS_IOCTL_GETDRVLIST - \n");
       *(struct fs_driver **)(arg) = driverlist;
-      res = FR_OK;
+      res = EZERO;
       break;
     case FS_IOCTL_GETDRV: // ************************************* get current drive *************************************
       fs_lldbgwait(" - FS_IOCTL_GETDRV - \n");
       strcpy((char*)arg,FPInfo.psz_cdrive);
-      res = FR_OK;
+      res = EZERO;
       break;
       
     case FS_IOCTL_CHDRIVE: // ************************************* change current drive *************************************
       // NULL,FS_IOCTL_CHDRIVE,args=drivestring
       fs_lldbgwait(" - FS_IOCTL_CHDRIVE - \n");
-      if (!arg) { res = ENODEV; break; }     // no args ? -> exit
+      if (!arg) { res = EINVDRV; break; }     // no args ? -> exit
       
       strcpy(tmp,(char*)arg); strcat(tmp,":");
       res=checkfp(tmp, &FPInfo); // analyze drive name      
@@ -618,8 +601,8 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
 	}
 #endif
 	
-	res = pfsdriver->f_oper->ioctl(NULL,FS_IOCTL_CHDRIVE,pfstab);	// is ioctl valid ? -> call it
-	fs_dbg("fc.c:  res(FS_IOCTL_CHDRIVE) = %d\n",res);
+	fres = pfsdriver->f_oper->ioctl(NULL,FS_IOCTL_CHDRIVE,pfstab);	// is ioctl valid ? -> call it
+	fs_dbg("fc.c:  fres(FS_IOCTL_CHDRIVE) = %d\n",fres);
 	
 #ifdef USE_JADOS
 	if(isJados) {
@@ -627,7 +610,7 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
 	}
 #endif	
 	
-	if(res == EZERO) {
+	if(fres == FR_OK) {
 	  // update psz_cdrive and psz_cpath....
 	  fs_lldbg(" fs.c: updating current drive/path information\n");
 	  strcpy(FPInfo.psz_cdrive, FPInfo.psz_driveName);
@@ -638,6 +621,7 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
 
       }else{
 	fs_lldbgwait(" fs.c: ioctl not valid !\n");
+	res = fres + FRESULT_OFFSET;
       }      
       
       break;
@@ -656,7 +640,7 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
       //  };
       fs_dbg(" - FS_IOCTL_CD - (%s)",(char*)arg);
       fs_lldbgwait("\n");
-      if (!arg) { res = ENODEV;	break;  }    				// we need some args ...
+      if (!arg) { res = EINVDRV;	break;  }    				// we need some args ...
       
       //split_filename((char*)arg, drive, path, filename, ext,fullname, filepath, fullpath, cdrive, cpath); // analyze filename      
       res=checkfp((char*)arg, &FPInfo);
@@ -704,10 +688,10 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
       
        if(pfsdriver->f_oper->ioctl) {
 	fs_lldbg(" calling drivers ioctl...\n"); 
-	res = pfsdriver->f_oper->ioctl(NULL,FS_IOCTL_CD,(char*)arg);	// is ioctl valid ? -> call it  // FIXME: arg =!= FPInfo.psz_driveName + ":" + FPInfo.psz_path + FPInfo.psz_filename .... o.ä.
-	fs_dbg("fs.c|ioctrl: res = %d\n",res);
+	fres = pfsdriver->f_oper->ioctl(NULL,FS_IOCTL_CD,(char*)arg);	// is ioctl valid ? -> call it  // FIXME: arg =!= FPInfo.psz_driveName + ":" + FPInfo.psz_path + FPInfo.psz_filename .... o.ä.
+	fs_dbg("fs.c|ioctrl: fres = %d\n",fres);
 	
-	if(res == EZERO) {
+	if(fres == FR_OK) {
 	  // update psz_cdrive and psz_cpath....
 	  fs_lldbg(" fs.c: updating current drive/path information\n");
 	  
@@ -723,6 +707,7 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
 	}
 	
       }else{
+	res = fres + FRESULT_OFFSET;
 	fs_lldbgwait(" ioctl not valid !\n");
       }     
           
@@ -767,9 +752,9 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
 	arg_get_cwd.cpath  = FPInfo.psz_cpath;
 	arg_get_cwd.size   = _MAX_PATH;		// size of path buffer
 	  
-	res = pfsdriver->f_oper->ioctl(NULL,FS_IOCTL_GETCWD, &arg_get_cwd);
+	fres = pfsdriver->f_oper->ioctl(NULL,FS_IOCTL_GETCWD, &arg_get_cwd);
 	
-	if(res == EZERO) {
+	if(fres == FR_OK) {
 	  // update psz_cdrive and psz_cpath....
 	  fs_lldbg(" updating current local and callers drive/path information:\n");	  
 	  
@@ -783,11 +768,12 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
 	  
 	  fs_dbg(" cdrive = %s\n cpath = %s\n",FPInfo.psz_cdrive,FPInfo.psz_cpath);
 	  fs_lldbgwait("...(KEY)\n");
-	}
+	} else {
+	    res = fres + FRESULT_OFFSET;
+        }
 	
        }
       
-      res = FR_OK;
       break;
       
     case FS_IOCTL_MKDIR: // ************************************* create a directory ************************************* 
@@ -797,7 +783,7 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
       // char *name = HDA0, int cmd = FS_IOCTL_RMDIR, unsigned long arg = (char*)fullpath
       fs_lldbgwait("fs.c: - FS_IOCTL_RMDIR - \n");
       
-      if(!name) { res = ENODEV; break; }
+      if(!name) { res = EINVDRV; break; }
       if(!arg)  { res = ENOPATH; break; }
             
       pfstab = get_fstabentry(name);
@@ -807,10 +793,14 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
       if(!pfsdriver) { res = EINVDRV; break;  }	// if no driver, exit...
       
        if(pfsdriver->f_oper->ioctl) {	
-	res = pfsdriver->f_oper->ioctl(NULL,cmd,arg);	// is ioctl valid ? -> call it
+	fres = pfsdriver->f_oper->ioctl(NULL,cmd,arg);	// is ioctl valid ? -> call it
       }else{
 	fs_lldbgwait(" ioctl not valid !\n");
       }         
+      
+      if(fres < FRESULT_OFFSET && fres != FR_OK)
+	res = fres + FRESULT_OFFSET;
+      else res = fres;
       
       break;
       
@@ -823,7 +813,7 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
       //      unsigned char mask;
       //};
       fs_lldbgwait("fs.c: - FS_IOCTL_CHMOD - \n");
-      if (!arg) { res = ENODEV;	break;  }    				// we need some args ... 
+      if (!arg) { res = EINVDRV;	break;  }    				// we need some args ... 
           
      // (struct ioctl_chmod*)arg->value // attribute bits
      // (struct ioctl_chmod*)arg->mask  // attribute mask
@@ -837,10 +827,15 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
       if(!pfsdriver) { res = EINVDRV; break;  }	// if no driver, exit...
       
        if(pfsdriver->f_oper->ioctl) {	
-	res = pfsdriver->f_oper->ioctl(NULL,cmd,arg);	// is ioctl valid ? -> call it
+	fres = pfsdriver->f_oper->ioctl(NULL,cmd,arg);	// is ioctl valid ? -> call it
       }else{
 	fs_lldbgwait(" ioctl not valid !\n");
-      }            
+      }           
+      
+      if(fres < FRESULT_OFFSET && fres != FR_OK)
+	res = fres + FRESULT_OFFSET;
+      else res = fres;
+      
       break;
       
     case FS_IOCTL_DEL:
@@ -859,7 +854,7 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
      // };
 
       fs_lldbgwait(" - FS_IOCTL_OPEN_DIR - \n");
-      if (!arg){ res = ENODEV;	break;  }    				// we need some args ... 
+      if (!arg){ res = EINVDRV;	break;  }    				// we need some args ... 
       
       //look for drive: 1) in arg.fpath 2) in *name 3) take CurrDrive
       //split_filename((char*)((struct ioctl_opendir *)arg)->path, drive, path, filename, ext, fullname, filepath, fullpath, cdrive, cpath); // analyze filename      
@@ -916,7 +911,7 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
     case FS_IOCTL_MKPTABLE: // currently we let ff.c f_fdisk handle this, but it should be moved to the block driver (it is filesystem independent) FIXME
       // args: char *name<=devicename, int cmd<=FS_IOCTL_MKPTABLE, unsigned long arg <=pointer to struct ioctl_mkptable
       fs_lldbgwait(" - FS_IOCTL_MKPTABLE - \n");
-      if (!arg){ res = ENODEV;	break;  }    				// we need some args ... 
+      if (!arg){ res = EINVDRV;	break;  }    				// we need some args ... 
       
       
       blk_drv = get_blk_driver(name);			/* fetch block device driver */
@@ -1070,16 +1065,21 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
       fs_dbg("fs-ioctl default...\n");
       pfsdriver = NULL;
       if(name == NULL && cmd > 100) { // unspecified FAT_IOCTL
-	  fs_lldbgwait("error, unspecified FAT_IOCTL...\n");
+	  fs_dbg("error, unspecified FAT_IOCTL (name = 0x%0x, cmd = %d...\n",name,cmd);
+	  fs_lldbgwait("");
 	  return FR_INVALID_PARAMETER;	  	 	
       }	else {
 	fs_lldbgwait("look for fs driver in fstab ...\n");
-	if(name == NULL) return FR_INVALID_PARAMETER;     			
+	if(name == NULL) {
+	  fs_lldbgwait("error, inavalid parameter (name == NULL) ...\n");
+	  return FR_INVALID_PARAMETER;     			
+	}
 	
 	pfstab = get_fstabentry(name);
       
         if(!pfstab){
 	  // error drive not mounted...
+	  fs_dbg("error, no filesystem found for specified drive (%s)...\n",name);
 	  res = EINVDRV;
 	  break;
         } 

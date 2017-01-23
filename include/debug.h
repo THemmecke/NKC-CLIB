@@ -142,9 +142,11 @@ static char debugbuf[255];
 #ifdef CONFIG_DEBUG_FF
 # define ff_dbg(format,arg...)    dbg(format,##arg)
 # define ff_lldbgwait(format)	   lldbgwait(format) 
+# define ff_lldbg(format)	     lldbg(format)
 #else
 # define ff_dbg(x...)
 # define ff_lldbgwait(x...)
+# define ff_lldbg(x...)	     lldbg(format)
 #endif
 
 #ifdef CONFIG_DEBUG_DRV

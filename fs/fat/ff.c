@@ -120,6 +120,7 @@
 
 
 #include <debug.h>
+#include <errno.h>
 
 
 /*--------------------------------------------------------------------------
@@ -2146,19 +2147,24 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) and adjus
 	ff_dbg(" ff.c|get_ldnumber: path=(%s)....\n",*path);
 
 	if (*path) {	/* If the pointer is not a null */
+		ff_lldbg(" ff.c|get_ldnumber: search for ':' in the path ...\n"); 
 		for (tt = *path; (UINT)*tt >= (_USE_LFN ? ' ' : '!') && *tt != ':'; tt++) ;	/* Find ':' in the path */
 		if (*tt == ':') {	/* If a ':' is exist in the path name */
+			ff_dbg(" ff.c|get_ldnumber: found ':' ...\n");
 			tp = *path;
 			i = *tp++ - '0'; 
 			if (i < 10 && tp == tt) {	/* Is there a numeric drive id? */
+				ff_dbg(" ff.c|get_ldnumber: found a numeric drive id ...\n");
 				if (i < _VOLUMES) {	/* If a drive id is found, get the value and strip it */
 					vol = (int)i;	/* return volume number */
 					*path = ++tt;	/* return path (without drive) */
 					
 					ff_dbg(" ff.c|get_ldnumber: (1)found vol %d, path %s\n", vol,*path);
 				}
-			} else {	/* No numeric drive id, try string id */
+			} else {	/* No numeric drive id, try string id */			        
 #if _STR_VOLUME_ID		/* Find string drive id */
+				ff_dbg(" ff.c|get_ldnumber: found a string drive id ...\n");
+				tt++;
 				*tt=0;
 				ff_dbg(" ff.c|get_ldnumber: fetch fstab entry for '%s'\n",*path);
 				if(pfstabentry = get_fstabentry(*path)){ 
@@ -3518,6 +3524,7 @@ FRESULT f_closedir (
 {
 	FRESULT res;
 
+	ff_lldbg(" f_closedir ...\n");
 
 	res = validate(dp);
 	if (res == FR_OK) {
@@ -3552,7 +3559,8 @@ FRESULT f_readdir (
 	FRESULT res;
 	DEF_NAMEBUF;
 
-
+	ff_lldbg(" f_readdir ...\n");
+	
 	res = validate(dp);						/* Check validity of the object */
 	if (res == FR_OK) {
 		if (!fno) {
@@ -3633,9 +3641,11 @@ FRESULT f_getfree (
 	UINT i;
 	BYTE fat, *p;
 
+	ff_dbg(" f_getfree (0): path = %s (@ 0x%x)\n",path,path);
 
 	/* Get logical drive number */
 	res = find_volume(fatfs, &path, 0);
+	ff_dbg(" f_getfree (1): path = %s (@ 0x%x)\n",path,path);
 	fs = *fatfs;
 	if (res == FR_OK) {
 		/* If free_clust is valid, return it without full cluster scan */
@@ -3678,6 +3688,8 @@ FRESULT f_getfree (
 			*nclst = n;
 		}
 	}
+	
+	ff_dbg(" f_getfree (3): path = %s\n",path);
 	LEAVE_FF(fs, res);
 }
 

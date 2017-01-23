@@ -68,18 +68,22 @@ static DRESULT read_sector(struct jdfileinfo *pfi)
 	}
 	
 	pbuffer = pfi->pfcb->pbuffer; 		// save sector buffer address
-	result = jd_readrec(pfi->pfcb);	// read sector
 	
-	switch(result)
-	{
+	switch( jd_readrec(pfi->pfcb) ) {
+	
 		case 0: 
 			fsnkc_dbg(" >>>>>>>>>>>>>>\n");
+			result = RES_OK;
 			break; 	    // no error
 		case 1: pfi->eof = 1; 
 			fsnkc_lldbgwait("...read_sector(EOF)\n");
+			result = RES_EOF;
 			return 1; // EOF
-		case 99: break; 	    // end of user space (JADOS)
+		case 99: 
+		        result = RES_NOMEM;
+			break; 	    // end of user space (JADOS)
 		default: 		    // error reading device
+		  result = RES_PARERR;
 		break;
 	}
 	
@@ -104,21 +108,24 @@ static DRESULT write_sector(struct jdfileinfo *pfi)
 		fsnkc_lldbgwait("...write_sector\n");
 	}
 		    	
-	pbuffer = pfi->pfcb->pbuffer; 		// save sector buffer address
-	result = jd_writerec(pfi->pfcb);	// write sector
+	pbuffer = pfi->pfcb->pbuffer; 		// save sector buffer address	
 	
-	switch(result)
+	switch( jd_writerec(pfi->pfcb) ) // write sector
 	{
 		case 0:  
-			fsnkc_dbg(" <<<<<<<<<<<<<<<<<\n");			
+			fsnkc_dbg(" <<<<<<<<<<<<<<<<<\n");
+			result = RES_OK;
 			break; 	// no error
 		case 5:  
 			fsnkc_lldbgwait("...write_sector(disk full)\n");
+			result = RES_DISKFULL;
 			return 0; 	// disk full
 		case 0xff: 
 			fsnkc_dbg(" media access error\n");
+			result = RES_ERROR;
 			break; 	// media access error	
 		default:		
+			result = RES_PARERR;
 			fsnkc_dbg(" other error\n"); 		// general errror
 			break;	
 	}
@@ -194,7 +201,7 @@ static DRESULT read_sector(struct jdfileinfo *pfi)
 
 // 1) search block driver
 // 2) call ioctrl JADOS_WRITE_REC
-UINT write_sector(struct jdfileinfo *pfi)
+static DRESULT write_sector(struct jdfileinfo *pfi)
 {
   struct blk_driver* blk_drv;
   DRESULT res = RES_PARERR;
@@ -217,7 +224,7 @@ UINT write_sector(struct jdfileinfo *pfi)
 }
 
 
-UINT call_blk_ioctl(struct jdfcb *pfcb, int cmd, unsigned long arg)  
+static DRESULT call_blk_ioctl(struct jdfcb *pfcb, int cmd, unsigned long arg)  
 {
   struct blk_driver* blk_drv;
   DRESULT res = RES_PARERR; 
@@ -335,7 +342,7 @@ static int nkcfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 #ifdef USE_JADOS
       jd_set_drive(current_jados_drive); // call jados
 #endif
-      res = 0;
+      res = FR_OK;
       break;
     // ****************************** open directory **************************************  
     case FS_IOCTL_OPEN_DIR:
@@ -407,19 +414,22 @@ static int nkcfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
       
       break;
       
-    default: res = 0;
+    default: res = FR_OK;
   }
 
   
   fsnkc_dbg("fs_nkc.c: ... nkcfs_ioctl ]\n");
 
-  return res;
+  if(res < FRESULT_OFFSET)
+    return res + FRESULT_OFFSET;
+   else return res;
 }
 
 
 static int nkcfs_open(struct _file *filp)
 {
-	UCHAR result;
+	FRESULT result;
+	DRESULT dresult;
 	struct jdfcb *pfcb;
 	struct jdfileinfo *pfi;
 	UCHAR *pbuffer;
@@ -454,30 +464,27 @@ static int nkcfs_open(struct _file *filp)
 	fsnkc_dbg(" pfi=0x%x",(int)pfi);	
 	fsnkc_dbg(" pbuffer=0x%x",(int)pbuffer);
 	fsnkc_lldbgwait("\n");
-	
+
 		
 #ifdef USE_JADOS
-	result = jd_fillfcb(pfcb,pfilename);
-#else	
-	// call NKC_IOCTL_FILLFCB (geht noch nicht, dieser Call muss von hier gemacht werden)	
-	//UINT call_blk_ioctl(struct jdfcb *pfcb, NKC_IOCTL_FILLFCB, unsigned long arg)
-#endif
-        
-	
-	/*
+	 /*
 		result	Bedeutung
 		0	FCB angelegt
 		0xff	name ist kein Dateiname	
 	*/
-	if(result)
+	if(jd_fillfcb(pfcb,pfilename))
 	{
 		gp_write(" error fillfcb: not a filename\n");
 		free(pfcb);
 		free(pfi);
 		free(pbuffer);
 		free(pfilename);
-		return ENOFILE;
+		return FR_INVALID_NAME;
 	}
+#else
+	// call NKC_IOCTL_FILLFCB (geht noch nicht, dieser Call muss von hier gemacht werden)	
+	//UINT call_blk_ioctl(struct jdfcb *pfcb, NKC_IOCTL_FILLFCB, unsigned long arg)
+#endif
 	
 	pfcb->pbuffer = pbuffer;	
 		
@@ -487,25 +494,25 @@ static int nkcfs_open(struct _file *filp)
 			OK, try to create the file
 		*/
 #ifdef USE_JADOS
-		result = jd_erase(pfcb); 	// first we try to erase the file if it exists 
-#else		
-		//result = call_blk_ioctl(pfcb, NKC_IOCTL_ERASE, NULL); // OK
-#endif
-		
-		/*
+		 /*
 		result	Bedeutung
 		0	Datei gel..scht
 		2	Datei nicht vorhanden
 		0xff	Fehler beim Zugriff auf den Massenspeicher
-				
 		*/
-#ifdef USE_JADOS
-		result = jd_create(pfcb);	// create new file 
-#else
-		//result = call_blk_ioctl(pfcb, NKC_IOCTL_CREATE, NULL); // OK
-#endif		
+		switch( jd_erase(pfcb) ) { 	// first we try to erase the file if it exists 
+		  case 0: result = FR_OK; break;
+		  case 2: result = FR_INVALID_NAME; break;
+		  case 0xFF: result = FR_DISK_ERR; break;
+		  default: result = FR_INVALID_PARAMETER;
+		}
+#else		
+		//result = call_blk_ioctl(pfcb, NKC_IOCTL_ERASE, NULL); // OK
+#endif
 		
-		/*
+
+#ifdef USE_JADOS
+                /*
 		result	Bedeutung
 		0	Datei angelegt
 		5	Massenspeicher voll
@@ -514,7 +521,16 @@ static int nkcfs_open(struct _file *filp)
 		
 		Achtung: falls die Datei schon existiert, wird sie lediglich ge..ffnet !
 		*/
-		if(result == 0xff) result = 7;
+		switch( jd_create(pfcb) ) {	// create new file 
+		  case 0: result = FR_OK; break;
+		  case 5: result = FR_DISKFULL; break;
+		  case 6: result = FR_DIRFULL; break;
+		  case 0xff: result = FR_DISK_ERR; break;
+		  default: result = FR_INVALID_PARAMETER; 
+		}
+#else
+		//result = call_blk_ioctl(pfcb, NKC_IOCTL_CREATE, NULL); // OK
+#endif				
 
 	}else
 	{
@@ -522,51 +538,56 @@ static int nkcfs_open(struct _file *filp)
 			OK, try to open the file
 		*/
 #ifdef USE_JADOS
-		result = jd_open(pfcb); 
-#else
-		//result = call_blk_ioctl(pfcb, NKC_IOCTL_OPEN, NULL); // OK
-#endif		
-		
-		/*
+                /*
 			result	Bedeutung
 			0	Datei geöffnet
 			0xff	Datei nicht vorhanden
 		*/
+		switch( jd_open(pfcb) ) {
+		  case 0: result = FR_OK; break;
+		  case 0xFF: result = FR_NO_FILE; break;
+		  default: result = FR_INVALID_PARAMETER;
+		}
+#else
+		//result = call_blk_ioctl(pfcb, NKC_IOCTL_OPEN, NULL); // OK
+#endif		
+				
 	}
 	
-	
+#ifdef CONFIG_DEBUG_FS_NKC	
 	switch(result)
 	{
-		case 0: 		// SUCCESS
+		case FR_OK: 		// SUCCESS
 				fsnkc_dbg("- success -\n");
 				break;						
-		case 5:		// DISK FULL (create)
+		case FR_DISKFULL:		// DISK FULL (create)
 				fsnkc_dbg("- disk full -\n");
 				break;				
-		case 6:  	// DIRECTORY FULL (create)
+		case FR_DIRFULL:  	// DIRECTORY FULL (create)
 				fsnkc_dbg("- directory full -\n");
 				break;						
-		case 7:		// ACCESS ERROR (create)
+		case FR_DISK_ERR:		// ACCESS ERROR (create)
 				fsnkc_dbg("- access error -\n");
 				break;						
-		case 0xff:	// FILE NOT FOUND
+		case FR_NO_FILE:	// FILE NOT FOUND
 				fsnkc_dbg("- file not found error -\n");
 				break;				
 		default:
 				fsnkc_dbg("- unspecified error -\n");
-				break;				
-
-		
+				break;						
 	}	
+#endif	
 	
-	if(result != 0)
+	if(result != FR_OK)
 	{		
 		free(pfi);
 		free(pfcb);
 		free(pbuffer);
 		free(pfilename);		
 		fsnkc_lldbgwait("...nkcfs_open(3)\n");
-		return ENOFILE;
+		if(result < FRESULT_OFFSET)
+		  return result + FRESULT_OFFSET;
+		else return result;
 	}
 	
 	pfcb->pbuffer = pbuffer;
@@ -580,7 +601,7 @@ static int nkcfs_open(struct _file *filp)
 	
 	if(!(filp->f_oflags & _F_CREATE))
 	{
-		read_sector(pfi);
+		dresult = read_sector(pfi);
 	}
 	
 	fsnkc_dbg("flags=0x%x",pfi->pfcb->mode);
@@ -590,7 +611,9 @@ static int nkcfs_open(struct _file *filp)
 	
 	free(pfilename);
 	
-	return EZERO;
+	if(dresult < FRESULT_OFFSET && dresult != RES_OK)
+	  return dresult + DRESULT_OFFSET;
+	else return dresult;
 }
 
 
@@ -598,7 +621,8 @@ static int nkcfs_open(struct _file *filp)
 
 static int nkcfs_close(struct _file *filp)
 {
-	UCHAR result;	
+	FRESULT result;	
+	DRESULT dresult = RES_PARERR;
 	struct jdfileinfo *pfi;
 	
 	fsnkc_dbg("nkcfs_close...\n");
@@ -609,14 +633,14 @@ static int nkcfs_close(struct _file *filp)
 	if(pfi->pfcb->mode == 0xE5 && (pfi->crpos > 0)) 
    	{
 	  fsnkc_dbg(" crpos = %d\n",pfi->crpos);
-   	  write_sector(pfi);
+   	  dresult = write_sector(pfi);
     }
 	
 	/* flush current sector, if mode = write */
 	if(pfi->pfcb->mode == 0xE5 && (pfi->crpos > 0)) 
 	{
 		fsnkc_dbg(" crpos = %d\n",pfi->crpos);
-		write_sector(pfi);
+		dresult = write_sector(pfi);
 	}
 
 	    	
@@ -634,7 +658,9 @@ static int nkcfs_close(struct _file *filp)
 			    	
 	fsnkc_lldbgwait("...nkcfs_close\n");
 	
-	return EZERO;
+	if(dresult < FRESULT_OFFSET && dresult != RES_OK)
+	  return dresult + DRESULT_OFFSET;
+	else return dresult;
 }
 
 static int nkcfs_read(struct _file *filp, char *buffer, int buflen)
@@ -720,7 +746,7 @@ static int  nkcfs_write(struct _file *filp, const char *buffer, int buflen)
 	UCHAR *pbuf;		// pointer to sector buffer
 	UINT bp;		// buffer pointer
 	int count = buflen;	// number of bytes to write	
-	UCHAR res;		// a result
+	DRESULT res;		// a result
 	
 	
 	char tbuf[2] = {0,0};
@@ -749,20 +775,21 @@ static int  nkcfs_write(struct _file *filp, const char *buffer, int buflen)
 		if(count)
 		{
 			res = write_sector(pfi);	// write current sector to disk an proceed to next sector
-					
+#ifdef CONFIG_DEBUG_FS_NKC					
 			switch(res)
 			{
-				case 0: 
+				case RES_OK: 
 					fsnkc_dbg("- sector written -\n");
 				 	break; 	// no error
-				case 5: 
+				case RES_DISKFULL: 
 					fsnkc_lldbgwait("...nkcfs_write(disk full)\n");
 					return ENOSPC; 	// No Space left on device
-				case 0xff: 
+				case RES_ERROR: 
 					fsnkc_lldbgwait("...nkcfs_write(media access error)\n");
 					return EACCES; 	// media access error						
 				
 			}
+#endif			
 		}
 		
 		fsnkc_lldbgwait("...nkcfs_write\n");
@@ -770,7 +797,9 @@ static int  nkcfs_write(struct _file *filp, const char *buffer, int buflen)
 		    
 	}  
 	
-	return EZERO; 
+	if(res < FRESULT_OFFSET && res != RES_OK)
+	  return res + DRESULT_OFFSET;
+	else return res; 
 
 }
 
@@ -839,28 +868,31 @@ static int  nkcfs_seek(struct _file *filp, int offset, int whence)
 		{
 			case 0: // successful
 				res = read_sector(pfi);	// ... and read record to buffer
-			
+			      
 				switch(res)
 				{
-					case 0: 							
+					case RES_OK: 							
 						 break;				// no error
-					case 1:  pfi->eof = 1;		/* set eof flag			*/ 
+					case RES_EOF:  pfi->eof = 1;		/* set eof flag			*/ 
 						break;
-					case 99:break; 			// end of user space (JADOS)
+					case RES_NOMEM:break; 			// end of user space (JADOS)
 					default: break;			// error reading device
 				}					
 				break;
 				
 			case 1: // EOF
-				pfi->eof = 1;	/* set eof flag											*/ 					
+				pfi->eof = 1;	/* set eof flag	 */ 					
+				res = RES_EOF;
 				break;	
 				
 			case 0xFF: // access error
 				fsnkc_lldbgwait("...nkcfs_seek(3)\n");
+				res = RES_ERROR;
 				return;	
 									
 			default: 
 				 fsnkc_dbg(" should not be here (0x%x)!\n",res);
+				 res = RES_ERROR;
 				 break;
 		}	
 			
@@ -871,7 +903,10 @@ static int  nkcfs_seek(struct _file *filp, int offset, int whence)
 	pfi->clsec	= (int)(divresult.quot + 1); 	/* current logical sector   		1...65536			*/
 	
 	fsnkc_lldbgwait("...nkcfs_seek\n");
-	return;
+		
+	if(res < FRESULT_OFFSET && res != RES_OK)
+	  return res + DRESULT_OFFSET;
+	else return res;
 }
 		    	
 
@@ -908,7 +943,7 @@ static int  nkcfs_remove(struct _file *filp)
 #endif	
 	free(pfilename);
 	
-	return 0;
+	return FR_OK;
 }
 
 static int  nkcfs_getpos(struct _file *filp)
@@ -932,6 +967,7 @@ static int  nkcfs_rename(struct _file *filp, const char *oldrelpath, const char 
 #else
 	//UINT call_blk_ioctl(pfi->pfcb, NKC_IOCTL_REMOVE, arg) 
 #endif	
+	return FR_DENIED;
 }
 
 
