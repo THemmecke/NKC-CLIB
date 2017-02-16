@@ -651,7 +651,7 @@ DSTATUS hd_initialize()
   init_ff();      // initialize diskio system
   //res = disk_initialize(0); // initialize GIDE, there is only one GIDE drive yet (disk should be inizialized while mounting in open() )
   
-  register_blk_driver("HD",  &hd_bops);
+  register_blk_driver("hd",  &hd_bops);
   
   return res;
 }

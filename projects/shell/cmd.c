@@ -71,26 +71,26 @@
 struct CMDHLP hlptxt[] =
 {
 {TEXT_CMDHELP_CLS,              
-                        "CLS: clear screen\n",
+                        "cls: clear screen\n",
                         "cls \n"},	
 {TEXT_CMDHELP_FSTAB,              
-                        "FSTAB: show file system table\n",
+                        "fstab: show file system table\n",
                         "fstab \n"},
 {TEXT_CMDHELP_FS,              
-                        "FS: show registered file system\n",
+                        "fs: show registered file system\n",
                         "fs \n"},
 {TEXT_CMDHELP_FATINFO,              
-                        "FATINFO: show info about FAT file system\n",
+                        "fatinfo: show info about FAT file system\n",
                         "fatinfo \n"},
 {TEXT_CMDHELP_DEV,              
-                        "DEV: show registered devices\n",
+                        "dev: show registered devices\n",
                         "dev \n"},
 {TEXT_CMDHELP_MEMINFO,              
-                        "MEMINFO: show availabe memory\n",
+                        "meminfo: show availabe memory\n",
                         "meminfo \n"},
 {TEXT_CMDHELP_CHMOD,
-                        "ATTRIB: Change file/dir attribute\n",
-                        "attrib <attr> <mask> <name>\n"\
+                        "chmod: Change file/dir attribute\n",
+                        "chmod <attr> <mask> <name>\n"\
                         "chmod  <attr> <mask> <name>\n"\
                         "  NewATTR = (attr & mask) | (OldATTR & ~mask)\n"\
                         "  attrib/mask:\n"\
@@ -103,86 +103,86 @@ struct CMDHLP hlptxt[] =
                         "    set attribute 'HIDDEN':   chmod 32 32 file.ext\n"\
                         "    clear attribute 'HIDDEN': chmod  0 32 file.ext\n"},
 {TEXT_CMDHELP_CD,	
-			"CD: change current directory/drive\n",
+			"cd: change current directory/drive\n",
                         "cd <dir>\n"\
                         "  cd         show current directory\n"\
                         "  cd ..      one level up\n"\
                         "  cd [dir]   change to dir\n"\
                         "  cd 1:      change to logical drive 1\n"},
 {TEXT_CMDHELP_COPY,             
-                        "COPY: copy file(s) or directory(s)\n",
+                        "copy: copy file(s) or directory(s)\n",
                         "copy <file1> <file2>\n"},
 {TEXT_CMDHELP_DEL,              
-                        "DEL: delete a file\n",
+                        "del: delete a file\n",
                         "del <filename>\n"},
 {TEXT_CMDHELP_DIR,              
-                        "DIR: list directory contents\n",
+                        "dir: list directory contents\n",
                         "dir [<dir>]\n"},
 {TEXT_CMDHELP_MD,               
-                        "MKDIR: make a directory\n",
+                        "mkdir: make a directory\n",
                         "mkdir <dirname>\n"\
                         "mkdir <dirname>\n"},
 {TEXT_CMDHELP_REN,              
-                        "REN: rename a file/directory\n",
+                        "ren: rename a file/directory\n",
                         "ren <oldname> <newname>\n"},
 {TEXT_CMDHELP_RD,               
-                        "RMDIR: remake/delete a directory\n",
+                        "rmdir: remake/delete a directory\n",
                         "rmdir [-R] <dirname>\n"},
 
                         
 {TEXT_CMDHELP_DI,
-	    "DINIT <d#>: initialize a disk\n",
+	    "dinit <d#>: initialize a disk\n",
             "dinit <disc name>\n"\
             "  disc name is HDA, HDB, SDA, SDB ... \n"},
 {TEXT_CMDHELP_DD,
-	    "DDUMP [<d#> <sec#>]: dump sector\n",
+	    "ddump [<d#> <sec#>]: dump sector\n",
             "ddump [<d#> <sec#>]\n"\
             "  dump sector sec# of disc d#\n"\
             "  first disc is #0\n"},
 {TEXT_CMDHELP_BD,
-	    "BDUMP <ofs>: dump working buffer\n",
+	    "bdump <ofs>: dump working buffer\n",
             "bdump <buffer offset>\n"},
 {TEXT_CMDHELP_BE,
-	    "BEDIT <ofs> [<data>]: edit working buffer\n",
+	    "bedit <ofs> [<data>]: edit working buffer\n",
             "bedit <ofs> [<data>]\n"},
 {TEXT_CMDHELP_BR,
-	    "BREAD <d#> <sec#> <cnt>: read disk to working buffer\n",
+	    "bread <d#> <sec#> <cnt>: read disk to working buffer\n",
             "bread <d#> <sec#> <cnt>\n"},
 {TEXT_CMDHELP_BW,
-	    "BWRITE <d#> <sec#> <cnt>: write working buffer to disk\n",
+	    "bwrite <d#> <sec#> <cnt>: write working buffer to disk\n",
             "bwrite <d#> <sec#> <cnt>\n"},
 {TEXT_CMDHELP_BF,
-	    "BFILL <val>: fill working buffer\n",
+	    "bfill <val>: fill working buffer\n",
             "bfill <val>\n"},
 {TEXT_CMDHELP_MOUNT,
-	    "MOUNT <vol> <fs> : initialize/mount volume \n",
+	    "mount <vol> <fs> : initialize/mount volume \n",
             "mount <vol> <fs>\n"\
             "   vol = HDA0,HDA1 ...\n"\
             "   fs = FAT32,JADOS ...\n"\
 	    "   mount only shows mounted volumes\n"},
 {TEXT_CMDHELP_UMOUNT,
-	    "UMOUNT <vol>: unmount volume\n",
+	    "umount <vol>: unmount volume\n",
             "umount <vol>  \n"\
             "   vol = HDA0,HDA1 ...\n"},            
 {TEXT_CMDHELP_VSTATUS,
-  	    "VSTATUS <vol>: show info of volumes FATFS structure\n",
+  	    "vstatus <vol>: show info of volumes FATFS structure\n",
             "vstatus <volume>\n"\
             "   - volume must be mounted.\n"\
             "   - info: FAT Type, FAT Start, DIR start, Data Start,\n"\
 	    "           Root DIR entries, number of clusters\n"},	    
 {TEXT_CMDHELP_LSTATUS,
-	    "LSTATUS : info on FS(FAT..) structure in current drive/directory\n",
+	    "lstatus : info on FS(FAT..) structure in current drive/directory\n",
             "lstatus :\n"\
             "    - info: FAT Type, Number of FATs, ClusterSize in sectors and bytes,\n"\
             "            Volume Label and S/N, number of files/directories,\n"\
             "            total/available disk space\n"},	  
 {TEXT_CMDHELP_DS,
-	    "DSTATUS <d#>: physical disk status (calls block driver)\n",
+	    "dstatus <d#>: physical disk status (calls block driver)\n",
             "dstatus <d#>\n"\
             "  d# = HDA, HDB, SDA, SDB ....\n"\
             "  info: Model, Serial-Number,cyl-sec-heads, tracks LBA-Sectors etc.\n"},	    
 {TEXT_CMDHELP_FOPEN,
-	    "FOPEN <file> <mode>: open a file\n",
+	    "fopen <file> <mode>: open a file\n",
             "fopen <file> <mode>\n"\
             " mode:\n"\
             "    read           r  --> file[0]\n"\
@@ -192,35 +192,35 @@ struct CMDHLP hlptxt[] =
             "    text/ascii     t\n"\
 	    "    update         +\n"},
 {TEXT_CMDHELP_FCLOSE,
-	    "FCLOSE <n>: close file[n]\n",
+	    "fclose <n>: close file[n]\n",
             "fclose <n>\n"},
 {TEXT_CMDHELP_FSEEK,
-	    "FSEEK <n> <mode> <ofs>: move filepointer of file n in mode\n",
+	    "fseek <n> <mode> <ofs>: move filepointer of file n in mode\n",
             "fseek <n> <mode> <ofs>\n"\
             "      mode:\n"\
             "      0 - SEEK_SET : Beginning of file\n"\
             "      1 - SEEK_CUR : Current position of the file pointer\n"\
             "      2 - SEEK_END : End of file\n"},
 {TEXT_CMDHELP_FDUMP,
-	    "FDUMP <len>: dump the file\n",
+	    "fdump <len>: dump the file\n",
             "fdump <len>\n"},
 {TEXT_CMDHELP_FREAD,
-	    "FREAD <len>: read the file\n",
+	    "fread <len>: read the file\n",
             "fread <len>\n"},
 {TEXT_CMDHELP_FWRITE,
-	    "FWRITE <len> <val>: write to the file\n",
+	    "fwrite <len> <val>: write to the file\n",
             "fwrite <len> <val>\n"},
 {TEXT_CMDHELP_FTRUNK,
-	    "FTRUNK : trunkate the file at current position\n",
+	    "ftrunk : trunkate the file at current position\n",
             "ftrunk\n"},
 {TEXT_CMDHELP_VLABEL,
-	    "VLABEL <op> <volume> <label>: read/write volume label\n",
+	    "vlabel <op> <volume> <label>: read/write volume label\n",
             "vlabel <op> <volume> <label>\n"\
             "    example: vlabel w hda0 test - sets label of hda0 to 'test'\n"\
             "             vlabel w hdb0      - clears label of hdb0\n"\
             "             vlabel r hda1      - reads label of hda1\n"},
 {TEXT_CMDHELP_MKFS,
-	    "MKFS <ld#> <fs> <rule> <cluster size>: create a file system\n",
+	    "mkfs <ld#> <fs> <rule> <cluster size>: create a file system\n",
             "mkfs <ld#> <fs> <rule> <cluster size>\n"\
             "     ld#          - volume\n"\
             "     fs           - file system\n"\
@@ -232,26 +232,26 @@ struct CMDHLP hlptxt[] =
             "      mkfs HDA0 FAT 0 1024\n"\
             "      mkfs SDA0 FAT 1 1024\n"},
 {TEXT_CMDHELP_MKPTABLE,
-	    "MKPTABLE <pd#> <size1> <size2> <size3> <size4> - Create partition table \n",
+	    "mkptable <pd#> <size1> <size2> <size3> <size4> - Create partition table \n",
             "mkptable <pd#> <size1> <size2> <size3> <size4>\n"\
             "          pd#: HDA = 1st (G)IDE disk \n"\
             "               SDA = 1st SD disk\n"},  
 {TEXT_CMDHELP_PTABLE,
-	    "PTABLE <pd#>  - show partition table of physical drive pd# \n",
+	    "ptable <pd#>  - show partition table of physical drive pd# \n",
             "ptable <pd#>\n"\
 	    "  example:\n"\
 	    "     ptable hda\n"},                      
 {TEXT_CMDHELP_PWD,
-	    "PWD: print working directory\n",
+	    "pwd: print working directory\n",
             "pwd\n"},           
 {TEXT_CMDHELP_QUIT,             
-                        "QUIT: quit/exit program\n",
+                        "quit: quit/exit program\n",
                         "quit\n"},    
 {TEXT_CMDHELP_HISTORY,             
-                        "HISTORY: show command history\n",
+                        "history: show command history\n",
                         "history\n"},	
 {TEXT_CMDHELP_TEST,             
-                        "TEST: test function\n",
+                        "test: test function\n",
                         "test\n"},			
 {TEXT_CMDHELP,
 			"type cmd /? for more information on cmd\n",""},        
@@ -262,56 +262,56 @@ struct CMDHLP hlptxt[] =
 // list of available commands ...
 struct CMD internalCommands[] =
 {
-  {"CLS"        , cmd_cls       , TEXT_CMDHELP_CLS},
-  {"FSTAB"      , cmd_fstab     , TEXT_CMDHELP_FSTAB},
-  {"FS"         , cmd_fs        , TEXT_CMDHELP_FS},
-  {"FATINFO"    , cmd_fatinfo   , TEXT_CMDHELP_FATINFO},
-  {"DEV"        , cmd_dev       , TEXT_CMDHELP_DEV},
-  {"MEMINFO"    , cmd_meminfo   , TEXT_CMDHELP_MEMINFO},
-  {"DINIT"      , cmd_dinit     , TEXT_CMDHELP_DI},  
-  {"DDUMP"      , cmd_ddump     , TEXT_CMDHELP_DD},
-  {"DSTATUS"    , cmd_dstatus   , TEXT_CMDHELP_DS},
-  {"BDUMP"      , cmd_bdump     , TEXT_CMDHELP_BD},
-  {"BEDIT"      , cmd_bedit     , TEXT_CMDHELP_BE},
-  {"BREAD"      , cmd_bread     , TEXT_CMDHELP_BR},
-  {"BWRITE"     , cmd_bwrite    , TEXT_CMDHELP_BW},
-  {"BFILL"      , cmd_bfill     , TEXT_CMDHELP_BF}, 
-  {"MOUNT"      , cmd_mount     , TEXT_CMDHELP_MOUNT},
-  {"UMOUNT"     , cmd_umount    , TEXT_CMDHELP_UMOUNT},
-  {"VSTATUS"    , cmd_vstatus   , TEXT_CMDHELP_VSTATUS},
-  {"LSTATUS"    , cmd_lstatus   , TEXT_CMDHELP_LSTATUS},
-  {"FOPEN"      , cmd_fopen     , TEXT_CMDHELP_FOPEN},
-  {"FCLOSE"     , cmd_fclose    , TEXT_CMDHELP_FCLOSE},
-  {"FSEEK"      , cmd_fseek     , TEXT_CMDHELP_FSEEK},
-  {"FDUMP"      , cmd_fdump     , TEXT_CMDHELP_FDUMP},
-  {"FREAD"      , cmd_fread     , TEXT_CMDHELP_FREAD},
-  {"FWRITE"     , cmd_fwrite    , TEXT_CMDHELP_FWRITE},
-  {"FTRUNK"     , cmd_ftrunk    , TEXT_CMDHELP_FTRUNK},
-  {"VLABEL"     , cmd_vlabel    , TEXT_CMDHELP_VLABEL},
-  {"MKFS"       , cmd_mkfs      , TEXT_CMDHELP_MKFS},        
-  {"PWD"        , cmd_pwd       , TEXT_CMDHELP_PWD},  
-  {"CHMOD"      , cmd_chmod     , TEXT_CMDHELP_CHMOD},
-  {"ATTRIB"     , cmd_chmod     , TEXT_CMDHELP_CHMOD},
-  {"CD"         , cmd_chdir     , TEXT_CMDHELP_CD},  
-  {"CHDIR"      , cmd_chdir     , TEXT_CMDHELP_CD},
-  {"COPY"       , cmd_copy      , TEXT_CMDHELP_COPY },
-  {"CP"         , cmd_copy      , TEXT_CMDHELP_COPY },
-  {"DEL"        , cmd_del       , TEXT_CMDHELP_DEL},
-  {"DIR"        , cmd_dir       , TEXT_CMDHELP_DIR},
-  {"LS"         , cmd_dir       , TEXT_CMDHELP_DIR},
-  {"MKDIR"      , cmd_mkdir     , TEXT_CMDHELP_MD},
-  {"MKPTABLE"   , cmd_mkptable  , TEXT_CMDHELP_MKPTABLE},
-  {"PTABLE"     , cmd_ptable    , TEXT_CMDHELP_PTABLE},  
-  {"REN"        , cmd_rename    , TEXT_CMDHELP_REN},
-  {"RENAME"     , cmd_rename    , TEXT_CMDHELP_REN},
-  {"RMDIR"      , cmd_rmdir     , TEXT_CMDHELP_RD},
-  {"QUIT"       , cmd_quit      , TEXT_CMDHELP_QUIT},
-  {"Q"          , cmd_quit      , TEXT_CMDHELP_QUIT},  
-  {"EXIT"       , cmd_quit      , TEXT_CMDHELP_QUIT},
-  {"HISTORY"    , cmd_history   , TEXT_CMDHELP_HISTORY},
-  {"HIST"       , cmd_history   , TEXT_CMDHELP_HISTORY},
-  {"TEST"       , cmd_test   	, TEXT_CMDHELP_TEST},
-  {"T"      	, cmd_test   	, TEXT_CMDHELP_TEST},
+  {"cls"        , cmd_cls       , TEXT_CMDHELP_CLS},
+  {"fstab"      , cmd_fstab     , TEXT_CMDHELP_FSTAB},
+  {"fs"         , cmd_fs        , TEXT_CMDHELP_FS},
+  {"fatinfo"    , cmd_fatinfo   , TEXT_CMDHELP_FATINFO},
+  {"dev"        , cmd_dev       , TEXT_CMDHELP_DEV},
+  {"meminfo"    , cmd_meminfo   , TEXT_CMDHELP_MEMINFO},
+  {"dinit"      , cmd_dinit     , TEXT_CMDHELP_DI},  
+  {"ddump"      , cmd_ddump     , TEXT_CMDHELP_DD},
+  {"dstatus"    , cmd_dstatus   , TEXT_CMDHELP_DS},
+  {"bdump"      , cmd_bdump     , TEXT_CMDHELP_BD},
+  {"bedit"      , cmd_bedit     , TEXT_CMDHELP_BE},
+  {"bread"      , cmd_bread     , TEXT_CMDHELP_BR},
+  {"bwrite"     , cmd_bwrite    , TEXT_CMDHELP_BW},
+  {"bfill"      , cmd_bfill     , TEXT_CMDHELP_BF}, 
+  {"mount"      , cmd_mount     , TEXT_CMDHELP_MOUNT},
+  {"umount"     , cmd_umount    , TEXT_CMDHELP_UMOUNT},
+  {"vstatus"    , cmd_vstatus   , TEXT_CMDHELP_VSTATUS},
+  {"lstatus"    , cmd_lstatus   , TEXT_CMDHELP_LSTATUS},
+  {"fopen"      , cmd_fopen     , TEXT_CMDHELP_FOPEN},
+  {"fclose"     , cmd_fclose    , TEXT_CMDHELP_FCLOSE},
+  {"fseek"      , cmd_fseek     , TEXT_CMDHELP_FSEEK},
+  {"fdump"      , cmd_fdump     , TEXT_CMDHELP_FDUMP},
+  {"fread"      , cmd_fread     , TEXT_CMDHELP_FREAD},
+  {"fwrite"     , cmd_fwrite    , TEXT_CMDHELP_FWRITE},
+  {"ftrunk"     , cmd_ftrunk    , TEXT_CMDHELP_FTRUNK},
+  {"vlabel"     , cmd_vlabel    , TEXT_CMDHELP_VLABEL},
+  {"mkfs"       , cmd_mkfs      , TEXT_CMDHELP_MKFS},        
+  {"pwd"        , cmd_pwd       , TEXT_CMDHELP_PWD},  
+  {"chmod"      , cmd_chmod     , TEXT_CMDHELP_CHMOD},
+  {"attrib"     , cmd_chmod     , TEXT_CMDHELP_CHMOD},
+  {"cd"         , cmd_chdir     , TEXT_CMDHELP_CD},  
+  {"chdir"      , cmd_chdir     , TEXT_CMDHELP_CD},
+  {"copy"       , cmd_copy      , TEXT_CMDHELP_COPY },
+  {"cp"         , cmd_copy      , TEXT_CMDHELP_COPY },
+  {"del"        , cmd_del       , TEXT_CMDHELP_DEL},
+  {"dir"        , cmd_dir       , TEXT_CMDHELP_DIR},
+  {"ls"         , cmd_dir       , TEXT_CMDHELP_DIR},
+  {"mkdir"      , cmd_mkdir     , TEXT_CMDHELP_MD},
+  {"mkptable"   , cmd_mkptable  , TEXT_CMDHELP_MKPTABLE},
+  {"ptable"     , cmd_ptable    , TEXT_CMDHELP_PTABLE},  
+  {"ren"        , cmd_rename    , TEXT_CMDHELP_REN},
+  {"rename"     , cmd_rename    , TEXT_CMDHELP_REN},
+  {"rmdir"      , cmd_rmdir     , TEXT_CMDHELP_RD},
+  {"quit"       , cmd_quit      , TEXT_CMDHELP_QUIT},
+  {"q"          , cmd_quit      , TEXT_CMDHELP_QUIT},  
+  {"exit"       , cmd_quit      , TEXT_CMDHELP_QUIT},
+  {"history"    , cmd_history   , TEXT_CMDHELP_HISTORY},
+  {"hist"       , cmd_history   , TEXT_CMDHELP_HISTORY},
+  {"test"       , cmd_test   	, TEXT_CMDHELP_TEST},
+  {"t"      	, cmd_test   	, TEXT_CMDHELP_TEST},
   {"?"          , showcmds      , TEXT_CMDHELP_QUESTION},
   
   {0,0,0}
@@ -1499,9 +1499,8 @@ int cmd_dinit  (char * args){
    
    while (*args == ' ') args++;
    
-   p1=args;
-   
-   while(*p1) { *p1 = toupper( *p1 );  p1++; } // convert to uppercase
+   //p1=args;   
+   //while(*p1) { *p1 = toupper( *p1 );  p1++; } // convert to uppercase
    
    p1=args;
    
@@ -1680,7 +1679,7 @@ int cmd_mkfs   (char * args){
    
    if (!xatos(&args, part,4) || !xatos(&args, type,5) || !xatoi(&args, &sfd) || !xatoi(&args, &au)) return 0;
    
-   ptr=part; while(*ptr) { *ptr = toupper( *ptr );  ptr++; } // convert to uppercase
+   //ptr=part; while(*ptr) { *ptr = toupper( *ptr );  ptr++; } // convert to uppercase
    ptr=type; while(*ptr) { *ptr = toupper( *ptr );  ptr++; } // convert to uppercase
  
    ioctl_args.part = part;    /* partition */
@@ -1823,7 +1822,7 @@ int cmd_ptable(char * args) { // args = "HDA", "HDB" etc.
   
    if (!xatos(&args, drive,3)) return 0;
   
-   p1=drive; while(*p1) { *p1 = toupper( *p1 );  p1++; } // convert to uppercase
+   //p1=drive; while(*p1) { *p1 = toupper( *p1 );  p1++; } // convert to uppercase
   
    ioctl_args.drv = drive;  
    ioctl_args.buff = Buff;
@@ -1861,7 +1860,7 @@ int _cmd_ptable(char * args) { // args = "HDA", "HDB" etc.
   
    if (!xatos(&args, drive,3)) return 0;
   
-   p1=drive; while(*p1) { *p1 = toupper( *p1 );  p1++; } // convert to uppercase
+   //p1=drive; while(*p1) { *p1 = toupper( *p1 );  p1++; } // convert to uppercase
   
    ioctl_args.drv = drive;  
    ioctl_args.buff = Buff;
@@ -1920,12 +1919,14 @@ int cmd_mount (char * args){
    
    //retreive arguments...   
   
+   /*
    pc=args;
+  
    while(*pc){			// convert args to uppercase
     *pc = toupper(*pc);
     pc++;
    }   
-   
+   */
    if ( !xatos(&args, vol,5) || !xatos(&args, fs,9)  ) return 0; 
    
    printf(" try mounting filesystem %s on volume %s  ... \n",fs,vol);
@@ -1954,12 +1955,14 @@ int cmd_umount (char * args){
    }   
    
    while (*args == ' ') args++;
-         
-   pc=args;
+      
+/*   
+   pc=args;   
    while(*pc){			// convert args to uppercase
     *pc = toupper(*pc);
     pc++;
-   }   
+   } 
+   */
    
    res = ioctl(args, FS_IOCTL_UMOUNT, 0);
    put_rc(res);
@@ -1991,12 +1994,13 @@ int cmd_vstatus(char * args){
      
    while (*args == ' ') args++;  	// skip whitespace
   
+  /*
    pc=args;
    while(*pc){			// convert args to uppercase
     *pc = toupper(*pc);
     pc++;
    }   
-   
+   */
    //res=checkfp(args, &FPInfo);		// analyze argumennt
 
    if(pfstabentry = get_fstabentry(args)){ 
@@ -2197,7 +2201,7 @@ int cmd_vlabel (char * args){
    
    xatos(&args, label,9); // fetch label (emtpty => clear label if op = w(rite)
    
-   p1=volume; while(*p1) { *p1 = toupper( *p1 );  p1++; } // convert to uppercase   
+   //p1=volume; while(*p1) { *p1 = toupper( *p1 );  p1++; } // convert to uppercase   
    
 #ifdef CONFIG_DEBUG
    printf(" vlabel %s %s %s\n",op,volume,label);

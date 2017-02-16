@@ -256,6 +256,7 @@ static UINT sd_read(struct _dev *devp, char *buffer, UINT start_sector, UINT num
   BYTE disk; 
   
   drvsd_lldbg("sd_read\n");
+  drvsd_lldbgdec("   sect : ",start_sector);
   
   if(devp == NULL) return EINVAL;
   disk = devp->pdrv+1;
@@ -526,6 +527,6 @@ int sd_initialize()
   //disk_initialize (0); (disk should be inizialized while mounting in open() )
   //disk_initialize (1);
   
-  register_blk_driver("SD",  &sd_bops);
+  register_blk_driver("sd",  &sd_bops);
 }
   

@@ -168,6 +168,7 @@ attempt to open /home/myCLib/CLIBS/projects/shell/../../lib/libCC.a succeeded
 (/home/myCLib/CLIBS/projects/shell/../../lib/libCC.a)abs.o
 (/home/myCLib/CLIBS/projects/shell/../../lib/libCC.a)drivers.o
 (/home/myCLib/CLIBS/projects/shell/../../lib/libCC.a)fs.o
+(/home/myCLib/CLIBS/projects/shell/../../lib/libCC.a)fs_nkc.o
 (/home/myCLib/CLIBS/projects/shell/../../lib/libCC.a)fs_fat.o
 (/home/myCLib/CLIBS/projects/shell/../../lib/libCC.a)ff.o
 (/home/myCLib/CLIBS/projects/shell/../../lib/libCC.a)diskio.o

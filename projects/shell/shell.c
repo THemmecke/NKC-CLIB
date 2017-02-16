@@ -101,7 +101,7 @@ void shell()
       
      cp = com; 
      while(*ptr && is_fnchar(*ptr))
-      *cp++ = toupper(*ptr++);
+      *cp++ = *ptr++;//toupper(*ptr++);
     
      *cp = '\0'; // terminate first word
            

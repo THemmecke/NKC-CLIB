@@ -304,9 +304,9 @@ unsigned char checkfp(char* fp, struct fpinfo *pfpinfo)
 	    (pfpinfo->psz_driveName)[n] = 0;        
 	    pstr+=n+1;
 	    
-	    n=0;				// use uppercase drive letters only
+	    n=0;				
 	    while((pfpinfo->psz_driveName)[n]){
-	      (pfpinfo->psz_driveName)[n] = toupper((pfpinfo->psz_driveName)[n]);	      
+	     // (pfpinfo->psz_driveName)[n] = toupper((pfpinfo->psz_driveName)[n]); // we are case sensitive now ...
 	      n++;
 	    }
 	    	    	   
@@ -1310,7 +1310,7 @@ FRESULT umountfs(char *devicename)
     
      // call fs device driver ioctl with drivename
      fs_dbg("fs.c|umountfs: found fstabentry, calling fs drivers ioctl ...\n");
-     fres = entry->pfsdrv->f_oper->ioctl(NULL,FS_IOCTL_UMOUNT,devicename);
+     fres = entry->pfsdrv->f_oper->ioctl(NULL,FS_IOCTL_UMOUNT,entry);
      remove_fstabentry(devicename);     
      
      return fres;   

@@ -173,10 +173,14 @@ static char debugbuf[255];
 # define drvsd_dbg(format,arg...)    dbg(format,##arg)
 # define drvsd_lldbg(format)	   lldbg(format) 
 # define drvsd_lldbgwait(format)	   lldbgwait(format)
+# define drvsd_lldbgdec(format,value)	lldbgdec(format,value)
+# define drvsd_lldbghex(format,value)	lldbghex(format,value)
 #else
 # define drvsd_dbg(x...)
 # define drvsd_lldbg(x...)
 # define drvsd_lldbgwait(x...)
+# define drvsd_lldbgdec(x...)
+# define drvsd_lldbghex(x...)
 #endif
 
 #ifdef CONFIG_DEBUG_DRV_JD
