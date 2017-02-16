@@ -5,6 +5,8 @@ INCLUDE=$(BASEDIR)/include
 CLIBPATH=$(BASEDIR)/lib
 CLIB=CC
 
+
+
 ############## define the target cpu (68000, 68008, 68020) #######################
 CPU=68020
 
@@ -123,6 +125,11 @@ CCFLAGS += -DCONFIG_FS_NKC
 endif
 ifeq ($(CONFIG_FS_FAT),1)
 CCFLAGS += -DCONFIG_FS_FAT
+# add fsfat version info from ffconf.h file
+#CCFLAGS += -DFAT_FS_VERSION=$$(grep _FAT_FS_VERSION $(BASEDIR)/fs/fat/ffconf.h | awk '{ print $3 }')
+#CCFLAGS += -DFAT_FS_VERSION=$$(date +'%Y%m%d')
+#CCFLAGS += -DFAT_FS_VERSION=$(shell grep _FAT_FS_VERSION '../../fs/fat/ffconf.h')
+CCFLAGS += -DFAT_FS_VERSION=\"R0.10a\"
 endif
 
 # ########## use hardware drivers ... ################
@@ -236,6 +243,11 @@ CCFLAGS += -DUSE_DYNAMIC_VSPRINTF_BUFFER
 LD = m68k-uclinux-ld
 ############# linker flags ###########################################
 LDFLAGS=
+
+############# version/build info ###########################################
+CLIB_BUILD_NUMBER_FILE=clib-build-number.txt
+LDFLAGS  = --defsym=__CLIB_BUILD_DATE=$$(date +'%Y%m%d')
+LDFLAGS += --defsym=__CLIB_BUILD_NUMBER=$$(cat $(BASEDIR)/object/$(CLIB_BUILD_NUMBER_FILE))
 
 # ######### generate verbose output ###############
 LDFLAGS += --verbose

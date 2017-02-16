@@ -2130,7 +2130,7 @@ FRESULT follow_path (	/* FR_OK(0): successful, !=0: error code */
 /*-----------------------------------------------------------------------*/
 
 static
-int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) and adjusts path without drive name*/
+int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) */
 	const TCHAR** path	/* Pointer to pointer to the path name */
 )
 {
@@ -2144,7 +2144,7 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) and adjus
 	ff_dbg(" ff.c|get_ldnumber: 0 should be returend with DYNAMIC_FSTAB enabled.\nThe pathname will be adjusted to a path without drive name and pCurFs will point to the current active fs.\n");
 
   
-	ff_dbg(" ff.c|get_ldnumber: path=(%s)....\n",*path);
+	ff_dbg(" ff.c|get_ldnumber: path(0x%0x)=(%s)....\n",*path,*path);
 
 	if (*path) {	/* If the pointer is not a null */
 		ff_lldbg(" ff.c|get_ldnumber: search for ':' in the path ...\n"); 
@@ -2157,15 +2157,16 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) and adjus
 				ff_dbg(" ff.c|get_ldnumber: found a numeric drive id ...\n");
 				if (i < _VOLUMES) {	/* If a drive id is found, get the value and strip it */
 					vol = (int)i;	/* return volume number */
-					*path = ++tt;	/* return path (without drive) */
+					//*path = ++tt;	/* return path (without drive) */
+					*path = ++tt;
 					
 					ff_dbg(" ff.c|get_ldnumber: (1)found vol %d, path %s\n", vol,*path);
 				}
 			} else {	/* No numeric drive id, try string id */			        
 #if _STR_VOLUME_ID		/* Find string drive id */
 				ff_dbg(" ff.c|get_ldnumber: found a string drive id ...\n");
-				tt++;
-				*tt=0;
+				
+				*tt=0;		/* temporarily terminate path (now points to [drive]) to search for fstabentry */		
 				ff_dbg(" ff.c|get_ldnumber: fetch fstab entry for '%s'\n",*path);
 				if(pfstabentry = get_fstabentry(*path)){ 
 				  ff_dbg(" ff.c|get_ldnumber: fstab entry = 0x%x, fs = 0x%x\n",pfstabentry,pfstabentry->pfs);
@@ -2173,8 +2174,13 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) and adjus
 				} else {
 				  ff_dbg(" ff.c|get_ldnumber: no fstab entry found. pCurFs = 0x%x\n",pCurFs);
 				}
+				*tt=':'; /* recover path string */
+				tt++;
 				
-				*path = ++tt;	/* return path (without drive) */
+				ff_dbg(" ff.c|get_ldnumber: *path -> (0x%0x), tt -> (0x%x)\n",*path, tt);
+				*path = tt;
+				ff_dbg(" ff.c|get_ldnumber: *path -> (0x%0x), tt -> (0x%x)\n",*path, tt);
+				//*path = ++tt;	/* return path (without drive) */
 				vol = 0;
 				
 				if(pfstabentry){
@@ -2289,7 +2295,9 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 	    }
 	  }
 	  
+	  ff_dbg(" ff.c|find_volume: (1) path(0x%0x) = %s\n",*path,*path);
 	  get_ldnumber(path); /* called to remove drive info from path ... */
+	  ff_dbg(" ff.c|find_volume: (2) path(0x%0x) = %s\n",*path,*path)
 	  
 	}
 	
@@ -3133,14 +3141,15 @@ FRESULT f_chdir (
 	DIR dj;
 	DEF_NAMEBUF;
 
-	ff_dbg(" f_chdir( %s )\n",path);
+	ff_dbg(" f_chdir( %s ), path(0x%0x)\n",path,path);
 	
 	/* Get logical drive number */
 	res = find_volume(&dj.fs, &path, 0);	
 	if (res == FR_OK) {
-		ff_dbg("found volume...\n");
+		ff_dbg("found volume, path(0x%0x) = %s...\n", path, path);
 		INIT_BUF(dj);
 		res = follow_path(&dj, path);		/* Follow the path */
+		ff_dbg("found volume, path(0x%0x) after follow_path \n", path);
 		FREE_BUF();
 		if (res == FR_OK) {					/* Follow completed */
 			ff_dbg("Follow completed ...\n");
@@ -3464,7 +3473,7 @@ FRESULT f_opendir (
 	FATFS* fs;
 	DEF_NAMEBUF;
 
-	ff_dbg(" f_opendir (path=%s)...\n",path);
+	ff_dbg(" f_opendir (path(0x%0x)=%s)...\n",path,path);
 
 	
 	if (!dp) return FR_INVALID_OBJECT;
@@ -3473,7 +3482,7 @@ FRESULT f_opendir (
 	res = find_volume(&fs, &path, 0);
 	
 	if (res == FR_OK) {
-		ff_dbg(" f_opendir: find_volume returned FR_OK   (fs->0x%x; path=%s)\n",fs,path);
+		ff_dbg(" f_opendir: find_volume returned FR_OK   (fs->0x%x; path(0x%0x)=%s)\n",fs,path,path);
 		dp->fs = fs;
 		INIT_BUF(*dp);
 		res = follow_path(dp, path);			/* Follow the path to the directory */

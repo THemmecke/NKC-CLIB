@@ -411,7 +411,7 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 			      fsfat_dbg("  part    = %d\n",((struct fstabentry*)arg)->partition);
 			      fsfat_dbg("  pFATFS  = 0x%x\n",((struct fstabentry*)arg)->pfs);
 	  			      
-			      fsfat_dbg("  options = %d",((struct fstabentry*)arg)->options); 
+			      fsfat_dbg("  options = %d (not used)",((struct fstabentry*)arg)->options); 
 			      fsfat_lldbgwait("\n");
 			      
 			      // allocate memory for FATFS structure and store pointer in fstab
@@ -472,12 +472,15 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
     // open directory
     case FS_IOCTL_OPEN_DIR:			     
     case FAT_IOCTL_OPEN_DIR:
+			      fsfat_dbg(" FS_IOCTL_OPEN_DIR(1):   path = 0x%0x\n",((struct ioctl_opendir*)arg)->path);
 			      res = f_opendir(((struct ioctl_opendir*)arg)->dp, 
 					      ((struct ioctl_opendir*)arg)->path);
+			      fsfat_dbg(" FS_IOCTL_OPEN_DIR(2):   path = 0x%0x\n",((struct ioctl_opendir*)arg)->path);
 			      break;
     // read directory
     case FS_IOCTL_READ_DIR:			      		      
     case FAT_IOCTL_READ_DIR:
+			      fsfat_dbg(" fs_fat.c| _IOCTL_READ_DIR: (%s)\n",(char*)arg);
 			      res = f_readdir(((struct ioctl_readdir*)arg)->dp,   
 					      ((struct ioctl_readdir*)arg)->fno);
 			      break;

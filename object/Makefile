@@ -67,8 +67,14 @@ endif
 
 #	$(LD) $(LDFLAGS) $(LIBOBJECTS) -o $(LIBDIR)/libCC.o; \
 # create a static library	
-all:
+all: $(CLIB_BUILD_NUMBER_FILE)
 	ar rcs $(LIBDIR)libCC.a $(LIBOBJECTS)
+	
+	
+# Build number file.  Increment if any object file changes.
+$(CLIB_BUILD_NUMBER_FILE): $(LIBOBJECTS)
+	@if ! test -f $(CLIB_BUILD_NUMBER_FILE); then echo 0 > $(CLIB_BUILD_NUMBER_FILE); fi 
+	@echo $$(($$(cat $(CLIB_BUILD_NUMBER_FILE)) + 1)) > $(CLIB_BUILD_NUMBER_FILE)
 	
 	
 # define a pattern rule to compile all *.c files to *.o files:

@@ -495,32 +495,23 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
       
         fs_dbg("device = %s\n",((struct ioctl_mount_fs *)arg)->devicename);
 	fs_dbg("fs     = %s\n",((struct ioctl_mount_fs *)arg)->fsname);
-	fs_dbg("options= %s\n",((struct ioctl_mount_fs *)arg)->options);
+	fs_dbg("options= %d\n",((struct ioctl_mount_fs *)arg)->options);
 	
 	// mount the fs in fstab and call the filesystems ioctl ...
-        fres = mountfs(    ((struct ioctl_mount_fs *)arg)->devicename, 
+        fres = mountfs(   ((struct ioctl_mount_fs *)arg)->devicename, 
 			  ((struct ioctl_mount_fs *)arg)->fsname, 
 			  ((struct ioctl_mount_fs *)arg)->options    );                 
-		
+				
 	fs_dbg("fs.c|FS_IOCTL_MOUNT: fres = %d",fres);
 	fs_lldbgwait("\n");
 	
 	switch(fres){
 	  // fs already mounted
-	  case FR_EXIST:
-	    res = EEXIST;
-	    break;
-	  case FR_NO_FILESYSTEM:
-	    res = ENXIO;
-	    break;	
-	  case FR_INVALID_DRIVE:
-	    res = EINVDRV;
-	    break;
 	  case FR_OK:
 	    res = EZERO;	    
 	    break;
 	    
-	  default: res = EFAULT; // unknown error ...
+	  default: res = fres + FRESULT_OFFSET; 
 	}		  
         break;
 	
@@ -538,20 +529,14 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
 	fs_dbg("fs.c:|FS_IOCTL_UMOUNT: umountfs returned %d",fres);
 	fs_lldbgwait("\n");
 	
-	switch(fres) {
-	  case FR_NO_FILESYSTEM:
-	    res = ENXIO;
-	    break;	
-	  case FR_INVALID_DRIVE:
-	    res = EINVDRV;
-	    break;
+	switch(fres){
+	  // fs already mounted
 	  case FR_OK:
 	    res = EZERO;	    
 	    break;
 	    
-	  default: res = EFAULT; // unknown error ...
-	}
-          	
+	  default: res = fres + FRESULT_OFFSET; 
+	}		  
         break;
 	
     case FS_IOCTL_GETDRVLIST: // ************************************* get pointer to driverlist *************************************
@@ -707,10 +692,14 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
 	}
 	
       }else{
-	res = fres + FRESULT_OFFSET;
 	fs_lldbgwait(" ioctl not valid !\n");
+	fres = EINVFNC;
       }     
           
+      if(fres < FRESULT_OFFSET && fres != FR_OK)
+	res = fres + FRESULT_OFFSET;
+      else res = fres;
+       
       break;        
     case FS_IOCTL_GETCWD: // ************************************* get current working directory and path
       // name=NULL, cmd=FS_IOCTL_GETCWD,arg =>  struct ioctl_get_cwd 
@@ -768,11 +757,13 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
 	  
 	  fs_dbg(" cdrive = %s\n cpath = %s\n",FPInfo.psz_cdrive,FPInfo.psz_cpath);
 	  fs_lldbgwait("...(KEY)\n");
-	} else {
-	    res = fres + FRESULT_OFFSET;
-        }
-	
+	  fres = FR_OK;
+	} 		
        }
+       
+       if(fres < FRESULT_OFFSET && fres != FR_OK)
+	res = fres + FRESULT_OFFSET;
+       else res = fres;
       
       break;
       

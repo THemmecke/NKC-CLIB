@@ -17,6 +17,9 @@
 /* Work Area                                               */
 /*---------------------------------------------------------*/
 
+extern char   _start;
+extern char   __BUILD_DATE;
+extern char   __BUILD_NUMBER;
 
 // global variables
 
@@ -79,13 +82,15 @@ void shell()
   ioctl(NULL,FS_IOCTL_GETDRV,FPInfo.psz_cdrive);
   
   
-  printf("\n\n Test-Shell v 1.0\n\n"
+  printf("\n\n Test-Shell v %d.%d\n\n"
          "   To access any drive, you have to mount it first.\n"
 	 "   Use the following commands:\n"
 	 "      fs    - to show available file systems\n"
 	 "      dev   - to show available devices\n"
 	 "      mount - to mount a device and associate it with a file system\n"
-	 "      ?     - for help on all commands\n\n");
+	 "      ?     - for help on all commands\n\n",
+	 (unsigned long) &__BUILD_DATE - (unsigned long) &_start,
+	 (unsigned long) &__BUILD_NUMBER - (unsigned long) &_start);
  
   for(;;)
   {
