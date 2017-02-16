@@ -174,41 +174,41 @@ void clreol( void ){
 }
 
 void clrscr( void ){
- 	nkc_clrscr();
+ 	gp_clrscr();
 }
 
 void gotoxy( int __x, int __y ){
-	nkc_setxy(__x, __y);
+	gp_setxy(__x, __y);
 }
 
 int  wherex( void ){
 	unsigned char _x,_y;
-	nkc_getxy(&_x, &_y);
+	gp_getxy(&_x, &_y);
 	return _x;
 }
 
 int  wherey( void ){
 	unsigned char _x,_y;
-	nkc_getxy(&_x, &_y);
+	gp_getxy(&_x, &_y);
 	return _y;
 }
 
 int  getch( void ){
-	return nkc_getchar();
+	return gp_getchar();
 }
 
 int  getche( void ){
-	int c = nkc_getchar();
-	nkc_putchar(c);
+	int c = gp_getchar();
+	gp_putchar(c);
 	return c;
 }
 
 int  kbhit( void ){
-	return nkc_kbhit();
+	return gp_kbhit();
 }
 
 int  putch( int __c ){
-	nkc_putchar(__c);
+	gp_putchar(__c);
 }
 
 
@@ -272,9 +272,9 @@ void  window( int __left, int __top, int __right, int __bottom){
 void  _setcursortype( int __cur_t ){
 
 	switch (__cur_t){
-		case _NOCURSOR: nkc_curoff(); break;
+		case _NOCURSOR: gp_curoff(); break;
 		case _SOLIDCURSOR:
-		case _NORMALCURSOR: nkc_curon(); break;
+		case _NORMALCURSOR: gp_curon(); break;
 	}
 
 }

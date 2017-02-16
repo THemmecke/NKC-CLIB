@@ -226,9 +226,3 @@ attempt to open cmd.o succeeded
 cmd.o
 attempt to open shell.o succeeded
 shell.o
-attempt to open mem.o succeeded
-mem.o
-attempt to open gdp.o succeeded
-gdp.o
-attempt to open llgdp.o succeeded
-llgdp.o
