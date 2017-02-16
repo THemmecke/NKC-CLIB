@@ -9,8 +9,12 @@ char **_env_arr;
 #pragma startup envset 19
 */
 
+unsigned long _CLIB_BUILD_DATE;
+unsigned long _CLIB_BUILD_NUMBER;
 
-void nkc_write(char* msg);
+extern char   _start;
+extern char   __CLIB_BUILD_DATE;
+extern char   __CLIB_BUILD_NUMBER;
 
 void envset(void)
 {
@@ -29,4 +33,10 @@ void envset(void)
 		_env_arr = malloc(sizeof(char *));
 		_env_arr[0] = 0;
 	}
+	
+	/* set build date an number info */
+	
+	_CLIB_BUILD_DATE = (unsigned long) &__CLIB_BUILD_DATE - (unsigned long) &_start;
+	_CLIB_BUILD_NUMBER = (unsigned long) &__CLIB_BUILD_NUMBER - (unsigned long) &_start;
+	
 }

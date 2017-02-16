@@ -10,14 +10,16 @@ struct _dev
 
 struct geometry
 {
-  BOOL   geo_available;    /* true: The device is vailable */
-  BOOL   geo_mediachanged; /* true: The media has changed since last query */
-  BOOL   geo_writeenabled; /* true: It is okay to write to this device */
-  UINT	 geo_cylinders;
-  UINT   geo_heads;
-  UINT	 geo_sptrack;
-  UINT   geo_nsectors;     /* Number of sectors on the device */
-  UINT   geo_sectorsize;   /* Size of one sector */
+  BOOL   available;    /* true: The device is vailable */
+  BOOL   mediachanged; /* true: The media has changed since last query */
+  BOOL   writeenabled; /* true: It is okay to write to this device */
+  UINT	 cylinders;
+  UINT   heads;
+  UINT	 sptrack;
+  UINT   nsectors;     /* Number of sectors on the device */
+  UINT   sectorsize;   /* Size of one sector */
+  USHORT type;	       /* device type */
+  char*  model;	       /* model name */
 };
 
 

@@ -195,7 +195,12 @@ trap1F:
 	/*----- Ctrl-C check -------*/
 checkkbd:
 	move.b NKC_KEY_DATA.w, %d0
+#ifdef M68000	
+	bmi tr1Fend				/* kein neues Zeichen -> Ende */
+#else
 	bmi.s tr1Fend				/* kein neues Zeichen -> Ende */
+#endif
+	
 	
 	cmp.b #0x03, %d0			/* check Ctrl-C (incl. Strobe-Flag) */
  	bne.s getkbd	 			/* kein ctrl-c 	*/

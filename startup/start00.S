@@ -16,8 +16,10 @@ _start:
 
 
 	LEA32A0 _OLDSTACK
-	//LEA32 _OLDSTACK,%a0
-	//_LEA _OLDSTACK(%pc),%a0
+/*	
+	LEA32 _OLDSTACK,%a0
+	_LEA _OLDSTACK(%pc),%a0
+*/	
 	move.l %sp,(%a0)	
 
        	writeln msg00
@@ -46,10 +48,10 @@ _start:
 	movel	#0, (%a0)
 
        	
-       jsr relocate		// do program relocation 1st
-       cmp #0,%d2		// continue if successful
-       bne __end		// exit otherwise
-       				// ************ from now on all addresses are relocated ! ***************
+       jsr relocate		/* do program relocation 1st */
+       cmp #0,%d2		/* continue if successful */
+       bne __end		/* exit otherwise */
+       				/* ************ from now on all addresses are relocated ! *************** */
      				
        writeln msg15
        
@@ -64,18 +66,7 @@ _start:
 	
 	lea _sbss,%a0	        
         lea _ebss,%a1	
-
-       
-       /* 
-        writeln msg09
-        prthex8 %a0
-        writeln buffer
-        crlf
-        prthex8 %a1
-        writeln buffer
-        crlf
-        waitcr
-        */
+      
 LD2:
 	movel	#0, (%a0)+
 	cmpal	%a0, %a1
@@ -106,19 +97,67 @@ LD2:
        	prthex8 %d0
        	writeln buffer
 	crlf
-       		  /* RAM_TOP at: ... */
-       /*
-       	prthex8 _HEAP
-
-       	writeln buffer
-       	writeln TAB
-       	prthex8 _RAM_TOP
-       	writeln buffer
+      
+       	
+#ifdef CONFIG_DEBUG_MM   
+        crlf
+        crlf
+        writeln msg24(%pc)	/* Heap starts at ... */
+        lea _HEAP(%pc),%a1
+        move.l (%a1),%d0
+       	prthex8 (%d0)    
        	crlf
+        writeln msg25(%pc)	/* Stack starts at ... */
+        lea _RAM_TOP(%pc),%a0
+        move.l (%a1),%d0
+       	prthex8 (%d0)
+       	crlf
+#endif       	
+       	
+        
+#ifdef  CONFIG_DEBUG_SIO_OUT
+       writeln dbgmsg00(%pc)         
+       
+#ifdef CONFIG_DEBUG_SIO_PORT_2
+       writeln dbgmsg03(%pc)  /* port 2 */
+#else
+       writeln dbgmsg02(%pc)  /* port 1 */
+#endif
 
-       	*/
+#ifdef CONFIG_DEBUG_SIO_BAUD_115200        
+       writeln dbgmsg05(%pc)  /* 8N1,115200 baud */
+#else
+       writeln dbgmsg04(%pc)  /* 8N1,9600 baud */
+#endif
+       
+       
+#ifdef CONFIG_DEBUG_SIO_PORT_2
+      /* ************ insert code for port 2 initialisation *********** */
+#else
+       move.l #0x0b,-(%sp)       
+#ifdef CONFIG_DEBUG_SIO_BAUD_115200              
+       move.l #0x13,-(%sp)	/* init serial 1 8N1, 115200 baud, no parity, no IRQ */	
+#else       
+       move.l #0x1e,-(%sp)	/* init serial 1 8N1, 9600 baud, no parity, no IRQ */
+#endif
+
+       bsr.l nkc_init_ser1	/* init serial 1 8N1, 9600 baud, no parity, no IRQ */
+       
+       crlf
+#endif
+
+
+       add.l #8,%sp		/* Stack aufräumen */                                   
+       
+       lea dbgmsg01(%pc),%a0
+       move.l %a0,-(%sp)
+       bsr.l nkc_ser1_write
+       add.l #4,%sp
+       
+       writeln dbgmsg01(%pc)   
+#endif
        	        
-       	writeln msg02	/* HEAP calculated ... */
+
 	bsr mm_init        	/* init memory management */
 
 /*	
@@ -167,8 +206,8 @@ procont/signal.c:#pragma startup siginit 128
 	bsr.l fileinit	; -> io/fclose.c (ruft _ll_init in nkc/llopen.S)
 	bsr.l siginit	; -> procont/signal.c
 */
-#ifdef CONFIG_FS_NKC
-	jsr _nkc_get_drive
+#ifdef USE_JADOS
+	jsr jd_get_drive
 	LEA32A0 _DRIVE
 	move.b %d0,(%a0)
 #endif
@@ -504,6 +543,34 @@ msg30:	.ascii " 0x"
 	.byte 0x00	
 msg31:	.ascii " relocation info needed but not found !" 	
 	.byte 0x0d,0x0a,0x00
+
+#ifdef  CONFIG_DEBUG_SIO_OUT
+dbgmsg00:
+        .byte 0x0a
+	.ascii "initializing serial debugging ..." 	
+	.byte 0x0a,0x00
 	
+dbgmsg01:
+	.ascii "serial debugging enabled"
+	.byte 0x0a,0x00
+	
+dbgmsg02:
+	.ascii "   - serial port: 1"
+	.byte 0x0a,0x00
+	
+dbgmsg03:
+	.ascii "   - serial port: 2"
+	.byte 0x0a,0x00	
+	
+dbgmsg04:
+	.ascii "   - 8N1, 9600 baud"
+	.byte 0x0a,0x00	
+	
+dbgmsg05:
+	.ascii "   - 8N1, 115200 baud"
+	.byte 0x0a,0x00		
+	
+#endif
+
 buffer:	ds.b 255						
 

@@ -1,28 +1,19 @@
 #include <stdio.h>
 #include <time.h>
 #include <libp.h>
-
-
-//#define NKC_DEBUG
-
-#ifdef NKC_DEBUG
-#include "../nkc/llnkc.h"
-#endif
+#include <debug.h>
 
 int _readbuf(FILE *stream)
 {	
-	#ifdef NKC_DEBUG
-	nkc_write("_readbuf...\n");
-	#endif
+	clio_lldbg("_readbuf...\n");
+
 	if (!(stream->flags & _F_IN) || !stream->level)  // stream is NOT incoming or buffer empty
 	{
 		if (stream->flags & _F_OUT) // file is outgoing
 		{			
 			if (fflush(stream))
 			{
-				#ifdef NKC_DEBUG
-				nkc_write("..._readbuf(1)\n"); nkc_getchar();
-				#endif
+				clio_lldbgwait("..._readbuf(1)\n"); 
 				return EOF;
 			}
 		}
@@ -43,9 +34,7 @@ int _readbuf(FILE *stream)
 			{
 				while (stream->level < stream->bsize) // ... fill buffer
 				{					
-					#ifdef NKC_DEBUG
-					nkc_write("#");
-					#endif
+					clio_lldbg("#");
 					int sz = _ll_read(stream->fd,stream->curp,1);	// -> nkc/llstd.S	
 										
 															
@@ -67,14 +56,10 @@ int _readbuf(FILE *stream)
 						  stream->level++;	// increment fill level
 						}
 					*/	
-						#ifdef NKC_DEBUG
-						nkc_write(" JADOS EOF\n");
-						#endif
+						clio_lldbg(" JADOS EOF\n");
 						stream->flags |= _F_EOF;
 						stream->curp = stream->buffer;	// reset current active pointer to start of buffer
-						#ifdef NKC_DEBUG
-						nkc_write("..._readbuf(2)\n"); nkc_getchar();
-						#endif
+						clio_lldbgwait("..._readbuf(2)\n"); 
 						return EOF;
 						break;				//break on 0 if ASCII file (JADOS EOF)
 					}
@@ -86,13 +71,11 @@ int _readbuf(FILE *stream)
 			}						
 			else 
 			{	// stream is not buffered, so ask OS to fill buffer direct with bsize characters:
-				#ifdef NKC_DEBUG
-				nkc_write("before call to _ll_read:\n");
-				nkc_write(" fd=0x"); nkc_write_hex8(stream->fd);
-				nkc_write(" buf=0x"); nkc_write_hex8((int)stream->buffer);
-				nkc_write(" size=0x"); nkc_write_hex8(stream->bsize);
-				nkc_write("\n");
-				#endif			
+				clio_lldbg("before call to _ll_read:\n");
+				clio_lldbghex(" fd=0x",stream->fd);
+				clio_lldbghex(" buf=0x",(int)stream->buffer);
+				clio_lldbghex(" size=0x",stream->bsize);
+				
 				stream->level = _ll_read(stream->fd,stream->buffer,stream->bsize);  // -> nkc/llstd.S
 			}	
 		}
@@ -100,15 +83,11 @@ int _readbuf(FILE *stream)
 	
 	if (stream->level == 0) // if fill level is 0 we have reached the end of the file
 	{	
-		#ifdef NKC_DEBUG
-		nkc_write("..._readbuf(EOF)\n"); nkc_getchar();
-		#endif
+		clio_lldbgwait("..._readbuf(EOF)\n");
 		stream->flags |= _F_EOF;
 		return EOF;
 	}
 	
-	#ifdef NKC_DEBUG
-	nkc_write("..._readbuf\n"); //nkc_getchar();
-	#endif
+	clio_lldbg("..._readbuf\n"); 
 	return 0;
 }

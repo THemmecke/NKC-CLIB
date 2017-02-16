@@ -5,6 +5,8 @@ INCLUDE=$(BASEDIR)/include
 CLIBPATH=$(BASEDIR)/lib
 CLIB=CC
 
+
+
 ############## define the target cpu (68000, 68008, 68020) #######################
 CPU=68020
 
@@ -48,24 +50,37 @@ CONFIG_USE_JADOS = 1
 # #include <debug.h> in 
 # global switch to turn debugging on/off
 CONFIG_DEBUG = 0
-CONFIG_DEBUG_DISKIO = 0
+# output debug to serial IO (PORT+BAUD+8N1)
+CONFIG_DEBUG_SIO_OUT = 1
+# define port and speed for serial debug output (default: Port 1, 9600 Baud, 8N1)
+CONFIG_DEBUG_SIO_PORT_2 = 0
+CONFIG_DEBUG_SIO_BAUD_115200 = 1
+# ------------------------------
+# disk i/o debug
+CONFIG_DEBUG_DISKIO = 1
+# debug GIDE C-files, ASM/S-files
 CONFIG_DEBUG_GIDE_C = 0
 CONFIG_DEBUG_GIDE_S = 0
+# debug extended printf 
 CONFIG_DEBUG_XXPRINTF = 0
+# /time debug
+CONFIG_DEBUG_TIME = 0
 # clib io debug
 CONFIG_DEBUG_CLIB_IO=0
 # HighLevel FileSystem
 CONFIG_DEBUG_FS = 1
 # NKC/JADOS FileSystem
-CONFIG_DEBUG_FS_NKC = 0
+CONFIG_DEBUG_FS_NKC = 1
 # FAT file system module
 CONFIG_DEBUG_FS_FAT = 1
 CONFIG_DEBUG_FF = 1
 # Driver Subsystem
 CONFIG_DEBUG_DRV = 1
-CONFIG_DEBUG_DRV_GIDE = 0
+CONFIG_DEBUG_DRV_GIDE = 1
 CONFIG_DEBUG_DRV_SD = 1
 CONFIG_DEBUG_DRV_JD = 0
+# Memory Management
+CONFIG_DEBUG_MM = 0
 
 ############## tell if internal math lib should be used (/math) ############################
 # 0 = no internal, use libgcc routines, 1 = use internal math, needs FPU !
@@ -74,8 +89,12 @@ CONFIG_USE_CLIBS_MATH=0
 
 ######## c-compiler ################
 CC=m68k-uclinux-gcc
+
 ############## c-compiler flags ############################################
 CCFLAGS=
+
+# ############# to use recursive functions disable the following flag #############
+#GCFLAGS+=NONRECURSIVE
 
 # ######### optimization level (-O0 = do not Optimize, default) #####################
 CCFLAGS +=  -O0 
@@ -107,6 +126,11 @@ CCFLAGS += -DCONFIG_FS_NKC
 endif
 ifeq ($(CONFIG_FS_FAT),1)
 CCFLAGS += -DCONFIG_FS_FAT
+# add fsfat version info from ffconf.h file
+#CCFLAGS += -DFAT_FS_VERSION=$$(grep _FAT_FS_VERSION $(BASEDIR)/fs/fat/ffconf.h | awk '{ print $3 }')
+#CCFLAGS += -DFAT_FS_VERSION=$$(date +'%Y%m%d')
+#CCFLAGS += -DFAT_FS_VERSION=$(shell grep _FAT_FS_VERSION '../../fs/fat/ffconf.h')
+CCFLAGS += -DFAT_FS_VERSION=\"R0.10a\"
 endif
 
 # ########## use hardware drivers ... ################
@@ -129,11 +153,34 @@ CCFLAGS += -DUSE_JADOS
 endif
 
 # DEBUG options ####################
+
+# ----------- turn debugging globaly on/off ------------
 ifeq ($(CONFIG_DEBUG),1)
 CCFLAGS += -DCONFIG_DEBUG
 
+
+# ----------- output debug info to serial port -------
+ifeq ($(CONFIG_DEBUG_SIO_OUT),1)
+CCFLAGS += -DCONFIG_DEBUG_SIO_OUT
+
+ifeq ($(CONFIG_DEBUG_SIO_PORT_2),1)
+CCFLAGS += -DCONFIG_DEBUG_SIO_PORT_2
+endif
+
+ifeq ($(CONFIG_DEBUG_SIO_BAUD_115200),1)
+CCFLAGS += -DCONFIG_DEBUG_SIO_BAUD_115200
+endif
+
+endif
+
+
+# ------ debugging info ---------------------
 ifeq ($(CONFIG_DEBUG_CLIB_IO),1)
 CCFLAGS += -DCONFIG_DEBUG_CLIB_IO
+endif
+
+ifeq ($(CONFIG_DEBUG_TIME),1)
+CCFLAGS += -DCONFIG_DEBUG_TIME
 endif
 
 ifeq ($(CONFIG_DEBUG_DISKIO),1)
@@ -184,6 +231,10 @@ ifeq ($(CONFIG_DEBUG_DRV_JD),1)
 CCFLAGS += -DCONFIG_DEBUG_DRV_JD
 endif
 
+ifeq ($(CONFIG_DEBUG_MM),1)
+CCFLAGS += -DCONFIG_DEBUG_MM
+endif
+
 endif
 
 # use dynamic vsprintf buffer instead of fixed 512Bytes buffer ####################
@@ -193,6 +244,11 @@ CCFLAGS += -DUSE_DYNAMIC_VSPRINTF_BUFFER
 LD = m68k-uclinux-ld
 ############# linker flags ###########################################
 LDFLAGS=
+
+############# version/build info ###########################################
+CLIB_BUILD_NUMBER_FILE=clib-build-number.txt
+LDFLAGS  = --defsym=__CLIB_BUILD_DATE=$$(date +'%Y%m%d')
+LDFLAGS += --defsym=__CLIB_BUILD_NUMBER=$$(cat $(BASEDIR)/object/$(CLIB_BUILD_NUMBER_FILE))
 
 # ######### generate verbose output ###############
 LDFLAGS += --verbose
@@ -273,8 +329,26 @@ endif
 # ######### debug configuration ###############
 ifeq ($(CONFIG_DEBUG),1)
 
+ifeq ($(CONFIG_DEBUG_SIO_OUT),1)
+AFLAGS += -DCONFIG_DEBUG_SIO_OUT
+
+
+ifeq ($(CONFIG_DEBUG_SIO_PORT_2),1)
+AFLAGS += -DCONFIG_DEBUG_SIO_PORT_2
+endif
+
+ifeq ($(CONFIG_DEBUG_SIO_BAUD_115200),1)
+AFLAGS += -DCONFIG_DEBUG_SIO_BAUD_115200
+endif
+
+endif
+
 ifeq ($(CONFIG_DEBUG_GIDE_S),1)
 AFLAGS += -DCONFIG_DEBUG_GIDE_S
+endif
+
+ifeq ($(CONFIG_DEBUG_MM),1)
+AFLAGS += -DCONFIG_DEBUG_MM
 endif
 
 endif

@@ -282,7 +282,7 @@
 #endif
 
 
-/* (G)IDE */
+/* ----------------------------------------------------------------------------- (G)IDE ------------------------------------------------------------------------------------------------------------- */
 
 /*
 	A3	/A3	A2	A1	A0															10 (GIDE BASE)
@@ -429,8 +429,8 @@
 
 
 
+/* ----------------------------------------------------------------------------- RTC 12887 ------------------------------------------------------------------------------------------------------------- */
 
-/* RTC 12887 */
 
 #define RTC_DS12887_INDEX       0xfffffffa*cpu
 #define RTC_DS12887_DATA        0xfffffffb*cpu
@@ -463,14 +463,14 @@
 #define RTC_ALWAYS_BCD  1
 
 
-/* TIMER */
+/* ----------------------------------------------------------------------------- TIMER ------------------------------------------------------------------------------------------------------------- */
 
 #define TIMER1_BASE       0xFFFFFFF4*cpu
 #define TIMER1_CTRL       0xFFFFFFF4*cpu
 #define TIMER1_HI         0xFFFFFFF5*cpu
 #define TIMER1_LO         0xFFFFFFF6*cpu	
 
-/* FLOPPY */
+/* ----------------------------------------------------------------------------- FLOPPY ------------------------------------------------------------------------------------------------------------- */
 
 #define FLO_COMMAND         0xFFFFFFC0*cpu
 #define FLO_TRACK           0xFFFFFFC1*cpu
@@ -478,7 +478,73 @@
 #define FLO_DATA            0xFFFFFFC3*cpu
 #define FLO_CTRL            0xFFFFFFC4*cpu
 
-/* SERIAL */
+/* ----------------------------------------------------------------------------- SERIAL ------------------------------------------------------------------------------------------------------------- */
+
+/*
+ * 
+ * control register definition
+ * ---------------------------
+ * bit
+ * 7		stop bits	0=1, 1=2, (1 if wordlength=8 and parity)
+ * 6 5		word length	00=8, 01=7, 10=6, 11=5
+ * 4		clock source	0=external, 1=internal baud rate generator
+ * 3210		baud rate	0000=16x external clock
+ * 				0001=50
+ * 				0010=75
+ * 				0011=109,92 (115200 using GDP-FPGA)
+ * 				0100=134,58 (57600 using GDP-FPGA)
+ * 				0101=150 (38400 usinf GDP-FPGA)
+ * 				0110=300
+ * 				0111=600
+ * 				1000=1200
+ * 				1001=1800
+ * 				1010=2400
+ * 				1011=3600
+ * 				1100=4800
+ * 				1101=7200
+ * 				1110=9600
+ * 				1111=1920
+ * 
+ * 8N1,9600 => 0001 1110 = 0x1e
+ * 8N1, 115200 => 0001 0011 = 0x13
+ * 
+ * 
+ * command register definitions
+ * ----------------------------
+ * bit
+ * 7		parity check cntrl:
+ * 		--0 : parity check disabled
+ * 		001 : odd parity receiver and transmitter
+ * 		011 : even parity receiver and transmitter
+ *		101 : mark parity bit transmitted, parity check disabled
+ *		111 : space parity bit transmitted, parity check disabled
+ * 4		0 = normal mode, 1 = echo mode (bit 2 = bit 3 = 0)
+ * 3 2		transmitter controls:
+ * 			transmit INT 	/RTS level	transmitter
+ * 		00:	 disabled	 high		 off
+ * 		01:	 enabled	 low		 on
+ * 		10:	 disabled	 low		 on
+ * 		11:	 disabled	 low		 transmit brk
+ * 1		0 = IRQ enabled from bit 3 of status register, 1 = disable IRQ
+ * 0		1 = enable receiver and all interrupts
+ * 
+ * no parity, receive/transmit enable, disable IRQ, no echo => 0000 1011 = 0x0b
+ * 
+ * 
+ * status register definitions
+ * ---------------------------
+ * 
+ * bit
+ * 7		0 = no INT, 1 = INT 
+ * 6		0 = DSR low, 1 = DSR high
+ * 5		0 = DCD low, 1 = DCD high
+ * 4		1 = transmit data register empty
+ * 3		1 = receive data register full
+ * 2		1 = overrun error
+ * 1		1 = framing error
+ * 0		1 = parity error
+ * 
+ */ 
 
 #define NKC_SER1_BASE        0xFFFFFFF0*cpu
 #define NKC_SER1_CTRL        0xFFFFFFF3*cpu
@@ -488,14 +554,16 @@
 #define NKC_SER1_RX          0xFFFFFFF0*cpu
 
 
-/* KBD */
+
+
+/* ----------------------------------------------------------------------------- KEYBOARD ------------------------------------------------------------------------------------------------------------- */
 
 #define NKC_KEY_STATUS	     0xffffff67*cpu
 #define NKC_KEY_DATA         0xffffff68*cpu
 #define NKC_KEY_DIP          0xffffff69*cpu
 
 
-/* ----------------------------------------------- GDP ------------------------------------------------------------------ */
+/* ----------------------------------------------------------------------------- GDP ------------------------------------------------------------------------------------------------------------- */
 
 /* --> gdplib/nkc_gdplib.h */
 

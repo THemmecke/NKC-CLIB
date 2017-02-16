@@ -8,8 +8,8 @@ using external linker script:
 MEMORY {
 	ram    : ORIGIN = 0x000000, LENGTH = 0x1FFFFF
 	                  /*  GP starts at   0x3C0000  (68020) */
-	stack  : ORIGIN = 0x100000, LENGTH = 0
-			  /* define where the program stack starts */
+	stack  : ORIGIN = 0x300000, LENGTH = 0
+			  /* define where the program stack starts (growing downwards) */
 }
 
 
@@ -64,8 +64,8 @@ SECTIONS {
 	} > ram
         
         
-	.stack 0x100000 (NOLOAD):  {
-	 _ramtop = . ;  /* top of ram for program stack -> start*.S , if JADOS is not used (this address will be relocated ! FIX! - currently an EQU is used inside of start*.S) */
+	.stack 0x300000 (NOLOAD):  {
+	 _ramtop = . ;  /* top of ram for program stack -> start*.S , if JADOS is not used (this address will be relocated ! FIXME! - currently an EQU is used inside of start*.S) */
 	} 
 }
 

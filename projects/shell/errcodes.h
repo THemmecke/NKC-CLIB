@@ -1,111 +1,98 @@
-// #define EZERO    0      /* Error 0   (no error)     */
-// #define EINVFNC  1      /* Invalid function number  */
-// #define ENOFILE  2      /* File not found           */
-// #define ENOPATH  3      /* Path not found           */
-// #define EMFILE   4      /* Too many open files      */
-// #define EACCES   5      /* Permission denied        */
-// #define EBADF    6      /* Bad file number          */
-// #define ECONTR   7      /* Memory blocks destroyed  */
-// #define ENOMEM   8      /* Not enough core          */
-// #define EINVMEM  9      /* Invalid memory block address */
-// #define EINVENV 10      /* Invalid environment      */
-// #define EINVFMT 11      /* Invalid format           */
-// #define EINVACC 12      /* Invalid access code      */
-// #define EINVDAT 13      /* Invalid data             */
-// #define EFAULT  14      /* Unknown error            */
-// #define EINVDRV 15      /* No such device  */
-// #define ECURDIR 16      /* Attempt to remove CurDir */
-// #define ENOTSAM 17      /* Not same device          */
-// #define ENMFILE 18      /* No more files            */
-// #define EINVAL  19      /* Invalid argument         */
-// #define E2BIG   20      /* Arg list too long        */
-// #define ENOEXEC 21      /* Exec format error        */
-// #define EXDEV   22      /* Cross-device link        */
-// #define ENFILE  23      /* Too many open files      */
-// #define ECHILD  24      /* No child process         */
-// #define ENOTTY  25      /* UNIX - not MSDOS         */
-// #define ETXTBSY 26      /* UNIX - not MSDOS         */
-// #define EFBIG   27      /* UNIX - not MSDOS         */
-// #define ENOSPC  28      /* No space left on device  */
-// #define ESPIPE  29      /* Illegal seek             */
-// #define EROFS   30      /* Read-only file system    */
-// #define EMLINK  31      /* UNIX - not MSDOS         */
-// #define EPIPE   32      /* Broken pipe              */
-// #define EDOM    33      /* Math argument            */
-// #define ERANGE  34      /* Result too large         */
-// #define EEXIST  35      /* File already exists      */
-// #define EDEADLOCK 36    /* Locking violation        */
-// #define EPERM   37      /* Operation not permitted  */
-// #define ESRCH   38      /* UNIX - not MSDOS         */
-// #define EINTR   39      /* Interrupted function call */
-// #define EIO     40      /* Input/output error       */
-// #define ENXIO   41      /* No such device or address */
-// #define EAGAIN  42      /* Resource temporarily unavailable */
-// #define ENOTBLK 43      /* UNIX - not MSDOS         */
-// #define EBUSY   44      /* Resource busy            */
-// #define ENOTDIR 45      /* UNIX - not MSDOS         */
-// #define EISDIR  46      /* UNIX - not MSDOS         */
-// #define EUCLEAN 47      /* UNIX - not MSDOS         */
-// 
-// /* extensions ... */
-// #define ENAMETOOLONG 48 /* Filename too long        */
-// #define ENODRV 49	/* no driver 		    */
 
-
-// const char *p_rc_code =
-// 		"OK\0DISK_ERR\0INT_ERR\0NOT_READY\0NO_FILE\0NO_PATH\0INVALID_NAME\0"
-// 		"DENIED\0EXIST\0INVALID_OBJECT\0WRITE_PROTECTED\0INVALID_DRIVE\0"
-// 		"NOT_ENABLED\0NO_FILE_SYSTEM\0MKFS_ABORTED\0TIMEOUT\0LOCKED\0"
-// 		"NOT_ENOUGH_CORE\0TOO_MANY_OPEN_FILES\0INVALID_PARAMETER\0NO_DRIVER\0";	
 		
-const char *p_rc_code =
-"Error 0   (no error)     \0"
-"Invalid function number  \0"
-"File not found           \0"
-"Path not found           \0"
-"Too many open files      \0"
-"Permission denied        \0"
-"Bad file number          \0"
-"Memory blocks destroyed  \0"
-"Not enough core          \0"
-"Invalid memory block address \0"
-"Invalid environment      \0"
-"Invalid format           \0"
-"Invalid access code      \0"
-"Invalid data             \0"
-"Unknown error            \0"
-"No such device  	 \0"
-"Attempt to remove CurDir \0"
-"Not same device          \0"
-"No more files            \0"
-"Invalid argument         \0"
-"Arg list too long        \0"
-"Exec format error        \0"
-"Cross-device link        \0"
-"Too many open files      \0"
-"No child process         \0"
-"UNIX - not MSDOS         \0"
-"UNIX - not MSDOS         \0"
-"UNIX - not MSDOS         \0"
-"No space left on device  \0"
-"Illegal seek             \0"
-"Read-only file system    \0"
-"UNIX - not MSDOS         \0"
-"Broken pipe              \0"
-"Math argument            \0"
-"Result too large         \0"
-"File already exists      \0"
-"Locking violation        \0"
-"Operation not permitted  \0"
-"UNIX - not MSDOS         \0"
-"Interrupted function call\0"
-"Input/output error       \0"
-"No such device or address\0"
-"Resource temporarily unavailable \0"
-"UNIX - not MSDOS         \0"
-"Resource busy            \0"
-"UNIX - not MSDOS         \0"
-"UNIX - not MSDOS         \0"
-"UNIX - not MSDOS         \0"
-"Filename too long        \0"
-"no driver                \0";
+struct rc_code_struct {
+    unsigned int rc;
+    char *rc_string;
+};
+
+
+const struct rc_code_struct rc_codes[] =
+{
+ {  EZERO                               ,  "Error 0   (no error)     \0"          },
+ {  EINVFNC                             ,  "Invalid function number  \0"          },
+ {  ENOFILE                             ,  "File not found           \0"          },
+ {  ENOPATH                             ,  "Path not found           \0"          },
+ {  EMFILE                              ,  "Too many open files      \0"          },
+ {  EACCES                              ,  "Permission denied        \0"          },
+ {  EBADF                               ,  "Bad file number          \0"          },
+ {  ECONTR                              ,  "Memory blocks destroyed  \0"          },
+ {  ENOMEM                              ,  "Not enough core          \0"          },
+ {  EINVMEM                             ,  "Invalid memory block address \0"      },
+ {  EINVENV                             ,  "Invalid environment      \0"          },
+ {  EINVFMT                             ,  "Invalid format           \0"          },
+ {  EINVACC                             ,  "Invalid access code      \0"          },
+ {  EINVDAT                             ,  "Invalid data             \0"          },
+ {  EFAULT                              ,  "Unknown error            \0"          },
+ {  EINVDRV                             ,  "No such device  	     \0"          },
+ {  ECURDIR                             ,  "Attempt to remove CurDir \0"          },
+ {  ENOTSAM                             ,  "Not same device          \0"          },
+ {  ENMFILE                             ,  "No more files            \0"          },
+ {  EINVAL                              ,  "Invalid argument         \0"          },
+ {  E2BIG                               ,  "Arg list too long        \0"          },
+ {  ENOEXEC                             ,  "Exec format error        \0"          },
+ {  EXDEV                               ,  "Cross-device link        \0"          },
+ {  ENFILE                              ,  "Too many open files      \0"          },
+ {  ECHILD                              ,  "No child process         \0"          },
+ {  ENOTTY                              ,  "UNIX - not MSDOS         \0"          },
+ {  ETXTBSY                             ,  "UNIX - not MSDOS         \0"          },
+ {  EFBIG                               ,  "UNIX - not MSDOS         \0"          },
+ {  ENOSPC                              ,  "No space left on device  \0"          },
+ {  ESPIPE                              ,  "Illegal seek             \0"          },
+ {  EROFS                               ,  "Read-only file system    \0"          },
+ {  EMLINK                              ,  "UNIX - not MSDOS         \0"          },
+ {  EPIPE                               ,  "Broken pipe              \0"          },
+ {  EDOM                                ,  "Math argument            \0"          },
+ {  ERANGE                              ,  "Result too large         \0"          },
+ {  EEXIST                              ,  "File already exists      \0"          },
+ {  EDEADLOCK                           ,  "Locking violation        \0"          },
+ {  EPERM                               ,  "Operation not permitted  \0"          },
+ {  ESRCH                               ,  "UNIX - not MSDOS         \0"          },
+ {  EINTR                               ,  "Interrupted function call\0"          },
+ {  EIO                                 ,  "Input/output error       \0"          },
+ {  ENXIO                               ,  "No such device or address\0"          },
+ {  EAGAIN                              ,  "Resource temporarily unavailable \0"  },
+ {  ENOTBLK                             ,  "UNIX - not MSDOS         \0"          },
+ {  EBUSY                               ,  "Resource busy            \0"          },
+ {  ENOTDIR                             ,  "UNIX - not MSDOS         \0"          },
+ {  EISDIR                              ,  "UNIX - not MSDOS         \0"          },
+ {  EUCLEAN                             ,  "UNIX - not MSDOS         \0"          },
+ {  ENAMETOOLONG                        ,  "Filename too long        \0"          },
+ {  ENODRV                              ,  "no driver                \0"          },
+ /******************************** FRESULT CODES ************************************************/
+ {  FR_DISK_ERR + FRESULT_OFFSET		,  "A hard error occurred in the low level disk I/O layer\0"             },
+ {  FR_INT_ERR + FRESULT_OFFSET	                ,  "Assertion failed \0"                                                 },
+ {  FR_NOT_READY + FRESULT_OFFSET		,  "The physical drive cannot work\0"                                    },
+ {  FR_NO_FILE + FRESULT_OFFSET			,  "Could not find the file\0"                                           },
+ {  FR_NO_PATH + FRESULT_OFFSET		        ,  "Could not find the path\0"                                           },
+ {  FR_INVALID_NAME + FRESULT_OFFSET	        ,  "The path name format is invalid\0"                                   },
+ {  FR_DENIED + FRESULT_OFFSET		        ,  "Access denied due to prohibited access or directory full\0"          },
+ {  FR_EXIST + FRESULT_OFFSET		        ,  "Access denied due to prohibited access \0"                           },
+ {  FR_INVALID_OBJECT + FRESULT_OFFSET	        ,  "The file/directory object is invalid \0"                             },
+ {  FR_WRITE_PROTECTED + FRESULT_OFFSET	        ,  "The physical drive is write protected \0"                            },
+ {  FR_INVALID_DRIVE + FRESULT_OFFSET	        ,  "The logical drive number is invalid \0"                              },
+ {  FR_NOT_ENABLED + FRESULT_OFFSET		,  "The volume has no work area\0"                                       },
+ {  FR_NO_FILESYSTEM + FRESULT_OFFSET	        ,  "There is no valid FAT volume\0"                                      },
+ {  FR_MKFS_ABORTED + FRESULT_OFFSET	        ,  "The f_mkfs() aborted due to any parameter error\0"                   },
+ {  FR_TIMEOUT + FRESULT_OFFSET		        ,  "Could not get a grant to access the volume within defined period\0"  },
+ {  FR_LOCKED + FRESULT_OFFSET		        ,  "The operation is rejected according to the file sharing policy\0"    },
+ {  FR_NOT_ENOUGH_CORE + FRESULT_OFFSET	        ,  "LFN working buffer could not be allocated\0"                         },
+ {  FR_TOO_MANY_OPEN_FILES + FRESULT_OFFSET	,  "Number of open files > _FS_SHARE\0"                                  },
+ {  FR_INVALID_PARAMETER + FRESULT_OFFSET	,  "Given parameter is invalid\0"	                                 },
+ {  FR_NO_DRIVER + FRESULT_OFFSET		,  "no driver\0"                                                         },
+ {  FR_EOF + FRESULT_OFFSET			,  "end of file reached\0"                                               },
+ {  FR_DISKFULL + FRESULT_OFFSET		,  "disk is full\0"                                                      },
+ {  FR_DIRFULL + FRESULT_OFFSET		        ,  "directory full\0"                                                    },
+ /********************************* DRESULT CODES ***********************************************/	
+ { RES_ERROR + DRESULT_OFFSET		        ,  "R/W Error \0"                   },
+ { RES_WRPRT + DRESULT_OFFSET		        ,  "Write Protected\0"              },
+ { RES_NOTRDY + DRESULT_OFFSET	                ,  "Not Ready\0"                    },
+ { RES_PARERR + DRESULT_OFFSET	                ,  "Invalid Parameter \0"	    },
+ { RES_EOF + DRESULT_OFFSET                     ,  "end of file reached \0"         },
+ { RES_NOMEM + DRESULT_OFFSET                   ,  "not enough memory\0"            },
+ { RES_DISKFULL + DRESULT_OFFSET                ,  "disk full \0"                   },
+ /********************************* STA (status) CODES ***********************************************/
+ { STA_NOINIT  + DSTATUS_OFFSET                 ,  "Drive not initialized \0"       },
+ { STA_NODISK  + DSTATUS_OFFSET                 ,  "No medium in the drive \0"      },
+ { STA_PROTECT + DSTATUS_OFFSET                 ,  "Write protected \0"             },
+ {0,0}
+};

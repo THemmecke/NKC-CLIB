@@ -3,7 +3,6 @@
 #include <stdio.h>
 
 
-//#define NKC_DEBUG
 
 #ifdef NKC_DEBUG
 #include "../nkc/llnkc.h"
@@ -48,7 +47,7 @@ static void siguser()
 static void sigbreak(int p)
 {
 	#ifdef NKC_DEBUG
-	nkc_write("sigbreak...\n");
+	gp_write("sigbreak...\n");
 	#endif
 	exit(EXIT_FAILURE);
 	

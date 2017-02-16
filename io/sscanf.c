@@ -1,14 +1,10 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <debug.h>
 
 /* Floating point not supported */
 
-//#define NKC_DEBUG 
-
-#ifdef NKC_DEBUG
-#include "../nkc/llnkc.h"
-#endif
 
 
 char *skipspace(char *buf, int *width, int *skip)

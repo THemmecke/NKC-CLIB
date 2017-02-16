@@ -49,11 +49,13 @@ int           heapcheck(void);
 int         brk(void *__addr);
 void       *sbrk(int __incr);
 
-int         heapfillfree(unsigned int __fillvalue);
-int         heapcheckfree(unsigned int __fillvalue);
+//int         heapfillfree(unsigned int __fillvalue);
+//int         heapcheckfree(unsigned int __fillvalue);
 
-int         heapchecknode(void *__node);
-int         heapwalk(struct heapinfo *__hi);
+//int         heapchecknode(void *__node);
+//int         heapwalk(struct heapinfo *__hi);
+
+void walk_heap(void); // first.c
 
 
 

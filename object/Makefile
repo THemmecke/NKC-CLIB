@@ -24,8 +24,10 @@ LIBOBJECTS= abort.o argset.o asctime.o assert.o atexit.o atof.o atoi.o bsearch.o
 
 ifeq ($(CONFIG_FS),1)
 LIBOBJECTS += fs.o
+	ifeq ($(CONFIG_USE_JADOS),1)
 	ifeq ($(CONFIG_FS_NKC),1)
 	LIBOBJECTS += fs_nkc.o
+	endif
 	endif
 	ifeq ($(CONFIG_FS_FAT),1)
 	LIBOBJECTS += fs_fat.o ff.o diskio.o
@@ -65,8 +67,14 @@ endif
 
 #	$(LD) $(LDFLAGS) $(LIBOBJECTS) -o $(LIBDIR)/libCC.o; \
 # create a static library	
-all:
+all: $(CLIB_BUILD_NUMBER_FILE)
 	ar rcs $(LIBDIR)libCC.a $(LIBOBJECTS)
+	
+	
+# Build number file.  Increment if any object file changes.
+$(CLIB_BUILD_NUMBER_FILE): $(LIBOBJECTS)
+	@if ! test -f $(CLIB_BUILD_NUMBER_FILE); then echo 0 > $(CLIB_BUILD_NUMBER_FILE); fi 
+	@echo $$(($$(cat $(CLIB_BUILD_NUMBER_FILE)) + 1)) > $(CLIB_BUILD_NUMBER_FILE)
 	
 	
 # define a pattern rule to compile all *.c files to *.o files:

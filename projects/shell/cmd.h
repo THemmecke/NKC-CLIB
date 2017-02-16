@@ -126,6 +126,7 @@ int cmd_fs(char* args);
 int cmd_fatinfo(char* args);
 int cmd_meminfo(char* args);
 int cmd_history(char* args);
+int cmd_test(char* args);
 
 int cmd_setpoint(char* args);
 int cmd_fill(char* args);

@@ -1,80 +1,30 @@
+https://github.com/gcc-mirror/gcc/blob/master/libgcc/libgcc2.c
 
-#include <math.h>
-
-#define NULL 0
-
-
-LONGLONG __udivmoddi4	(	
-		LONGLONG 	num,
-		LONGLONG 	den,
-		LONGLONG * 	rem_p 
-	)	
-{
-  LONGLONG quot = 0, qbit = 1;
-
-  if ( den == 0 ) {
-    return 1/((unsigned)den); /* Intentional divide by zero, without
-                                 triggering a compiler warning which
-                                 would abort the build */
-  }
-
-  /* Left-justify denominator and count shift */
-  while ( (SLONGLONG)den >= 0 ) {
-    den <<= 1;
-    qbit <<= 1;
-  }
-
-  while ( qbit ) {
-    if ( den <= num ) {
-      num -= den;
-      quot += qbit;
-    }
-    den >>= 1;
-    qbit >>= 1;
-  }
-
-  if ( rem_p )
-    *rem_p = num;
-
-  return quot;
-}
+https://www.mirbsd.org/htman/i386/manINFO/gccint.html#Integer-library-routines
+https://www.libsdl.org/extras/amigaos/cross/src/article.html
 
 
-/*
- * __umoddi3.c
- */
 
 
-LONGLONG __umoddi3(LONGLONG num, LONGLONG den)
-{
-  LONGLONG v;
-
-  (void) __udivmoddi4(num, den, &v);
-  return v;
-}
+/* ******************************************************************* */
 
 
-/*
- * __divdi3.c
- */
+/* ======================= longlong.h ==================================*/
 
+/* You have to define the following before including this file:
 
-LONGLONG __udivdi3(LONGLONG num, LONGLONG den)
-{
-  return __udivmoddi4(num, den, NULL);
-}
+   UWtype -- An unsigned type, default type for operations (typically a "word")
+   UHWtype -- An unsigned type, at least half the size of UWtype.
+   UDWtype -- An unsigned type, at least twice as large a UWtype
+   W_TYPE_SIZE -- size in bits of UWtype
 
+   UQItype -- Unsigned 8 bit type.
+   SItype, USItype -- Signed and unsigned 32 bit types.
+   DItype, UDItype -- Signed and unsigned 64 bit types.
 
-#ifdef L_muldi3
-
-
-#if defined (M68020)
-#define __mc68020__
-#elif defined (M68060)
-#define __mc68060__
-#else
-#define __mc68000__
-#endif
+   On a 32 bit machine UWtype should typically be USItype;
+   on a 64 bit machine, UWtype should typically be UDItype.  
+*/
 
 /* 32 bit usigned */
 #define UWtype          usigned int
@@ -90,31 +40,6 @@ LONGLONG __udivdi3(LONGLONG num, LONGLONG den)
 #define SItype		signed int	
 /* 32 bit usigned */
 #define USItype		unsigned int	
-
-
-#define LIBGCC2_UNITS_PER_WORD = 4
-#define BITS_PER_UNIT = 8
-#define W_TYPE_SIZE (4 * BITS_PER_UNIT)
-#define Wtype   SItype
-#define UWtype  USItype
-#define HWtype  SItype
-#define UHWtype USItype
-#define DWtype  DItype
-#define UDWtype UDItype
-#define __NW(a,b)       __ ## a ## si ## b
-#define __NDW(a,b)      __ ## a ## di ## b
-
-
-/* BIG ENDIAN ! */
-struct DWstruct {Wtype high, low;};
-
-typedef union
-{
-  struct DWstruct s;
-  DWtype ll;
-} DWunion;
-
-
 
 /*
 1) umul_ppmm(high_prod, low_prod, multiplier, multiplicand) multiplies two
@@ -195,9 +120,32 @@ typedef union
 
 #endif /* not mc68020 */
 
-/*
- *  __muldi3
- */
+/* ====================== libgcc2.h ===================================== */
+#define LIBGCC2_UNITS_PER_WORD = 4
+#define BITS_PER_UNIT = 8
+#define W_TYPE_SIZE (4 * BITS_PER_UNIT)
+#define Wtype   SItype		signed int
+#define UWtype  USItype		unsigned int
+#define HWtype  SItype		signed int
+#define UHWtype USItype		unsigned int
+#define DWtype  DItype		signed long long
+#define UDWtype UDItype		unsigned long long
+#define __NW(a,b)       __ ## a ## si ## b
+#define __NDW(a,b)      __ ## a ## di ## b
+
+
+/* BIG ENDIAN ! */
+struct DWstruct {Wtype high, low;};
+
+typedef union
+{
+  struct DWstruct s;
+  DWtype ll;
+} DWunion;
+
+
+/* ======================== libgcc2.c ==================================== */
+#ifdef L_muldi3
 
 __muldi3 (DWtype u, DWtype v)
 {
@@ -211,3 +159,4 @@ __muldi3 (DWtype u, DWtype v)
   return w.ll;
 }
 #endif
+gcc/longlong.h:

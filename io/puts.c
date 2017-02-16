@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include "../nkc/llnkc.h"
 
 int puts(const char *string)
 {

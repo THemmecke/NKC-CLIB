@@ -9,12 +9,15 @@ MODULES += fs
 endif
 
 
+
+	
 all:
 	for dir in $(MODULES); do \
 		(cd $$dir; ${MAKE} all;cp *.o ../object;); \
 	done
 	cd object; make all
-	
+
+
 	
 clean:
 	for dir in $(MODULES); do \
@@ -23,3 +26,5 @@ clean:
 	rm -f object/*.o
 	rm -f lib/libCC.a; \
 	rm -f lib/startup.o
+
+	

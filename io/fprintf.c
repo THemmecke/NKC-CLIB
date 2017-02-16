@@ -1,9 +1,5 @@
 #include <stdio.h>
-
-#ifdef CONFIG_DEBUG_XXPRINTF
-#include "../nkc/llnkc.h"
-#endif
-
+#include <debug.h>
 
 int vfprintf(FILE *stream, const char *format, void *list)
 {
@@ -22,19 +18,20 @@ int vfprintf(FILE *stream, const char *format, void *list)
 	*/
 	
 	#ifdef USE_DYNAMIC_VSPRINTF_BUFFER
-	#ifdef CONFIG_DEBUG_XXPRINTF
-	nkc_write(" pbuffer-addr = 0x"); nkc_write_hex8(&buffer); nkc_write("\n");
-	nkc_write(" pbuffer      = 0x"); nkc_write_hex8(buffer);  nkc_write("\n");
-	nkc_getchar();
-	#endif
+	
+	xxprintf_lldbghex(" pbuffer-addr = 0x",&buffer);
+	xxprintf_lldbghex(" pbuffer      = 0x",buffer);
+	xxprintf_lldbgwait(" ");
+	
 	rv = vsprintf(&buffer,format,list); /* buffer allocation is done here (-> sprintf.c: _printchar() ) ... */
 	#else
 	rv = vsprintf(buffer,format,list);
 	#endif
 				
-	#ifdef CONFIG_DEBUG_XXPRINTF
-	nkc_write("DEBUG: <<"); nkc_write(buffer); nkc_write(">>\n");
-	#endif		
+	xxprintf_lldbg("DEBUG: <<"); 
+	xxprintf_lldbg(buffer); 
+	xxprintf_lldbg(">>\n");
+			
 		
 	if (fputs(buffer,stream) == EOF)
 		//return 0;
@@ -42,11 +39,9 @@ int vfprintf(FILE *stream, const char *format, void *list)
 	
 	fflush(stream); /* flush the buffer before freeing it ... ! */
 		
-	#ifdef CONFIG_DEBUG_XXPRINTF
-	nkc_write(" pbuffer-addr = 0x"); nkc_write_hex8(&buffer); nkc_write("\n");
-	nkc_write(" pbuffer      = 0x"); nkc_write_hex8(buffer);  nkc_write("\n");
-	nkc_getchar();
-	#endif
+	xxprintf_lldbghex(" pbuffer-addr = 0x",&buffer);
+	xxprintf_lldbghex(" pbuffer      = 0x",buffer);
+	xxprintf_lldbgwait(" ");
 		
 	#ifdef USE_DYNAMIC_VSPRINTF_BUFFER
 	free(buffer);
