@@ -110,8 +110,8 @@ void jd_showsp()
 /* Private Prototypes */
 
 
-static UINT read_sector(struct jdfileinfo *pfi);
-static UINT write_sector(struct jdfileinfo *pfi);
+static DRESULT read_sector(struct jdfileinfo *pfi);
+static DRESULT write_sector(struct jdfileinfo *pfi);
 
 
 FRESULT nkcfs_opendir (

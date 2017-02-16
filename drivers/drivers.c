@@ -26,7 +26,7 @@ struct blk_driver* get_blk_driver(char *name)
 	
 	i=0;  /* convert drive name to uppercase */
 	strcpy(drive_name,name); 				
-	while(drive_name[i] && i<3){ drive_name[i] = toupper(drive_name[i]); i++;}
+	while(drive_name[i] && i<3){ drive_name[i] = /*toupper*/(drive_name[i]); i++;}
 	
 	drive_name[2] = 0; /* only the first two letters matter */
 			

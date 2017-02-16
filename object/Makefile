@@ -19,13 +19,15 @@ ARCH=$(BASEDIR)/arch/m68k
 export PATH:=/opt/m68k-elf-tools/bin:$(PATH)
 
 #LIBOBJECTS= abort.o argset.o asctime.o assert.o atexit.o atof.o atoi.o bsearch.o calloc.o clearerr.o clock.o ctime.o ctype.o difftime.o envset.o exit.o fclose.o fflush.o fget.o fgetpos.o fgets.o fopen.o fprintf.o fputc.o fputs.o fread.o free.o freopen.o fseek.o fsetpos.o ftell.o fwrite.o getenv.o gets.o gmtime.o first.o llmisc.o llopen.o llopenc.o llsig.o llstd.o llnkc.o lotime.o malloc.o mbtowc.o memchr.o memcmp.o memcpy.o memmove.o memset.o mktime.o phictype.o printf.o putget.o puts.o qsort.o readbuf.o realloc.o remove.o rename.o rewind.o scanf.o setbuf.o setjmp.o setvbuf.o signal.o sprintf.o sscanf.o strpbrk.o strcat.o strchr.o strcmp.o strcpy.o strcspn.o strdup.o strerr.o strftime.o strlen.o strncat.o strncmp.o strncpy.o strrchr.o strstr.o strtok.o strtoul.o system.o time.o tmpfil.o ungetc.o wctomb.o writebuf.o startup.o divmod64.o rand.o abs.o
-LIBOBJECTS= abort.o argset.o asctime.o assert.o atexit.o atof.o atoi.o bsearch.o calloc.o clearerr.o clock.o ctime.o ctype.o difftime.o envset.o exit.o fclose.o fflush.o fget.o fgetpos.o fgets.o fopen.o fprintf.o fputc.o fputs.o fread.o free.o freopen.o fseek.o fsetpos.o ftell.o fwrite.o getenv.o gets.o gmtime.o first.o llmisc.o llopen.o llsig.o llstd.o llnkc.o lotime.o malloc.o mbtowc.o memchr.o memcmp.o memcpy.o memmove.o memset.o mktime.o phictype.o printf.o putget.o puts.o qsort.o readbuf.o realloc.o remove.o rename.o rewind.o scanf.o setbuf.o setjmp.o setvbuf.o signal.o sprintf.o sscanf.o strpbrk.o strcat.o strchr.o strcmp.o strcpy.o strcspn.o strdup.o strerr.o strftime.o strlen.o strncat.o strncmp.o strncpy.o strrchr.o strstr.o strtok.o strtoul.o system.o time.o tmpfil.o ungetc.o wctomb.o writebuf.o startup.o divmod64.o rand.o abs.o \
-            drivers.o  
+
+LIBOBJECTS= abort.o argset.o asctime.o assert.o atexit.o atof.o atoi.o bsearch.o calloc.o clearerr.o clock.o ctime.o ctype.o difftime.o envset.o exit.o fclose.o fflush.o fget.o fgetpos.o fgets.o fopen.o fprintf.o fputc.o fputs.o fread.o free.o freopen.o fseek.o fsetpos.o ftell.o fwrite.o getenv.o gets.o gmtime.o first.o llmisc.o llopen.o llsig.o llstd.o llnkc.o lotime.o malloc.o mbtowc.o memchr.o memcmp.o memcpy.o memmove.o memset.o mktime.o phictype.o printf.o putget.o puts.o qsort.o readbuf.o realloc.o remove.o rename.o rewind.o scanf.o setbuf.o setjmp.o setvbuf.o signal.o sprintf.o sscanf.o strpbrk.o strcat.o strchr.o strcmp.o strcpy.o strcspn.o strdup.o strerr.o strftime.o strlen.o strncat.o strncmp.o strncpy.o strrchr.o strstr.o strtok.o strtoul.o system.o time.o tmpfil.o ungetc.o wctomb.o writebuf.o startup.o divmod64.o rand.o abs.o conio.o drivers.o
 
 ifeq ($(CONFIG_FS),1)
 LIBOBJECTS += fs.o
+	ifeq ($(CONFIG_USE_JADOS),1)
 	ifeq ($(CONFIG_FS_NKC),1)
 	LIBOBJECTS += fs_nkc.o
+	endif
 	endif
 	ifeq ($(CONFIG_FS_FAT),1)
 	LIBOBJECTS += fs_fat.o ff.o diskio.o
@@ -65,8 +67,14 @@ endif
 
 #	$(LD) $(LDFLAGS) $(LIBOBJECTS) -o $(LIBDIR)/libCC.o; \
 # create a static library	
-all:
+all: $(CLIB_BUILD_NUMBER_FILE)
 	ar rcs $(LIBDIR)libCC.a $(LIBOBJECTS)
+	
+	
+# Build number file.  Increment if any object file changes.
+$(CLIB_BUILD_NUMBER_FILE): $(LIBOBJECTS)
+	@if ! test -f $(CLIB_BUILD_NUMBER_FILE); then echo 0 > $(CLIB_BUILD_NUMBER_FILE); fi 
+	@echo $$(($$(cat $(CLIB_BUILD_NUMBER_FILE)) + 1)) > $(CLIB_BUILD_NUMBER_FILE)
 	
 	
 # define a pattern rule to compile all *.c files to *.o files:

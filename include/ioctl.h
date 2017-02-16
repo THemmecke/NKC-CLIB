@@ -67,14 +67,12 @@
 #define FAT_IOCTL_MKFS 				115
 // siehe auch FS_IOCTL_GETCWD.....fix !
 #define FAT_IOCTL_GETCWD 			116
-// get FatFs structure
-#define FAT_IOCTL_GET_FATFS 			117
 // rename a file/directory
-#define FAT_IOCTL_RENAME			118
+#define FAT_IOCTL_RENAME			117
 // change physical drive
-#define FAT_IOCTL_CHDRIVE			119
+#define FAT_IOCTL_CHDRIVE			118
 // print info about FAT file system		
-#define FAT_IOCTL_INFO				120
+#define FAT_IOCTL_INFO				119
 // Low Level FileSystem Services 200+ ==============================
 #define FS_LL_IOCTL				200
 // initialize disc drive
@@ -203,11 +201,6 @@ struct ioctl_mkptable {
   char *devicename;		/* pointer to physical drive name (HDA,HDB,SDA,SDB ....) */
   const unsigned int *szt;	/* Pointer to the size table for each partitions */
   void* work;			/* Pointer to the working buffer */
-};
-
-struct ioctl_getfatfs {
-  unsigned char vol;
-  FATFS **ppfs;
 };
 
 struct ioctl_mount_fs {

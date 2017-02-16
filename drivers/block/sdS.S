@@ -74,7 +74,7 @@ msg03:	.ascii "send command read..."
 #endif	
 		
 	.text
-//	.global idetifySD, sddisk, sdtest, _sd
+//	.global sddisk, sdtest, _sd
 	.global sddisk, sdtest
 
 
@@ -188,7 +188,7 @@ sdtest_e:
 //DRESULT idetifySD(BYTE disk, struct _deviceinfo *p)
 //*/
 //
-//idetifySD: 
+//idetifySD: .global idetifySD
 //	movea.l %a7,%a1
 //	movem.l %d1-%d4/%a0-%a1,-(%sp)
 //		

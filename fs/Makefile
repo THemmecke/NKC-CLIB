@@ -8,8 +8,10 @@ include $(BASEDIR)/Makefile.rules
 # ############### m68k-tools ###################################
 MODULES=
 
+ifeq ($(CONFIG_USE_JADOS),1)
 ifeq ($(CONFIG_FS_NKC),1)
 MODULES += nkc
+endif
 endif
 
 ifeq ($(CONFIG_FS_FAT),1)

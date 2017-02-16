@@ -9,6 +9,9 @@ BASEDIR=$(shell  pwd)/..
 
 include $(BASEDIR)/Makefile.rules
 
+#ifdef M68000
+CCFLAGS +=  -DL_muldi3
+#endif
 
 # ###################################################
 

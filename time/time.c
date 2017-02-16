@@ -3,10 +3,8 @@
 #include <libp.h>
 
 
-//#define NKC_DEBUG
 
-
-#ifdef NKC_DEBUG
+#ifdef CONFIG_DEBUG_TIME
 #include "../nkc/llnkc.h"
 #endif
 
@@ -29,20 +27,20 @@ time_t time(time_t *tptr)
 {
 	long val;	
 	struct tm t2;
-	#ifdef NKC_DEBUG
-	nkc_write("time...\n");
+	#ifdef CONFIG_DEBUG_TIME
+	gp_write("time...\n");
 	#endif
 	
 	_ll_gettime(&t2);
 	
-	#ifdef NKC_DEBUG
-	nkc_write(" sec :"); nkc_write_dec_dw((unsigned int)t2.tm_sec); nkc_write("\n");
-	nkc_write(" min :"); nkc_write_dec_dw((unsigned int)t2.tm_min); nkc_write("\n");
-	nkc_write(" hour:"); nkc_write_dec_dw((unsigned int)t2.tm_hour); nkc_write("\n");
-	nkc_write(" year:"); nkc_write_dec_dw((unsigned int)t2.tm_year); nkc_write("\n");
-	nkc_write(" mon :"); nkc_write_dec_dw((unsigned int)t2.tm_mon); nkc_write("\n");
-	nkc_write(" mday :"); nkc_write_dec_dw((unsigned int)t2.tm_mday); nkc_write("\n");
-	nkc_write(" wday :"); nkc_write_dec_dw((unsigned int)t2.tm_wday); nkc_write("\n");
+	#ifdef CONFIG_DEBUG_TIME
+	gp_write(" sec :"); gp_write_dec_dw((unsigned int)t2.tm_sec); gp_write("\n");
+	gp_write(" min :"); gp_write_dec_dw((unsigned int)t2.tm_min); gp_write("\n");
+	gp_write(" hour:"); gp_write_dec_dw((unsigned int)t2.tm_hour); gp_write("\n");
+	gp_write(" year:"); gp_write_dec_dw((unsigned int)t2.tm_year); gp_write("\n");
+	gp_write(" mon :"); gp_write_dec_dw((unsigned int)t2.tm_mon); gp_write("\n");
+	gp_write(" mday :"); gp_write_dec_dw((unsigned int)t2.tm_mday); gp_write("\n");
+	gp_write(" wday :"); gp_write_dec_dw((unsigned int)t2.tm_wday); gp_write("\n");
 	#endif
 	
 	val = mktime(&t2);
@@ -50,8 +48,8 @@ time_t time(time_t *tptr)
 	if (tptr)
 		*tptr = val;
 		
-	#ifdef NKC_DEBUG
-	nkc_write(" ...time\n");
+	#ifdef NCONFIG_DEBUG_TIME
+	gp_write(" ...time\n");
 	#endif	
 	return val;
 }

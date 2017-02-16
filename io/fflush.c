@@ -2,12 +2,7 @@
 #include <time.h>
 #include <memory.h>
 #include <libp.h>
-
-//#define NKC_DEBUG
-
-#ifdef NKC_DEBUG
-#include "../nkc/llnkc.h"
-#endif
+#include <debug.h>
 
 extern FILE *_pstreams[_NFILE_];
 extern char *_filenames[_NFILE_];
@@ -18,9 +13,7 @@ static int oneflush(FILE *stream)
 	char * crlf = "\n";
 	int rv = 0;
 	
-	#ifdef NKC_DEBUG
-	nkc_write("oneflush...\n");
-	#endif
+	clio_lldbg("oneflush...\n");	
 	
 	if (stream->token == FILTOK) {
 		
@@ -32,9 +25,8 @@ static int oneflush(FILE *stream)
 					
 					stream->flags |= _F_ERR;
 					rv = EOF;
-					#ifdef NKC_DEBUG
-					nkc_write("EOF\n");
-					#endif
+					
+					clio_lldbg("EOF\n");
 				}
 				else rv = 0;
 				stream->level = 0;
@@ -54,15 +46,11 @@ static int oneflush(FILE *stream)
 		}
 		stream->flags &= ~(_F_IN | _F_OUT);
 		
-		#ifdef NKC_DEBUG
-		nkc_write("...oneflush\n");
-		#endif
+		clio_lldbg("...oneflush\n");
 		return rv;			
 	}
 	else {
-		#ifdef NKC_DEBUG
-		nkc_write("...oneflush(EOF)\n");
-		#endif
+		clio_lldbg("...oneflush(EOF)\n");
 		return EOF;
 	}
 }
@@ -70,16 +58,12 @@ int fflush(FILE *stream)
 {
 	int rv, res;
 	
-	#ifdef NKC_DEBUG
-	nkc_write("fflush...\n");
-	#endif
+	clio_lldbg("fflush...\n");
 	
 	if (stream)	
 	{
 		res = oneflush(stream);
-		#ifdef NKC_DEBUG
-		nkc_write("...fflush\n");
-		#endif
+		clio_lldbg("...fflush\n");
 		return(res);
 	}
 	else {
@@ -88,8 +72,6 @@ int fflush(FILE *stream)
 			rv |= oneflush(_pstreams[i]);
 	}
 	
-	#ifdef NKC_DEBUG
-	nkc_write("...fflush(1)\n");
-	#endif
+	clio_lldbg("...fflush(1)\n");
 	return rv;
 }

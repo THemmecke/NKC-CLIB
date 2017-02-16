@@ -8,5 +8,5 @@ int printf(const char *format, ...)
 
 void perror(const char *__s)
 {
-	nkc_write(__s);
+	gp_write(__s);
 }

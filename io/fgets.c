@@ -1,12 +1,6 @@
 #include <stdio.h>
 
 
-//#define NKC_DEBUG
-
-#ifdef NKC_DEBUG
-#include "../nkc/llnkc.h"
-#endif
-
 char *fgets(char *buf, int num, FILE *stream)
 {
 	int i = 0,rv;

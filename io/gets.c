@@ -1,19 +1,12 @@
 #include <stdio.h>
-
-//#define NKC_DEBUG 
-
-#ifdef NKC_DEBUG
-#include "../nkc/llnkc.h"
-#endif
+#include <debug.h>
 
 
 char *gets(char *buf)
 {
 	int i = 0,rv;
 	
-	#ifdef NKC_DEBUG
-	nkc_write("scanf...\n");
-	#endif
+	clio_lldbg("scanf...\n");
 	
 	while (1) {
 		rv = fgetc(stdin);

@@ -1,15 +1,8 @@
 #include <time.h>
 #include <stdio.h>
 
-//#define NKC_DEBUG
-
-#ifdef NKC_DEBUG
+#ifdef CONFIG_DEBUG_TIME
 #include "../nkc/llnkc.h"
-void nkc_write(char* msg);
-void nkc_write_hex2(unsigned char val);
-void nkc_write_hex8(unsigned int val);
-void nkc_write_dec_dw(unsigned int val);
-char nkc_getchar(void);
 #endif
 
 extern char _monthdays[];
@@ -17,18 +10,18 @@ struct tm *localtime(const time_t *time)
 {
 	struct tm *t = gmtime(time);
 	
-	#ifdef NKC_DEBUG
-	nkc_write("localtime (after gmtime)...\n");
+	#ifdef CONFIG_DEBUG_TIME
+	gp_write("localtime (after gmtime)...\n");
 	#endif
 	
-	#ifdef NKC_DEBUG
-	nkc_write(" sec :"); nkc_write_dec_dw((unsigned int)t->tm_sec); nkc_write("\n");
-	nkc_write(" min :"); nkc_write_dec_dw((unsigned int)t->tm_min); nkc_write("\n");
-	nkc_write(" hour:"); nkc_write_dec_dw((unsigned int)t->tm_hour); nkc_write("\n");
-	nkc_write(" year:"); nkc_write_dec_dw((unsigned int)t->tm_year); nkc_write("\n");
-	nkc_write(" mon :"); nkc_write_dec_dw((unsigned int)t->tm_mon); nkc_write("\n");
-	nkc_write(" mday :"); nkc_write_dec_dw((unsigned int)t->tm_mday); nkc_write("\n");
-	nkc_write(" wday :"); nkc_write_dec_dw((unsigned int)t->tm_wday); nkc_write("\n");
+	#ifdef CONFIG_DEBUG_TIME
+	gp_write(" sec :"); gp_write_dec_dw((unsigned int)t->tm_sec); gp_write("\n");
+	gp_write(" min :"); gp_write_dec_dw((unsigned int)t->tm_min); gp_write("\n");
+	gp_write(" hour:"); gp_write_dec_dw((unsigned int)t->tm_hour); gp_write("\n");
+	gp_write(" year:"); gp_write_dec_dw((unsigned int)t->tm_year); gp_write("\n");
+	gp_write(" mon :"); gp_write_dec_dw((unsigned int)t->tm_mon); gp_write("\n");
+	gp_write(" mday :"); gp_write_dec_dw((unsigned int)t->tm_mday); gp_write("\n");
+	gp_write(" wday :"); gp_write_dec_dw((unsigned int)t->tm_wday); gp_write("\n");
 	#endif
 	
 /*	t->tm_hour += GMT_OFFS; */
@@ -44,8 +37,8 @@ struct tm *localtime(const time_t *time)
 			}
 		}
 	}
-	#ifdef NKC_DEBUG
-	nkc_write("...localtime\n");
+	#ifdef CONFIG_DEBUG_TIME
+	gp_write("...localtime\n");
 	#endif
 	return t;
 }

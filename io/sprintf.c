@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
-
-#include "../nkc/llnkc.h"
+#include <debug.h>
 
 
 #define USE_printF2
@@ -119,9 +118,8 @@ char* vptr;
 
 long a,b,x;
 
-#ifdef CONFIG_DEBUG_XXPRINTF 
-nkc_write("_printchar:\n");
-#endif
+xxprintf_lldbg("_printchar:\n");
+
 
 a = 0x12345;
 b = 788;
@@ -162,20 +160,17 @@ a=x;
    }
 
 	if (str) {
-	    #ifdef CONFIG_DEBUG_XXPRINTF 
-	    nkc_write(" ...\n");
-	    #endif
+	    xxprintf_lldbg(" ...\n");
+
 	    
 	    #ifdef USE_DYNAMIC_VSPRINTF_BUFFER
 	    if(_dynamic_buffer == 1) {
 	      if(_curr_num_chunks == 0 ||
 	         _curr_chunk_len == CHUNK_SIZE) {
 	          _curr_num_chunks++;	  
-	          #ifdef CONFIG_DEBUG_XXPRINTF     
-	          nkc_write(" realloc ...\n");	          	          
-	          nkc_write(" pbuffer  = 0x"); nkc_write_hex8(*buffer_ptr); nkc_write("\n");
-	          nkc_getchar();
-	          #endif
+	          xxprintf_lldbg(" realloc ...\n");	          	          
+	          xxprintf_lldbghex(" pbuffer  = 0x",*buffer_ptr);
+		  xxprintf_lldbgwait(" ");
 	             
 	          vptr=(char*)realloc(buffer_start,_curr_num_chunks*CHUNK_SIZE+1);
 	          if(vptr){	                
@@ -183,15 +178,12 @@ a=x;
 	                buffer_start = vptr;
 	                *str = vptr+(_curr_num_chunks-1)*CHUNK_SIZE;	          
 	                _curr_chunk_len=0;
-	                #ifdef CONFIG_DEBUG_XXPRINTF
-	                nkc_write(" success\n");
-	                nkc_write(" pbuffer  = 0x"); nkc_write_hex8(*buffer_ptr); nkc_write("\n");
-    	                nkc_getchar();
-    	                #endif
+	                xxprintf_lldbg(" success\n");
+	                xxprintf_lldbghex(" pbuffer  = 0x",*buffer_ptr);
+    	                xxprintf_lldbgwait(" ");
 	          } else {
-	                #ifdef CONFIG_DEBUG_XXPRINTF
-	                nkc_write(" failed\n");
-	                #endif
+	                xxprintf_lldbg(" failed\n");
+	                
 	                _curr_num_chunks--;
 	                _fixed_overrun++ ;
                         return ;
