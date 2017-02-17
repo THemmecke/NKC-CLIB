@@ -13,7 +13,6 @@
 #include "cmd.h"
 #include "shell.h"
 
-#include "gdp.h"
 
 #include "../../nkc/llnkc.h"
 
