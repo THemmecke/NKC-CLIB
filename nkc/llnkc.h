@@ -47,7 +47,7 @@ void gp_setpage(unsigned char writepage, unsigned char viewpage);
 
 void gp_read(unsigned char x, unsigned char y, char* buffer);
 
-
+#ifdef USE_JADOS
 /* ******************************************* call to JADOS (TRAP #6) ******************************************* */
 
 /* FCB */
@@ -94,7 +94,7 @@ BYTE jd_directory_test(void* pbuf, void* ppattern, BYTE attrib, WORD columns, WO
 void* jd_get_ramtop(void);
 void* jd_get_laddr(void);
 void* jd_get_gp(void);
-
+#endif
 
 
 #endif	

@@ -1,10 +1,12 @@
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>       /* time_t, struct tm, difftime, time, mktime */
 #include <ioctl.h>
 #include <errno.h>
 
 #include <fs.h>
 #include <ff.h>
+#include <fs_nkc.h>
 #include <gide.h>
 
 
@@ -59,20 +61,22 @@
 #define TEXT_CMDHELP_UMOUNT             34
 #define TEXT_CMDHELP_PTABLE             35
 #define TEXT_CMDHELP_CLS             	36
-#define TEXT_CMDHELP_FSTAB		37
-#define TEXT_CMDHELP_FS    		38
-#define TEXT_CMDHELP_DEV		39
-#define TEXT_CMDHELP_FATINFO		40
-#define TEXT_CMDHELP_MEMINFO		41
-#define TEXT_CMDHELP_HISTORY		42
+#define TEXT_CMDHELP_FSTAB				37
+#define TEXT_CMDHELP_FS    				38
+#define TEXT_CMDHELP_DEV				39
+#define TEXT_CMDHELP_FATINFO			40
+#define TEXT_CMDHELP_MEMINFO			41
+#define TEXT_CMDHELP_HISTORY			42
 
-#define TEXT_CMDHELP_TEST		43
+#define TEXT_CMDHELP_CLOCK    			43
+
+
 #define TEXT_CMDHELP                    44
 
 // TEST commands ...
-#define	TEXT_CMDHELP_SP			44
-#define	TEXT_CMDHELP_FILL		45
-#define	TEXT_CMDHELP_TEST		46
+#define	TEXT_CMDHELP_SP					45
+#define	TEXT_CMDHELP_FILL				46
+#define	TEXT_CMDHELP_TEST				47
 
 // Help text ... 
 struct CMDHLP hlptxt[] =
@@ -145,7 +149,7 @@ struct CMDHLP hlptxt[] =
 	    "ddump [<d#> <sec#>]: dump sector\n",
             "ddump [<d#> <sec#>]\n"\
             "  dump sector sec# of disc d#\n"\
-            "  first disc is #0\n"},
+            "  example: dd sda 10  (dump sector 10 of drive sda)\n"},
 {TEXT_CMDHELP_BD,
 	    "bdump <ofs>: dump working buffer\n",
             "bdump <buffer offset>\n"},
@@ -270,6 +274,9 @@ struct CMDHLP hlptxt[] =
 {TEXT_CMDHELP_HISTORY,             
                         "history: show command history\n",
                         "history\n"},	
+{TEXT_CMDHELP_CLOCK,             
+                        "clock: show system clock (RTC)\n",
+                        "clock\n"},                                                  
 {TEXT_CMDHELP_TEST,             
                         "test: test function\n",
                         "test\n"},			
@@ -290,6 +297,7 @@ struct CMD internalCommands[] =
   {"meminfo"    , cmd_meminfo   , TEXT_CMDHELP_MEMINFO},
   {"dinit"      , cmd_dinit     , TEXT_CMDHELP_DI},  
   {"ddump"      , cmd_ddump     , TEXT_CMDHELP_DD},
+  {"dd"      	, cmd_ddump     , TEXT_CMDHELP_DD},
   {"dstatus"    , cmd_dstatus   , TEXT_CMDHELP_DS},
   {"bdump"      , cmd_bdump     , TEXT_CMDHELP_BD},
   {"bedit"      , cmd_bedit     , TEXT_CMDHELP_BE},
@@ -330,7 +338,8 @@ struct CMD internalCommands[] =
   {"exit"       , cmd_quit      , TEXT_CMDHELP_QUIT},
   {"history"    , cmd_history   , TEXT_CMDHELP_HISTORY},
   {"hist"       , cmd_history   , TEXT_CMDHELP_HISTORY},
-  {"test"       , cmd_test   	, TEXT_CMDHELP_TEST},
+  {"clock"      , cmd_clock      , TEXT_CMDHELP_CLOCK},
+  {"test"       , cmd_test   	  , TEXT_CMDHELP_TEST},
   {"t"      	, cmd_test   	, TEXT_CMDHELP_TEST},
   {"?"          , showcmds      , TEXT_CMDHELP_QUESTION},
   
@@ -986,6 +995,7 @@ int cmd_dir(char *args) // ...
   int i;
   FRESULT res;
   char fullpath1[_MAX_PATH];
+  struct fstabentry *pfstab;
   
   while (*args == ' ') args++;
   
@@ -1000,12 +1010,12 @@ int cmd_dir(char *args) // ...
   printf(" directory of %s is:\n",fullpath1);
 
   
-
+#ifdef USE_JADOS
   if( !FPInfo1.psz_driveName[1] ) { // one character drive name -> is it a JADOS drive ?
     if( (FPInfo1.psz_driveName[0] >= 'A' && FPInfo1.psz_driveName[0] <= 'Z') ||  // JADOS hard drive
         (FPInfo1.psz_driveName[0] >= '0' && FPInfo1.psz_driveName[0] <= '3') ){  // JADOS floppy drive
 	  res = cmd_dir_nkc(fullpath1,FPInfo1.psz_driveName);
-	  if(res) printf(" cmd_dir_nkc returned '%s'\n",get_rc_string(res));
+	  if(res) printf(" cmd_dir_nkc returned (%d) '%s'\n",res,get_rc_string(res));
 	  return 0;
     }else{  //invalid drive name
 	  printf(" invalid drive name (%s)\n",FPInfo1.psz_driveName);
@@ -1014,12 +1024,33 @@ int cmd_dir(char *args) // ...
   }else{ // give it to the fat driver
     
     res = cmd_dir_fat(fullpath1,FPInfo1.psz_driveName);
-    if(res) printf(" cmd_dir_fat returned '%s'\n",get_rc_string(res));
+    if(res) printf(" cmd_dir_fat returned (%d) '%s'\n",res,get_rc_string(res));
     return 0;
   }
+#else
+  pfstab = get_fstabentry(FPInfo1.psz_driveName);
+  
+  if( pfstab ){
+    if( !strcmp(pfstab->pfsdrv->pname, "JADOSFS") ) { // JADOS drive
+      //res = cmd_dir_nkc(pfstab);
+      res = cmd_dir_fat(fullpath1,FPInfo1.psz_driveName);
+      if(res) printf(" cmd_dir_nkc returned '%s'\n",get_rc_string(res));
+      return 0;
+    }else if( !strcmp(pfstab->pfsdrv->pname, "FAT") ) { // FAT drive
+      res = cmd_dir_fat(fullpath1,FPInfo1.psz_driveName);
+      if(res) printf(" cmd_dir_fat returned '%s'\n",get_rc_string(res));
+      return 0;
+    }else{ // unknown filesystem
+      printf(" error: unknown filesystem '%s'\n",pfstab->pfsdrv->pname);
+      return 0;
+    }
+  }
+
+#endif
       
 }
 
+#ifdef USE_JADOS
 int cmd_dir_nkc(char *args, 		// arguments
 		char* pd		// drive 
 	       ) // NKC/JADOS dir
@@ -1095,6 +1126,68 @@ int cmd_dir_nkc(char *args, 		// arguments
   
   return EZERO;
 }
+#else
+int cmd_dir_nkc(struct fstabentry *pfstab) 		// pointer to fstabentry
+{
+  struct jddir *dir;
+  struct ioctl_nkc_dir arg;
+  FRESULT res;  
+  UINT i, line=0;
+  char c;
+  
+
+  arg.pfstab = pfstab;
+  if(!arg.pfstab){
+    printf(" filesystem not mounted !\n");
+  }
+  
+  dir = (struct jddir *)malloc( sizeof(struct jddir)*NUM_JD_DIR_ENTRIES );
+  
+  if(!dir){
+    printf(" not enough memory for jados directory object....\n");
+    return EZERO;
+  }
+  
+  arg.pbuf = (void*)dir;
+  
+  res = ioctl(pfstab->devname,FS_IOCTL_READ_DIR,&arg);
+  // res = ioctl(NULL,FS_IOCTL_READ_DIR,&arg);
+  
+  // format directory ...
+  //          14          7     10	  2+6
+  printf(" File-Name         Size     Date         Flags \n");
+
+  for(i=0;i<NUM_JD_DIR_ENTRIES;i++) {
+    if(!dir[i].id)
+    {
+      printf(" %8s.%3s   %8d    %02d.%02d.%02d     0x%02x\n",  
+	     dir[i].filename, 
+	     dir[i].fileext, 
+	     dir[i].length*1024, 
+	     
+	     // year                       day                      month
+	     // (Finfo.fdate >> 9) + 1980, (Finfo.fdate >> 5) & 15, Finfo.fdate & 31,
+	     
+	     ((dir[i].date & 0x0000000F))      + ((dir[i].date & 0x000000F0) >> 4),  	/* day */ 
+	     ((dir[i].date & 0x00000F00) >> 8) + ((dir[i].date & 0x0000F000) >> 12),  /* month */ 
+	     ((dir[i].date & 0x000F0000) >> 16)+ ((dir[i].date & 0x00F00000) >> 20),  /* year */ 
+	     dir[i].mode);      	     	     
+      	
+      if(!(line % LINES_PER_PAGE) && line != 0) {
+	  printf(" ---- KEY ---- "); c=getchar(); printf("\n");
+	  if(c=='q' || c=='Q') break;
+      }
+      line++;
+    }
+  }
+  
+  
+  
+  // free memory
+  free(dir);
+  return EZERO;
+}
+#endif
 
 int cmd_dir_fat(char *args,  // fullpath
 		char* pd)    // drivename
@@ -1102,7 +1195,7 @@ int cmd_dir_fat(char *args,  // fullpath
    
    DIR dir;				/* FAT Directory object */
    FILINFO Finfo;			/* File info object */
-   FATFS *fs;				/* Pointer to file system object */
+   FS *fs;				/* Pointer to file system object */
    FRESULT res;
    UINT s1, s2;
    long p1,p2,line=0;  
@@ -1120,7 +1213,7 @@ int cmd_dir_fat(char *args,  // fullpath
    arg_opendir.dp = &dir;
    arg_opendir.path = args;
    
-   res = ioctl(pd,FAT_IOCTL_OPEN_DIR,&arg_opendir);
+   res = ioctl(pd,FS_IOCTL_OPEN_DIR,&arg_opendir);
    
    if (res) { put_rc(res); return 0; }
    AccSize = s1 = s2 = 0;
@@ -1130,7 +1223,7 @@ int cmd_dir_fat(char *args,  // fullpath
    for(;;) {
         arg_readdir.dp = &dir;
 	arg_readdir.fno = &Finfo;
-	res = ioctl(pd,FAT_IOCTL_READ_DIR,&arg_readdir);
+	res = ioctl(pd,FS_IOCTL_READ_DIR,&arg_readdir);
 	
 	if ((res != FR_OK) || !Finfo.fname[0]) break;
 	if (Finfo.fattrib & AM_DIR) {
@@ -1157,14 +1250,34 @@ int cmd_dir_fat(char *args,  // fullpath
 	}
 	line++;
    }
-   res = ioctl(pd,FAT_IOCTL_CLOSE_DIR,&dir);
+   res = ioctl(pd,FS_IOCTL_CLOSE_DIR,&dir);
    printf("%4u File(s),%11llu bytes total\n%4u Dir(s)", s1, AccSize, s2);     
    
    arg_getfree.path = args;
    arg_getfree.nclst = (DWORD*)&p1;
-   arg_getfree.ppfatfs = &fs;   
-   if(ioctl(pd,FAT_IOCTL_GET_FREE,&arg_getfree) == FR_OK)
-   printf(",%12llu bytes free\n", (LONGLONG)p1 * fs->csize * 512);
+   arg_getfree.ppfs = &fs;   
+   if(ioctl(pd,FS_IOCTL_GET_FREE,&arg_getfree) == FR_OK) {
+     
+	  switch(fs->fs_id) {
+	    case FS_TYPE_FAT:   
+		  p2 = ((FATFS*)fs)->csize *512; 
+		  dbg("fs_id = FS_TYPE_FAT\n");
+		  break;
+	    case FS_TYPE_JADOS: 
+	          p2 = ((JDFS*)fs)->pjdhd->csize;
+		  dbg("name  = %s\n",((JDFS*)fs)->pjdhd->name);
+		  dbg("csize = %d\n",((JDFS*)fs)->pjdhd->csize);
+		  dbg("sects = %d\n",((JDFS*)fs)->pjdhd->nsectors);
+		  dbg("fs_id = FS_TYPE_JADOS\n");
+		  break;
+	    default:
+	          dbg("fs_id = %d (unknown)\n",fs->fs_id);
+	  }
+	  
+	  printf(",%12llu bytes free (nclst=%d, csize=%d)\n", (LONGLONG)p1 * p2  ,p1,p2);
+	  // printf(",%12llu bytes free\n", (LONGLONG)p1 * fs->csize * 512);
+   }
+   else printf("\n");
    
    return 0;
 }
@@ -1313,22 +1426,32 @@ int cmd_copy(char *args)
     
      return 0;
    }
-   printf("Start Copy %s ==> %s ...",fullpath1,fullpath2);
+   printf("Start Copy %s ==> %s ",fullpath1,fullpath2);
    p1 = 0;
    for (;;) {
      //res = f_read(&file[0], Buff, sizeof Buff, &s1);
      s1 = fread(Buff, 1, sizeof Buff, file[0]); 
      if (s1 == 0) {
-       //printf("eof !\n");
+       printf("src at eof !\n");
        break;   /* error or eof */
      }
      //res = f_write(&file[1], Buff, s1, &s2);
+
+     //printf(" %d bytes read from source file [KEY].\n",s1);
+     //getchar();
+
      s2 = fwrite(Buff, 1, s1, file[1]); 
+
+     //printf(" %d bytes written to destination file [KEY].\n",s2);
+     //getchar();
+
      p1 += s2;
      if (s2 < s1) {
-       //printf("error or disk full !\n");
+       printf("error or disk full !\n");
        break;   /* error or disk full */
      }
+
+     printf(".");
    }
    printf("\nready\n");   
    fclose(file[0]);
@@ -2138,7 +2261,7 @@ int cmd_lstatus_fat(char * args){
 #else      
   arg_getfree.path = tmp;
   arg_getfree.nclst = (DWORD*)&p1;
-  arg_getfree.ppfatfs = &fs;   
+  arg_getfree.ppfs = (FS*)&fs;   
   printf("cmd_lstatus_fat [%s] (3)\n",tmp);
   res = ioctl(args,FAT_IOCTL_GET_FREE,&arg_getfree); // <<--- !!
   printf("cmd_lstatus_fat [%s] (4)\n",tmp);
@@ -2483,6 +2606,49 @@ int cmd_history(char* args)
   
   return 0;
 }
+
+
+/*
+struct tm
+{
+  int   tm_sec;
+  int   tm_min;
+  int   tm_hour;
+  int   tm_mday;
+  int   tm_mon;
+  int   tm_year;
+  int   tm_wday;
+  int   tm_yday;
+  int   tm_isdst;
+};
+*/
+int cmd_clock(char* args)
+{
+  
+  time_t timer;
+  struct tm y2k = {0};
+  struct tm *py2k;
+  double seconds;
+
+  printf("sytem date (RTC):\n");
+
+  time(&timer);  				/* get current time; same as: timer = time(NULL)  */
+  py2k = localtime(&timer);		/* get pointer to struct tm */
+
+  printf("y2k: %02d:%02d:%02d   %02d/%02d/%02d\n", py2k->tm_hour, py2k->tm_min, py2k->tm_sec, py2k->tm_mday, py2k->tm_mon+1, py2k->tm_year-100+2000);
+
+  seconds = difftime(timer,mktime(&y2k));
+
+  printf ("%.f seconds since January 1, 2000 in the current timezone\n", seconds);
+
+  printf ("The current local time is: %s\n", ctime (&timer));
+
+
+
+
+  return 0;
+}
+
 
 
 extern char   _start;

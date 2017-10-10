@@ -10,7 +10,7 @@ int _baseputc(int c, FILE *stream)
 	
 	clio_lldbg("_baseputc...\n");
 		
-	if (!(stream->flags & _F_BIN) && c == '\n')
+	if (!(stream->flags & _F_BIN) && c == '\n') // stream is ASCII and \n detected
 	{		
 		clio_lldbgwait("\\n detected (1)\n"); 
 		
@@ -102,7 +102,7 @@ int _basegetc(FILE *stream)
 		
 		
 		stream->level--;
-		clio_lldbg("..._basegetc\n"); 
+		clio_lldbg("..._basegetc\n"); //!
 		return(*stream->curp++);
 	}
 	else if (stream->hold) 

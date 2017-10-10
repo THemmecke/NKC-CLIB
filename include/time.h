@@ -25,8 +25,8 @@ typedef long clock_t;
 #define CLOCKS_PER_SEC 1000.0
 #define CLK_TCK        1000.0
 
-#define TZNAME "Eastern Standard Time"
-#define GMT_OFFS 7
+#define TZNAME "Middle European Standard Time"
+#define GMT_OFFS 0
 
 #define NONRECURSIVE
 
@@ -43,14 +43,31 @@ struct tm
   int   tm_isdst;
 };
 
+/* Convert tm structure to string (Www Mmm dd hh:mm:ss yyyy) */
 char *   asctime(const struct tm *__tblock);
+
+/* Convert time_t value to string (Www Mmm dd hh:mm:ss yyyy) 
+   This function is equivalent to: asctime(localtime(timer)) */
 char *   ctime(const time_t *__time);
+
+/* Return difference between two times */
 double      difftime(time_t __time2, time_t __time1);
+
+/* Convert time_t to tm as UTC time */
 struct tm * gmtime(const time_t *__timer);
+
+/* Convert time_t to tm as local time */
 struct tm * localtime(const time_t *__timer);
+
+
+/* Get current time */
 time_t      time(time_t *__timer);
+
+/* Convert tm structure to time_t */
 time_t        mktime(struct tm *__timeptr);
 clock_t     clock(void);
+
+/* Format time as string */
 size_t        strftime(char *__s, size_t __maxsize,
                         const char *__fmt, const struct tm *__t);
 size_t        _lstrftime(char *__s, size_t __maxsize,

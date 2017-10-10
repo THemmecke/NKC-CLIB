@@ -26,7 +26,7 @@ static int oneflush(FILE *stream)
 					stream->flags |= _F_ERR;
 					rv = EOF;
 					
-					clio_lldbg("EOF\n");
+					clio_lldbg("oneflush: EOF\n");
 				}
 				else rv = 0;
 				stream->level = 0;

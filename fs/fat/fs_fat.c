@@ -293,7 +293,8 @@ static int     fatfs_rename(struct _file *filp, const char *oldrelpath, const ch
 }
 
 
-static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
+//static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
+static int     fatfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg){
   FIL *pfil;
   long p1,p2;
   WORD w;
@@ -329,14 +330,14 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 			      pcd = ((struct ioctl_get_cwd*)arg)->cdrive;
 			      n= strchr(pcp,':') - pcp;
 			      if(n>0){
-				  pcd[0] = 0; // clear drive string
-				  strncat(pcd,pcp,n);
-				  // terminate string
-				  pcd[n] = 0;        
-				  pcp+=n+1;
-				  // remove drive info from path
-				  strncpy(((struct ioctl_get_cwd*)arg)->cpath,pcp,strlen(pcp));				  
-				  ((char*)(((struct ioctl_get_cwd*)arg)->cpath))[strlen(pcp)] = 0;
+    				  pcd[0] = 0; // clear drive string
+    				  strncat(pcd,pcp,n);
+    				  // terminate string
+    				  pcd[n] = 0;        
+    				  pcp+=n+1;
+    				  // remove drive info from path
+    				  strncpy(((struct ioctl_get_cwd*)arg)->cpath,pcp,strlen(pcp));				  
+    				  ((char*)(((struct ioctl_get_cwd*)arg)->cpath))[strlen(pcp)] = 0;
 			      }
 			     
 			      fsfat_dbg(" fs_fat.c|ioctl: cpath(2) = %s\n", (char*)((struct ioctl_get_cwd*)arg)->cpath);
@@ -430,6 +431,7 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 
 			      
 			      pFatFs->pfstab = (struct fstabentry*)arg;				// add corresponding fstabentry to FatFs struct
+			      pFatFs->fs_id = FS_TYPE_FAT;					/* idetify this filesystem (id's defined in fs.h) */
 			      
 			      res = f_mount(pFatFs,  tmp, 1); // Mount immediately     
 			      
@@ -509,7 +511,7 @@ static int     fatfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 			      fsfat_dbg(" FAT_IOCTL_GET_FREE (1): path = %s\n", ((struct ioctl_getfree*)arg)->path);
 			      res = f_getfree(((struct ioctl_getfree*)arg)->path,
 					      ((struct ioctl_getfree*)arg)->nclst,
-					      ((struct ioctl_getfree*)arg)->ppfatfs);  
+					      (FATFS**)((struct ioctl_getfree*)arg)->ppfs);  			      
 			      fsfat_dbg(" FAT_IOCTL_GET_FREE (2): path = %s\n", ((struct ioctl_getfree*)arg)->path);
 			      break;
     // create FAT file system

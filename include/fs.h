@@ -41,12 +41,12 @@ struct _file
 {
   int               		f_oflags; 	/* Open mode flags */
   int             		f_pos;    	/* File position */
-  struct fs_driver 		*p_fs_drv;  	/* fs driver interface */
-  
+  //struct fs_driver 		*p_fs_drv;  	/* fs driver interface FIXME: kann durch 'p_fstab->pfsdrv' ersetzt werden !!! */ 
+  struct fstabentry		*p_fstab;	/* pointer to related fstab entry */
   int				fd;		/* file handle */
   struct _file 			*next;		/* pointer to next file in list */	
   char				*pname;         /* filename with LW,path,name and extension  (fullpath) */
-  void         			*private;       /* file private data -> for example: pointer to jados fileinfo */
+  void         			*private;       /* file private data -> for example: pointer to jados fileinfo or fcb (if not using JADOS calls) */
 
 };
 
@@ -95,6 +95,18 @@ struct fs_driver* get_driver(char *name);
 #define FS_READ  1
 #define FS_WRITE 2
 #define FS_RW	 3
+
+
+typedef enum {
+  FS_TYPE_FAT = 1,
+  FS_TYPE_JADOS  
+} FSTYPE;
+
+/* used in filesystem structures (e.g. in ff.h, FATFS) as first entry to recognize filesystem type */
+typedef struct {
+        FSTYPE	fs_id;	
+} FS;
+
 
 struct fstabentry
 {

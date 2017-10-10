@@ -1,11 +1,12 @@
 #include <stdio.h>
+//#include <debug.h> // don't do that here !!
 
 
 
 int _writebuf(FILE *stream)
 {
 	
-	
+
 	if ((stream->flags & _F_IN) || (( stream->flags & _F_OUT) && stream->curp >=stream->bsize + stream->buffer)) {
 		
 		if (fflush(stream))

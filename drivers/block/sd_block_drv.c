@@ -53,9 +53,9 @@
 #define BUFSIZE 512
 
 typedef struct {
-	DSTATUS	status;		/* drive status */
-	WORD sz_sector;		/* sectorsize */
-	DWORD n_sectors;	/* number of sectors over all */
+	DSTATUS	status;		/* drive status 		*/
+	WORD sz_sector;		/* sectorsize 			*/
+	DWORD n_sectors;	/* number of sectors over all 	*/
 } STAT;
 
 
@@ -132,7 +132,7 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 	}
 		
 	Stat[pdrv].status = stat;	
-	Stat[pdrv].sz_sector = 512;
+	Stat[pdrv].sz_sector = pdi->bpb; //512; /* information should be read from the device =pdi->bpb ? */
 	
 	if(pdi == NULL) {
 	  drvsd_lldbgwait("error: no device ...\n");
@@ -210,12 +210,12 @@ static UINT sd_open(struct _dev *devp)
   if(devp == NULL) return EINVAL;    
   disk = devp->pdrv+1;
   
-  pdi = sdtest(disk);
+  pdi = sdtest(disk); /* this is a GP call ... */
   
   if(pdi == NULL) return EINVDRV;
   
   Stat[devp->pdrv].status = stat;	
-  Stat[devp->pdrv].sz_sector = 512;
+  Stat[devp->pdrv].sz_sector = pdi->bpb;//512; /* FIXME: */
   Stat[devp->pdrv].n_sectors = pdi->size;
     
   drvsd_dbg(" Model: %s\n",pdi->sdname);
@@ -247,24 +247,71 @@ static UINT sd_close(struct _dev *devp)
  *   Read the specified numer of sectors from the read-ahead buffer or from
  *   the physical device.
  *
+ * Input:
+ *   devp
+ *   buffer
+ *   start_sector
+ *   num_sectors
+ *
+ *  Output:
+ *   DRESULT 
+ *       0: success
+ *      -1: RDY timeout 
+ *      -2: DRQ timeouot
+ *      -3: BUSY timeout
+ * 
+ *      -100: unknown command 
+ *
  ****************************************************************************/
 
-static UINT sd_read(struct _dev *devp, char *buffer, UINT start_sector, UINT num_sectors)
+static DRESULT sd_read(struct _dev *devp, char *buffer, UINT start_sector, UINT num_sectors)
 {
 
   DRESULT res;
   BYTE disk; 
   
   drvsd_lldbg("sd_read\n");
-  drvsd_lldbgdec("   sect : ",start_sector);
-  
+
   if(devp == NULL) return EINVAL;
   disk = devp->pdrv+1;
+
+  drvsd_lldbgdec("   disk : ",devp->pdrv);
+  drvsd_lldbgdec("   sect : ",start_sector);
+  drvsd_lldbgdec("   num  : ",num_sectors);
+  
+  
      
-  res = sddisk(CMD_READ,start_sector,num_sectors,disk,buffer);	
+  res = sddisk(CMD_READ,start_sector,num_sectors,disk,buffer);	/* this is a GP call ... */
+  
+  switch(res){
+    /*  0: success
+     * -1: RDY timeout 
+     * -2: DRQ timeouot
+     * -3: BUSY timeout
+     * 
+     *  -100: unknown command 
+     */
+    case 0: 
+      res = RES_OK;
+      drvsd_lldbg(" sd_read-OK\n");
+      break;
+    case -1:
+    case -2:
+    case -3:
+      res = RES_NOTRDY;
+      drvsd_lldbg(" sd_read-NOTRDY\n");
+      break;
+    case -100:
+      res = RES_PARERR;
+      drvsd_lldbg(" sd_read-PARERR(1)\n");
+      break;
+    
+    default:
+      res = RES_PARERR;
+      drvsd_lldbg(" sd_read-PARERR(2)\n");
+  }
   
   return res;
-  
 }
 
 /****************************************************************************
@@ -274,23 +321,65 @@ static UINT sd_read(struct _dev *devp, char *buffer, UINT start_sector, UINT num
  *   Write the specified number of sectors to the write buffer or to the
  *   physical device.
  *
+ *
+ * Input:
+ *   devp
+ *   buffer
+ *   start_sector
+ *   num_sectors
+ *
+ *  Output:
+ *   res 
  ****************************************************************************/
 
-static UINT sd_write(struct _dev *devp, char *buffer, UINT start_sector, UINT num_sectors)
+static DRESULT sd_write(struct _dev *devp, char *buffer, UINT start_sector, UINT num_sectors)
 {
   DRESULT res;
   BYTE disk;
   
+  drvsd_lldbg("sd_write\n");
+
   if(devp == NULL) return EINVAL;
   if(buffer == NULL) return EINVAL;
   
   disk = devp->pdrv+1;
+    
+  drvsd_lldbgdec("   disk : ",devp->pdrv);
+  drvsd_lldbgdec("   sect : ",start_sector);
+  drvsd_lldbgdec("   num  : ",num_sectors);
+
+  res = sddisk(CMD_WRITE,start_sector,num_sectors,disk,buffer);	/* this is a GP call ... */
   
-  drvsd_lldbg("sd_write\n");
-  
-  res = sddisk(CMD_WRITE,start_sector,num_sectors,disk,buffer);	
+  switch(res){
+    /*  0: success
+     * -1: RDY timeout 
+     * -2: DRQ timeouot
+     * -3: BUSY timeout
+     * 
+     *  -100: unknown command 
+     */
+    case 0: 
+      res = RES_OK;
+      drvsd_lldbg(" sd_write-OK\n");
+      break;
+    case -1:
+    case -2:
+    case -3:
+      res = RES_NOTRDY;
+      drvsd_lldbg(" sd_write-NOTRDY\n");
+      break;
+    case -100:
+      res = RES_PARERR;
+      drvsd_lldbg(" sd_write-PARERR(1)\n");
+      break;
+    
+    default:
+      res = RES_PARERR;
+      drvsd_lldbg(" sd_write-PARERR(2)\n");
+  }
   
   return res;
+
 }
 
 
@@ -302,7 +391,7 @@ static UINT sd_write(struct _dev *devp, char *buffer, UINT start_sector, UINT nu
  ****************************************************************************/
 
 	
-static UINT sd_geometry(struct _dev *devp, struct geometry *geometry)
+static DRESULT sd_geometry(struct _dev *devp, struct geometry *geometry)
 {
   unsigned int stat; //STA_NODISK
   struct _sddriveinfo* pdi;
@@ -319,12 +408,13 @@ static UINT sd_geometry(struct _dev *devp, struct geometry *geometry)
     drvsd_lldbg(" error: no physical device given\n");
     return RES_PARERR;  
   }
-  disk = devp->pdrv;
+  disk = devp->pdrv+1;
     
-  pdi = sdtest(disk);
+  pdi = sdtest(disk); /* this is a GP call ... */
   
   if(pdi == NULL){
     geometry->available = FALSE;
+    drvsd_lldbg(" error: device not available\n");
     return EINVDRV;
   }
  
@@ -335,7 +425,7 @@ static UINT sd_geometry(struct _dev *devp, struct geometry *geometry)
   geometry->heads = 0;
   geometry->sptrack = 0;
   geometry->nsectors = pdi->size; // sectors per card
-  geometry->sectorsize = pdi->bpb;; // usually 512 Bytes per Sector
+  geometry->sectorsize = pdi->bpb; // usually 512 Bytes per Sector
   geometry->type = pdi->type;
   geometry->model = malloc(strlen(pdi->sdname)+1);
   if(geometry->model){
@@ -358,8 +448,7 @@ DRESULT idetifySD(BYTE disk, struct _deviceinfo *p){
   struct geometry g;
   struct _dev d;
   
-  d.pdrv = disk;
-  
+  d.pdrv = disk-1; // weil identifySD mit disk+1 aufgerifen wird, aber in sd_geometry schon +1 umgerechnet wird  
   sd_geometry(&d, &g);  
    
   if( strlen(g.model) < 40 ) strcpy(p->modelnum,g.model);
@@ -383,7 +472,7 @@ DRESULT idetifySD(BYTE disk, struct _deviceinfo *p){
  *
  ****************************************************************************/
 
-static UINT sd_ioctl(struct _dev *devp, UINT cmd, unsigned long arg)
+static DRESULT sd_ioctl(struct _dev *devp, UINT cmd, unsigned long arg)
 {
   BYTE disk; 
   DSTATUS stat;

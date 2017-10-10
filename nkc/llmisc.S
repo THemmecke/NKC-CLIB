@@ -56,12 +56,28 @@ _ll_gettime:
 	
 	CMOS_READ #RTC_MONTH
 	BCD_TO_BIN	
-	sub.l #1,%d0
+	/*
+	sub.l #1,%d0   why ? 
+	*/
 	move.l %d0,16(%a2)
 	
 	CMOS_READ #RTC_YEAR	
 	BCD_TO_BIN
-	move.l %d0,20(%a2)
+
+/*--	
+	move.l %d0,%d1
+	CMOS_READ #RTC_CENTURY
+	BCD_TO_BIN
+
+	mulu.l #100,%d0
+	add.l %d1,%d0
+	sub.l #1900,%d0
+--*/	
+
+	addi.l #100,%d0		/* years since 1900  */
+	move.l %d0,20(%a2) 
+
+	
 	
 	CMOS_READ #RTC_DAY_OF_WEEK	
 	BCD_TO_BIN

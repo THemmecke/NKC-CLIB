@@ -1,12 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <libp.h>
-
-
-
-#ifdef CONFIG_DEBUG_TIME
-#include "../nkc/llnkc.h"
-#endif
+#include <debug.h>
 
 /*
  struct tm
@@ -23,34 +18,44 @@
 		};
 */
 
+
+/*
+Get current time
+Get the current calendar time as a value of type time_t.
+
+The function returns this value, and if the argument is not a null pointer, it also sets this value to the object pointed by timer.
+
+The value returned generally represents the number of seconds since 00:00 hours, Jan 1, 1970 UTC (i.e., the current unix timestamp). 
+Although libraries may use a different representation of time: Portable programs should not use the value returned by this function directly, 
+but always rely on calls to other elements of the standard library to translate them to portable types (such as localtime, gmtime or difftime).
+*/
+
 time_t time(time_t *tptr)
 {
 	long val;	
 	struct tm t2;
-	#ifdef CONFIG_DEBUG_TIME
-	gp_write("time...\n");
-	#endif
+	
+	time_lldbg("[time...\n");
 	
 	_ll_gettime(&t2);
+	t2.tm_mon--;
 	
-	#ifdef CONFIG_DEBUG_TIME
-	gp_write(" sec :"); gp_write_dec_dw((unsigned int)t2.tm_sec); gp_write("\n");
-	gp_write(" min :"); gp_write_dec_dw((unsigned int)t2.tm_min); gp_write("\n");
-	gp_write(" hour:"); gp_write_dec_dw((unsigned int)t2.tm_hour); gp_write("\n");
-	gp_write(" year:"); gp_write_dec_dw((unsigned int)t2.tm_year); gp_write("\n");
-	gp_write(" mon :"); gp_write_dec_dw((unsigned int)t2.tm_mon); gp_write("\n");
-	gp_write(" mday :"); gp_write_dec_dw((unsigned int)t2.tm_mday); gp_write("\n");
-	gp_write(" wday :"); gp_write_dec_dw((unsigned int)t2.tm_wday); gp_write("\n");
-	#endif
+	time_lldbgdec(" sec :",(unsigned int)t2.tm_sec);
+	time_lldbgdec(" min :",(unsigned int)t2.tm_min);
+	time_lldbgdec(" hour:",(unsigned int)t2.tm_hour);
+	time_lldbgdec(" year:",(unsigned int)t2.tm_year);
+	time_lldbgdec(" mon :",(unsigned int)t2.tm_mon);
+	time_lldbgdec(" mday:",(unsigned int)t2.tm_mday);
+	time_lldbgdec(" wday:",(unsigned int)t2.tm_wday);
 	
+	
+
 	val = mktime(&t2);
 	
 	if (tptr)
 		*tptr = val;
 		
-	#ifdef NCONFIG_DEBUG_TIME
-	gp_write(" ...time\n");
-	#endif	
+	time_lldbg("...time]\n");	
 	return val;
 }
 

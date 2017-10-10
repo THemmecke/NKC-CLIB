@@ -21,10 +21,12 @@
 extern "C" {
 #endif
 
+  
 #include <errno.h>	/* Basic integer types */
 #include <stdio.h>	/* include _F_WRIT...etc. from stdio.h */
   
 #include <drivers.h>		/* include block driver definitions */  
+#include <fs.h>			/* include FSTYPE */
   
 #include "../fs/fat/ffconf.h"		/* FatFs configuration options */
 
@@ -59,6 +61,7 @@ typedef char TCHAR;
 /* File system object structure (FATFS) */
 
 typedef struct {
+        FSTYPE	fs_id;			/* id to identify filesystem type in void pointers, defined in fs.h */
 	BYTE	fs_type;		/* FAT sub-type (0:Not mounted) */
 	BYTE	drv;			/* Physical drive number */
 

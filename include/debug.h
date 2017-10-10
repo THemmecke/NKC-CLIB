@@ -133,10 +133,12 @@ static char debugbuf[255];
 # define fsnkc_dbg(format,arg...)    dbg(format,##arg)
 # define fsnkc_lldbgwait(format)	   lldbgwait(format) 
 # define fsnkc_lldbg(format)	     lldbg(format)
+# define fsnkc_lldbgdec(format,value)	lldbgdec(format,value)
 #else
 # define fsnkc_dbg(x...)
 # define fsnkc_lldbgwait(x...)
 # define fsnkc_lldbg(x...)
+# define fsnkc_lldbgdec(x...)
 #endif
 
 #ifdef CONFIG_DEBUG_FF
@@ -146,7 +148,7 @@ static char debugbuf[255];
 #else
 # define ff_dbg(x...)
 # define ff_lldbgwait(x...)
-# define ff_lldbg(x...)	     lldbg(format)
+# define ff_lldbg(x...)	     
 #endif
 
 #ifdef CONFIG_DEBUG_DRV
@@ -217,6 +219,18 @@ static char debugbuf[255];
 # define xxprintf_lldbgwait(x...)
 # define xxprintf_lldbgdec(format,value)
 # define xxprintf_lldbghex(format,value)
+#endif
+	
+#ifdef CONFIG_DEBUG_TIME
+# define time_dbg(format,arg...)    dbg(format,##arg)
+# define time_lldbgwait(format)	   lldbgwait(format) 
+# define time_lldbg(format)	     lldbg(format)
+# define time_lldbgdec(format,value)	lldbgdec(format,value)
+#else
+# define time_dbg(x...)
+# define time_lldbgwait(x...)
+# define time_lldbg(x...)
+# define time_lldbgdec(x...)
 #endif
 
 #endif

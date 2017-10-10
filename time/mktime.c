@@ -14,9 +14,8 @@ time_t mktime(struct tm *timeptr)
 #endif
 	int i = 0;
 	struct tm t = *timeptr;
-/*	t.tm_year += 1900;*/
-	t.tm_year += 2000;		
-/*	t.tm_hour-=GMT_OFFS; */
+	t.tm_year += 1900;	
+	t.tm_hour-=GMT_OFFS; 
 	if (t.tm_hour<0) {
 		t.tm_hour = 23;
 		t.tm_mday--;

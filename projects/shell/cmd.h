@@ -86,7 +86,11 @@ int cmd_chdir(char *);
 int cmd_copy(char *);
 int cmd_dir(char *);
 int cmd_dir_fat(char *,char* pd);
+#ifdef USE_JADOS
 int cmd_dir_nkc(char *,char* pd);
+#else
+int cmd_dir_nkc(struct fstabentry *pfstab);
+#endif
 int cmd_mkdir(char *);
 int cmd_rmdir(char *);
 int cmd_rename(char *);
@@ -126,6 +130,7 @@ int cmd_fs(char* args);
 int cmd_fatinfo(char* args);
 int cmd_meminfo(char* args);
 int cmd_history(char* args);
+int cmd_clock(char* args);
 int cmd_test(char* args);
 
 int cmd_setpoint(char* args);

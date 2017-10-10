@@ -31,7 +31,7 @@ size_t fread(void *buf, size_t size, size_t count, FILE *stream)
 	
 	for (i=0; i < len; i++) {
 		clio_lldbg("+");
-		rv = _basegetc(stream);
+		rv = _basegetc(stream); // !
 		if (rv == EOF)
 		{
 			//TH: JADOS EOF handling (see also _basegetc in putget.c)

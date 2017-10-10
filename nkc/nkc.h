@@ -451,6 +451,7 @@
 #define RTC_DAY_OF_MONTH	7
 #define RTC_MONTH		8
 #define RTC_YEAR		9
+#define RTC_CENTURY		50
 
 /* control registers - Moto names
  */

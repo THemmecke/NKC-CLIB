@@ -166,7 +166,7 @@ struct ioctl_readdir {
 struct ioctl_getfree {
 	char* path;		/* Path name of the logical drive number */
 	DWORD* nclst;		/* Pointer to a variable to return number of free clusters */
-	FATFS** ppfatfs;	/* Pointer to return pointer to corresponding file system object */
+	FS** ppfs;		/* Pointer to return pointer to corresponding file system object */
 };
 
 struct ioctl_rename {
