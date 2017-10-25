@@ -33,7 +33,8 @@ CONFIG_DRV_JD = 0
 
 ############## character devices ... ################################################
 CONFIG_CHAR_DEVICES = 1
-
+############## select char devices: RTC, Keyboard, Mouse ... ########################
+CONFIG_DRV_RTC = 0
 
 ############## use GP / JADOS ? #####################################################
 # use GP (trap 1) calls 
@@ -48,7 +49,7 @@ CONFIG_USE_JADOS = 0
 ############# DEBUG configuration #################################################
 # #include <debug.h> in 
 # global switch to turn debugging on/off
-CONFIG_DEBUG = 1
+CONFIG_DEBUG = 0
 # output debug to serial IO (PORT+BAUD+8N1)
 CONFIG_DEBUG_SIO_OUT = 1
 # define port and speed for serial debug output (default: Port 1, 9600 Baud, 8N1)
@@ -56,14 +57,14 @@ CONFIG_DEBUG_SIO_PORT_2 = 0
 CONFIG_DEBUG_SIO_BAUD_115200 = 1
 # ------------------------------
 # disk i/o debug
-CONFIG_DEBUG_DISKIO = 1
+CONFIG_DEBUG_DISKIO = 0
 # debug GIDE C-files, ASM/S-files
 CONFIG_DEBUG_GIDE_C = 0
 CONFIG_DEBUG_GIDE_S = 0
 # debug extended printf 
 CONFIG_DEBUG_XXPRINTF = 0
 # time debug
-CONFIG_DEBUG_TIME = 1
+CONFIG_DEBUG_TIME = 0
 # clib io debug
 CONFIG_DEBUG_CLIB_IO=0
 # HighLevel FileSystem
@@ -74,10 +75,10 @@ CONFIG_DEBUG_FS_NKC = 1
 CONFIG_DEBUG_FS_FAT = 0
 CONFIG_DEBUG_FF = 0
 # Driver Subsystem
-CONFIG_DEBUG_DRV = 1
-CONFIG_DEBUG_DRV_GIDE = 1
-CONFIG_DEBUG_DRV_SD = 1
-CONFIG_DEBUG_DRV_JD = 1
+CONFIG_DEBUG_DRV = 0
+CONFIG_DEBUG_DRV_GIDE = 0
+CONFIG_DEBUG_DRV_SD = 0
+CONFIG_DEBUG_DRV_JD = 0
 # Memory Management
 CONFIG_DEBUG_MM = 0
 
@@ -96,7 +97,13 @@ CCFLAGS=
 #GCFLAGS+=NONRECURSIVE
 
 # ######### optimization level (-O0 = do not Optimize, default) #####################
-CCFLAGS +=  -O0 
+# invoke GCC with -Q --help=optimizers to find out the exact set of optimizations
+# (m68k-uclinux-gcc -Q --help=optimizers)
+# -O[level]
+# -O0 - do not optimize at all
+# -Os - optimize for size
+# -O  -  trie to reduce code size and execution time
+CCFLAGS +=  -O0
 
 # ######### do not generate debug info at all #####################
 CCFLAGS +=  -g0
@@ -141,6 +148,9 @@ CCFLAGS += -DCONFIG_DRV_SD
 endif
 ifeq ($(CONFIG_DRV_JD),1)
 CCFLAGS += -DCONFIG_DRV_JD
+endif
+ifeq ($(CONFIG_DRV_RTC),1)
+CCFLAGS += -DCCONFIG_DRV_RTC
 endif
 
 # #### use GP / JADOS calls #####################
@@ -293,7 +303,6 @@ LDFLAGS += -r
 LDFLAGS += -O0
 
 
-
 ############### assembler #################################
 AS = m68k-uclinux-as
 ############### assembler flags ###########################
@@ -389,7 +398,7 @@ EB = elf2bin
 
 
 # CCFLAGS:
-# -0s                           Optimize for size (-O0 = do not Optimize, default)
+# -Os                           Optimize for size (-O0 = do not Optimize, default)
 # -g                            gererates debug info (section .stab)
 # -g0				do not generate debug info at all
 # -fomit-frame-pointer          Dont keep the frame-pointer in register for functions that don't need one.

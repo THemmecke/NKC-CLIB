@@ -582,22 +582,8 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
       if(pfsdriver->f_oper->ioctl) {	
 		fs_lldbg(" fs.c: calling (fs)drivers ioctl...\n");
 	
-#ifdef USE_JADOS	
-		if(pfstab->devname[0] == '*') {
-		  // give actual drivename to JADOS	  
-		  isJados = TRUE;
-		  pfstab->devname[0] = FPInfo.psz_driveName[0];	  
-		}
-#endif
-	
 		fres = pfsdriver->f_oper->ioctl(pfstab,FS_IOCTL_CHDRIVE,pfstab);	// is ioctl valid ? -> call it
-		fs_dbg("fc.c:  fres(FS_IOCTL_CHDRIVE) = %d\n",fres);
-	
-#ifdef USE_JADOS
-		if(isJados) {
-		  pfstab->devname[0] = '*';
-		}
-#endif	
+		fs_dbg("fc.c:  fres(FS_IOCTL_CHDRIVE) = %d\n",fres);	
 	
 		if(fres == FR_OK) {
 		  // update psz_cdrive and psz_cpath....
@@ -1353,11 +1339,6 @@ struct fstabentry* get_fstabentry(char* devname)
   struct fstabentry *pcur;
   char* tc;
   int i=0;
-#ifdef USE_JADOS
-  BOOL isJados = FALSE;
-  char jadosdrv;
-#endif
-  
   
   fs_dbg(" fs.c|get_fstabentry: (%s)\n",devname);
   
@@ -1384,13 +1365,6 @@ struct fstabentry* get_fstabentry(char* devname)
   
   fs_dbg(" fs.c|get_fstabentry: search for '%s'...\n",tc);
   
-#ifdef USE_JADOS
-  if(!tc[1]) { // JADOS drive
-    isJados = TRUE;
-    jadosdrv = tc[0];
-    tc[0] = '*';
-  }
-#endif
   
   while(pcur)
   {
@@ -1410,23 +1384,13 @@ struct fstabentry* get_fstabentry(char* devname)
 	  fs_dbg("     pFS     = 0x%x\n",pcur->pfs);
 	  fs_dbg("     next    = 0x%x\n",pcur->next);
 	  fs_lldbgwait("           ....(KEY)\n");
-#ifdef USE_JADOS
-	  if(isJados){
-	    tc[0] = jadosdrv;
-	  }
-#endif
+
 	  free(tc);
   	  return pcur;
   	}
   	
   	pcur = pcur->next;
   }		
-
-#ifdef USE_JADOS
-  if(isJados){
-	    tc[0] = jadosdrv;    
-  }
-#endif
    
   fs_dbg(" fs.c|get_fstabentry: (FAILED) volume not found\n");  
   free(tc);
@@ -1454,46 +1418,23 @@ FRESULT add_fstabentry(char *volume, char* fsname, unsigned char options)
     struct fs_driver *pfs_drv;
     char* pdevname;
     char* pfsname;
-    struct fstabentry *pfstab, *ptail;
-    
-#ifdef USE_JADOS
-    BOOL isJados = FALSE;
-#endif    
+    struct fstabentry *pfstab, *ptail;   
     
     fs_dbg("add_fstabentry ...\n");
     
     pfs_drv = get_driver(fsname);     // file system driver
-    
-#ifdef USE_JADOS
-    if(volume[1]){ // not a JADOS drive
-     pblk_drv = get_blk_driver(volume);// block device driver
-    }else{
-      isJados = TRUE;
-      pblk_drv = NULL;
-    }
-#else
+
    pblk_drv = get_blk_driver(volume);// block device driver
-#endif
     
     if(!pfs_drv) { // errorhandling
       fs_dbg("error no filesystem driver found for %s ...\n",fsname);
       return FR_NO_FILE;
     }
     
-#ifdef USE_JADOS
-// we call JADOS directly in JADOSFS
-    if(!isJados) {
-       if(!pblk_drv) {  // errorhandling
-	fs_dbg("error no block device driver driver found for %s ...\n",volume);
-	return FR_INVALID_DRIVE;
-      }
-    }
-#else
     if(!pblk_drv) {  // errorhandling
       fs_dbg("error no block device driver driver found for %s ...\n",volume);
       return FR_INVALID_DRIVE;
     }
-#endif
     
     pfstab = (struct fstabentry *)malloc(sizeof(struct fstabentry));
     
@@ -1533,11 +1474,7 @@ FRESULT add_fstabentry(char *volume, char* fsname, unsigned char options)
     
     
 
-    if( (pfstab->pdrv == -1 || pfstab->partition == -1)
-#ifdef USE_JADOS      
-      && !isJados
-#endif      
-      ) {
+    if( (pfstab->pdrv == -1 || pfstab->partition == -1)) {
 
       fs_dbg("error: invalid drive specified\n");
       free(pfstab);
@@ -1636,48 +1573,23 @@ void _ll_init_fs(void)  			// initialize filesystems (nkc/llopenc.c)
 	FPInfo.psz_filename = (char*)malloc(_MAX_FILENAME); if(FPInfo.psz_filename ==0 ) exit(ENOMEM);
 	FPInfo.psz_fileext = (char*)malloc(_MAX_FILEEXT); if(FPInfo.psz_fileext == 0 ) exit(ENOMEM);
 	FPInfo.psz_cdrive = (char*)malloc(_MAX_DRIVE_NAME); if(FPInfo.psz_cdrive == 0 ) exit(ENOMEM);
-	FPInfo.psz_cpath = (char*)malloc(_MAX_PATH); if(FPInfo.psz_cpath == 0 ) exit(ENOMEM);
- 	
- #ifdef USE_JADOS
- 	/* for now we assume the program was started from a jados drive
- 	 * and so the cdrive is a JADOS drive
- 	 */
- 	  
- 	if(_DRIVE >= 0 && _DRIVE <= 4) /* is it a ramdisk(0) or floppy drive(1..4) ? */
-		{
-			FPInfo.psz_cdrive[0] = _DRIVE + '0';			
-		}
-		
-	if(_DRIVE >= 5 && _DRIVE <= 30) /* is it a hard disk drive (5..30) ? */
-		{
-			FPInfo.psz_cdrive[0] = _DRIVE - 5 + 'A';
-		}
-			
-#else
-        FPInfo.psz_cdrive[0] = '?';
-#endif		
-				
+	FPInfo.psz_cpath = (char*)malloc(_MAX_PATH); if(FPInfo.psz_cpath == 0 ) exit(ENOMEM); 	
+    FPInfo.psz_cdrive[0] = '?';					
 	FPInfo.psz_cdrive[1] = 0;	// current drive name, i.e. where the program was started : A,B, HDA1 etc
 	FPInfo.psz_cpath[0] = 0;	// current path name; for jados this is empty or '/'
   	
  	fs_dbg("fs.c:  FPInfo.psz_cdrive = %s",FPInfo.psz_cdrive); 
 	fs_lldbgwait("\n");	
 	
-//#ifdef USE_JADOS	
  	#ifdef CONFIG_FS_NKC
  	// initialize NKC/JADOS FileSystem
  	nkcfs_init_fs();
  	#endif 
-//#endif
 	
   	#ifdef CONFIG_FS_FAT
  	// initialize FAT FileSystem
  	fatfs_init_fs();
  	#endif 
-	
-#ifdef USE_JADOS
-	add_fstabentry("*", "JADOSFS", 0); // this entry will match any single character drive (i.e. JADOS drives)
-#endif
 
 	fs_lldbgwait("fs.c: ..._ll_init_fs ]\n");
 }

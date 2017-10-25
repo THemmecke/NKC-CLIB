@@ -215,7 +215,7 @@ static UINT sd_open(struct _dev *devp)
   if(pdi == NULL) return EINVDRV;
   
   Stat[devp->pdrv].status = stat;	
-  Stat[devp->pdrv].sz_sector = pdi->bpb;//512; /* FIXME: */
+  Stat[devp->pdrv].sz_sector = pdi->bpb;
   Stat[devp->pdrv].n_sectors = pdi->size;
     
   drvsd_dbg(" Model: %s\n",pdi->sdname);
@@ -468,7 +468,7 @@ DRESULT idetifySD(BYTE disk, struct _deviceinfo *p){
 /****************************************************************************
  * Name: sd_ioctl
  *
- * Description: Return device geometry
+ * Description: ioctl function
  *
  ****************************************************************************/
 
@@ -522,41 +522,41 @@ static DRESULT sd_ioctl(struct _dev *devp, UINT cmd, unsigned long arg)
     // handles calls from FAT FS module .... ( ff.c )
     case CTRL_SYNC:
         drvsd_lldbg(" ->CTRL_SYNC\n"); 
-	// no need to call anything....
-	res = RES_OK;
-	break;
+	       // no need to call anything....
+	       res = RES_OK;
+	   break;
 
     case FS_IOCTL_DISK_GET_SECTOR_COUNT:
     case GET_SECTOR_COUNT: // return available sectors on the device
         drvsd_lldbg(" ->FS_IOCTL_DISK_GET_SECTOR_COUNT\n");
-	*(DWORD*)arg = Stat[devp->pdrv].n_sectors;
-	res = RES_OK;
-	break;
+      	*(DWORD*)arg = Stat[devp->pdrv].n_sectors;
+      	res = RES_OK;
+  	break;
 
     case FS_IOCTL_DISK_GET_SECTOR_SIZE:
     case GET_SECTOR_SIZE: // return sector size in bytes
         drvsd_lldbg(" ->FS_IOCTL_DISK_GET_SECTOR_SIZE\n");
-	*(WORD*)arg = Stat[devp->pdrv].sz_sector;
-	res = RES_OK;
-	break;
+      	*(WORD*)arg = Stat[devp->pdrv].sz_sector;
+      	res = RES_OK;
+    break;
 	
     case GET_BLOCK_SIZE: // return erase block size of flash memory in units of sectors
         drvsd_lldbg(" ->GET_BLOCK_SIZE\n");
-	*(DWORD*)arg = 128;
-	res = RES_OK;
-	break;
+        // FIXME
+      	*(DWORD*)arg = 128;
+      	res = RES_OK;
+  	break;
 	
     case CTRL_ERASE_SECTOR:
         drvsd_lldbg(" ->CTRL_ERASE_SECTOR\n");
-	// FIXME
-	res = RES_OK;
-	break;
+      	// FIXME
+      	res = RES_OK;
+  	break;
 	
     case FS_IOCTL_GET_DISK_DRIVE_STATUS:  
       drvsd_lldbg(" ->FS_IOCTL_GET_DISK_DRIVE_STATUS\n");
       // args: struct _dev *devp<=phydrv, int cmd<=FS_IOCTL_GET_DISK_DRIVE_STATUS, unsigned long arg <=pointer to struct _deviceinfo            
   
-      
       memset((struct _deviceinfo *)arg,0, sizeof(struct _deviceinfo));
       
       result = idetifySD(devp->pdrv+1, (struct _deviceinfo *)arg );
@@ -564,38 +564,38 @@ static DRESULT sd_ioctl(struct _dev *devp, UINT cmd, unsigned long arg)
       
       switch(result){ 
           case STA_NODISK:
-	    res = RES_NOTRDY;
-	    break;
-	  case STA_OK:
-	    res = RES_OK;
-	    break;
-	  default:
-	     res = RES_OK;
+    	    res = RES_NOTRDY;
+    	    break;
+      	  case STA_OK:
+      	    res = RES_OK;
+          break;
+      	  default:
+      	     res = RES_OK;
       }
 
-      break;
+    break;
     case GET_DISK_STATUS:
         drvsd_lldbg(" ->GET_DISK_STATUS\n");
-	*(DSTATUS*)arg = Stat[devp->pdrv].status;
-	res = RES_OK;
-	break;
+      	*(DSTATUS*)arg = Stat[devp->pdrv].status;
+      	res = RES_OK;
+    break;
 		
     case FS_IOCTL_DISK_INIT: 
       // args: struct _dev *devp<=phydrv, int cmd<=FS_IOCTL_DISK_INIT, unsigned long arg <=NULL
     case CTRL_DISK_INIT:
         drvsd_lldbg(" sd_block_drv: ->FS_IOCTL_DISK_INIT\n");
 	
-	switch( disk_initialize (devp->pdrv) ){ 
-	  case STA_NODISK:
-	    res = RES_NOTRDY;
-	    break;
-	  case STA_OK:
-	    res = RES_OK;
-	    break;
-	  default:
-	     res = RES_OK;
-	}
-	break;
+      	switch( disk_initialize (devp->pdrv) ){ 
+      	  case STA_NODISK:
+      	    res = RES_NOTRDY;
+      	    break;
+      	  case STA_OK:
+      	    res = RES_OK;
+      	    break;
+      	  default:
+      	     res = RES_OK;
+      	}
+	   break;
     
   }
   

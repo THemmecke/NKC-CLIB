@@ -678,7 +678,7 @@ FRESULT nkcfs_mount(unsigned char  mount, 		/* 1=> mount, 0=> unmount */
 
 		// walk through the disk ....
 		fsnkc_dbg(" nkcfs_mount: valid partitions are: \n"); 
-		for(i=0; i < MAX_PARTITIONS && ssector < pJDHd->nsectors; i++) {
+		for(i=0,ssector=0; i < MAX_PARTITIONS && ssector < pJDHd->nsectors; i++) {
 		  
 		  ssector = (FCLUSTER + i*PART_SIZE) * pJDHd->spc;
 		  fsnkc_dbg(" check if partition %d startig at sector %d is valid ...\n ",i,ssector);
@@ -848,7 +848,7 @@ static int     nkcfs_readdir(struct _file *filp, DIR *dir,FILINFO* finfo) {
 	//	8-5 	Month (1–12)
 	//	4-0 	Day (1–31)
     finfo->fsize = pdir[dir->index].length*1024;
-    // FIXME: we should not add 2000 if RTC supports y2k     
+    // FIXME: we should not add 2000 if RTC supports y2k, but hey ... Y2K is so long ago ... :-(    
     finfo->fdate  = ((y + 2000) - 1980) << 9; 	/* year */
     finfo->fdate += m << 5; 					/* month */
     finfo->fdate +=  d;  						/* day */
@@ -958,24 +958,7 @@ static int nkcfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg){
     case FS_IOCTL_GETCWD:
       fsnkc_dbg("fs_nkc.c: - FS_IOCTL_GETCWD -\n");
 
-#ifdef USE_JADOS
-      current_jados_drive = jd_get_drive(); // call jados
-
-      cdrive[1] = 0;
-      if(current_jados_drive >= 0 && current_jados_drive <= 4) /* is it a ramdisk(0) or floppy drive(1..4) ? */
-		{
-			cdrive[0] = current_jados_drive + '0';
-		}
-
-		if(current_jados_drive >= 5 && current_jados_drive <= 30) /* is it a hard disk drive (5..30) ? */
-		{
-			cdrive[0] = current_jados_drive - 5 + 'A';
-		}
-
-      strcpy((char*)((struct ioctl_get_cwd*)(arg))->cdrive,cdrive);
-#else
       strcpy((char*)((struct ioctl_get_cwd*)(arg))->cdrive,current_jados_drive); // return current jados drive
-#endif
       strcpy((char*)((struct ioctl_get_cwd*)(arg))->cpath,"/");     /* there is nothing like a subdirectory in JADOS/NKC FS */
       res = FR_OK;
       break;
@@ -985,18 +968,7 @@ static int nkcfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg){
       fsnkc_dbg(" fs_nkc.c: FS_IOCTL_CHDRIVE: %s", ((struct fstabentry*)arg)->devname);
       fsnkc_lldbgwait("(KEY)\n");
 
-#ifdef USE_JADOS
-      if((*(char*)((struct fstabentry*)arg)->devname) >= '0' && (*(char*)((struct fstabentry*)arg)->devname) <= '4'){ /* is it a ramdisk(0) or floppy drive(1..4) ? */
-		current_jados_drive = (*(char*)((struct fstabentry*)arg)->devname) - '0';
-      }
-      if((*(char*)((struct fstabentry*)arg)->devname) >= 'A' && (*(char*)((struct fstabentry*)arg)->devname) <= 'Z'){ /* is it a hard disk drive (5..30) ? */
-		current_jados_drive = (*(char*)((struct fstabentry*)arg)->devname) + 5 - 'A';
-      }
-
-      jd_set_drive(current_jados_drive); // call jados
-#else
       strcpy(current_jados_drive,((struct fstabentry*)arg)->devname); // set selected drive as current drive
-#endif
 
       res = FR_OK;
       break;
@@ -1057,20 +1029,6 @@ static int nkcfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg){
 	break;
       }
 
-#ifdef USE_JADOS
-      fsnkc_dbg("fs_nkc.c: convert drive %s to ",(((struct fstabentry*)arg)->devname) );
-
-      if( (*((struct fstabentry*)arg)->devname) >= '0' && (*((struct fstabentry*)arg)->devname) <= '4' ){ /* is it a ramdisk(0) or floppy drive(1..4) ? */
-		((struct fstabentry*)arg)->pdrv = (*((struct fstabentry*)arg)->devname) - '0';
-		fsnkc_dbg("fs_nkc: phydrv(1) %d\n",((struct fstabentry*)arg)->pdrv);
-      }
-      else if( (*((struct fstabentry*)arg)->devname) >= 'A' && (*((struct fstabentry*)arg)->devname) <= 'Z' ){ /* is it a hard disk drive (5..30) ? */
-		((struct fstabentry*)arg)->pdrv = (*((struct fstabentry*)arg)->devname) + 5 - 'A';
-		fsnkc_dbg("fs_nkc: phydrv(2) %d \n",((struct fstabentry*)arg)->pdrv);
-      }
-      else fsnkc_dbg("fs_nkc: ...ERROR\n");
-      res = FR_OK;
-#endif
       res = nkcfs_mount(1, ((struct fstabentry*)arg));
 
       break;
@@ -1206,7 +1164,7 @@ static int nkcfs_open(struct _file *filp)
     return ENOFILE;
    }
 
-   /* translate stdio.h mode flag ... FIXME: eliminate FA_ flags,also in FAT file system */
+   /* translate stdio.h mode flag to definition of ff.h (Chungs FAT-FS) ...  */
    mode = 0;	/* file open mode 				 */
    omode = 0;	/* file open mode  (JADOS style) */
    iread = 0;   /* read first sector ?           */
@@ -1214,7 +1172,7 @@ static int nkcfs_open(struct _file *filp)
    if(filp->f_oflags & _F_WRIT) mode |= FA_WRITE; // F_WRIT = 2, FA_WRITE = 2 (i.e = _F_WRIT)
    if(filp->f_oflags & _F_CREATE) mode |= FA_CREATE_NEW; // _F_CREATE = 0x800, FA_CREATE_NEW = 4
 
-   							// es wird von "oben" immer "create new" uebergeben, wenn eine Datei zum Schreiben geffnet werden soll
+   							// es wird von "oben" immer "create new" uebergeben, wenn eine Datei zum Schreiben geoeffnet werden soll
    							// das fuehrt richtigerweise zu einem Fehler => check upper layer !
 
    res = find_file(filp,&dir,&jdir); /* fetch file information */
@@ -1973,7 +1931,6 @@ static int  nkcfs_rename(struct _file *filp, const char *oldrelpath, const char 
     JDFS *pJDFs;
     struct jdhd *pJDHd;
 	unsigned short index,nexttrack,ii;
-	char *pname;
 	DRESULT dresult = RES_PARERR;
 
 	fsnkc_dbg("fs_nkc.c: nkcfs_rename...\n");
@@ -2028,33 +1985,10 @@ static int  nkcfs_rename(struct _file *filp, const char *oldrelpath, const char 
 		return ENOMEM;
 	}
 
-	// FIXME: muss das Kopieren sein ?
-	pname = (char*)malloc(strlen(newrelpath)+1);
 
-	if( !pname ){
-		/* free buffers and handles*/
-		free(nfilp);
-		free(pdir);
-		free(pnjddir);
-		free(pfcb->pbuffer);
-		free(pfcb);
-		return ENOMEM;
-	}
-
-	if(	!strcpy(pname,newrelpath) )
-	{
-		/* free buffers and handles*/
-		free(pname);		
-		free(nfilp);
-		free(pdir);
-		free(pnjddir);
-		free(pfcb->pbuffer);
-		free(pfcb);
-		return ENOMEM;
-	}
 	
 	nfilp->p_fstab = pfstab; 
-	nfilp->pname = pname;
+	nfilp->pname = newrelpath;
 	nfilp->fd = 0;
 	nfilp->f_pos = 0;
 	nfilp->f_oflags = 0;
@@ -2064,7 +1998,6 @@ static int  nkcfs_rename(struct _file *filp, const char *oldrelpath, const char 
 		/* error file already exists or other error */
 	
 		/* free buffers and handles*/
-		free(pname);
 		free(nfilp);
 		free(pdir);
 		free(pnjddir);
@@ -2087,7 +2020,6 @@ static int  nkcfs_rename(struct _file *filp, const char *oldrelpath, const char 
     memcpy(pjddir[dir_index].fileext,pnjddir->fileext,3);
 
 	/* free buffers and handles*/
-	free(pname);
 	free(nfilp);
 	free(pdir);
 	free(pnjddir);
@@ -2115,7 +2047,6 @@ static int  nkcfs_rename(struct _file *filp, const char *oldrelpath, const char 
 	fsnkc_dbg("fs_nkc.c: nkcfs_rename: free ressources ...\n");		
 
 	/* free buffers and handles*/
-	free(pname);
 	free(nfilp);
 	free(pdir);
 	free(pnjddir);
@@ -2129,10 +2060,6 @@ static int  nkcfs_rename(struct _file *filp, const char *oldrelpath, const char 
 void nkcfs_init_fs(void)
 {
 	fsnkc_dbg("nkcfs_init_fs...\n");
-
-#ifdef USE_JADOS
-	current_jados_drive = _DRIVE;
-#endif
 
 	register_driver("JADOSFS",&nkc_file_operations); 	// general driver for a JADOS filesystem
 

@@ -18,6 +18,7 @@
 
 #include "../../nkc/llnkc.h"
 
+extern int _ll_settime(struct tm *tm2);
 
 #define MBR_Table			446	/* MBR: Partition table offset (2) */
 #define	SZ_PTE				16	/* MBR: Size of a partition table entry */
@@ -276,7 +277,7 @@ struct CMDHLP hlptxt[] =
                         "history\n"},	
 {TEXT_CMDHELP_CLOCK,             
                         "clock: show system clock (RTC)\n",
-                        "clock\n"},                                                  
+                        "clock [MMDDhhmm[[CC]YY][.ss]]\n"},                                                  
 {TEXT_CMDHELP_TEST,             
                         "test: test function\n",
                         "test\n"},			
@@ -375,11 +376,7 @@ extern struct fpinfo FPInfo; // shell.c :  working struct for checkfp (check fil
 struct fpinfo FPInfo1, FPInfo2; // working buffer(2) for arbitrary use with checkfp and checkargs
 
 WORD AccFiles, AccDirs;
-BYTE Buff[262144];			/* Working buffer */
-
-//extern char FPInfo.psz_cpath[300];		/* shell.c */
-//extern char FPInfo.psz_cdrive[MAX_CHAR];	/* shell.c */
-//extern BYTE CurrFATDrive;		/* shell.c */
+BYTE Buff[262144];			/* Working buffer FIXME: allocate this buffer dynamic ! */
 
 // ---
 FILE* file[2];				/* Pointer to File objects file[0] idt used for read and file[1] ist used for write */
@@ -552,14 +549,15 @@ FRESULT scan_fat_files (	/* used in cmd_lstatus */
 */
 
 int xatoi (			/* 0:Failed, 1:Successful */
-	char **str,	/* Pointer to pointer to the string */
-	long *res		/* Pointer to a variable to store the value */
+	char **str,	/* Pointer to pointer to the string Note: char var[x] => &var cannot be used directly, use pvar = &var instead !*/
+	long *res		/* Pointer to a variable to store the value Note: MUST be 32 bits ! */
 )
 {
 	unsigned long val;
 	unsigned char r, s = 0;
 	char c;
 
+	printf(" xatoi(0x%08x 0x%08x 0x%08x)\n",**str,*str, str);
 
 	*res = 0;
 	while ((c = **str) == ' ') (*str)++;	/* Skip leading spaces */
@@ -612,7 +610,7 @@ int xatoi (			/* 0:Failed, 1:Successful */
 /*	"HDA0   binary w "
 	    ^                       1st call returns 'HDA0' and next ptr (if len = 4)
 	        ^                   2nd call returns 'binary' and next ptr
-                       ^            3rd call returns 'w' and next ptr                          
+                   ^            3rd call returns 'w' and next ptr                          
 */
 
 int xatos (			/* 0:Failed, 1:Successful */
@@ -640,7 +638,7 @@ int xatos (			/* 0:Failed, 1:Successful */
 	*p = 0; /* terminate string */
 	
 	
-	//if(n==len) return 0;
+	if(n == 0) return 0;
 	//  else return 1;
 	return 1;
 }
@@ -2609,6 +2607,8 @@ int cmd_history(char* args)
 
 
 /*
+int _ll_settime(struct tm *tm2)
+
 struct tm
 {
   int   tm_sec;
@@ -2622,6 +2622,11 @@ struct tm
   int   tm_isdst;
 };
 */
+
+
+/*
+clock [MMDDhhmm[[CC]YY][.ss]]
+*/
 int cmd_clock(char* args)
 {
   
@@ -2629,22 +2634,140 @@ int cmd_clock(char* args)
   struct tm y2k = {0};
   struct tm *py2k;
   double seconds;
+  unsigned char century, year, month, day, hour, minute, second, error;
+  char MM[3];
+  char DD[3];
+  char hh[3];
+  char mm[3];
+  char CC[3];
+  char YY[3];
+  char ss[3];
+  char answer;
+  int res;
 
-  printf("sytem date (RTC):\n");
+
+  printf("sytem clock (RTC) [%s](%d):\n",args, strlen(args));
 
   time(&timer);  				/* get current time; same as: timer = time(NULL)  */
   py2k = localtime(&timer);		/* get pointer to struct tm */
-
-  printf("y2k: %02d:%02d:%02d   %02d/%02d/%02d\n", py2k->tm_hour, py2k->tm_min, py2k->tm_sec, py2k->tm_mday, py2k->tm_mon+1, py2k->tm_year-100+2000);
-
-  seconds = difftime(timer,mktime(&y2k));
-
-  printf ("%.f seconds since January 1, 2000 in the current timezone\n", seconds);
-
   printf ("The current local time is: %s\n", ctime (&timer));
 
+  /*parse args ...*/
+  if(strlen(args) > 8) {
+   /* skip whitespace */
+   while (*args == ' ') args++; 
+     
+   /* scan MMDDhhmm */
+   if (!xatos(&args, MM,2) || !xatos(&args, DD,2) || !xatos(&args, hh,2) || !xatos(&args, mm,2)) {   	
+   	printf(" error in args (1), try 'clock /?'\n");
+   	return 0;
+   }
+
+   /* check for optional .ss */
+   ss[0]=0;
+   if(*args == '.'){
+   	args++;
+   	if(!xatos(&args,ss,2)){
+   	 printf(" error in args (2), try 'clock /?'\n");
+   	 return 0;
+   	}
+   } 
+   /* check for optional CC and YY */
+   if(xatos(&args, CC,2)) { 
+   	if(!xatos(&args,YY,2)){
+   		strcpy(YY,CC);
+   		strcpy(CC,"20");
+   	} 
+   } else {
+   	sprintf(YY,"%02d",py2k->tm_year-100);
+   	strcpy(CC,"20");
+   }
+
+   /* again for optional .ss if not already done*/
+   if(ss[0] == 0){
+	   if(*args == '.'){
+	   	args++;
+	   	if(!xatos(&args,ss,2)){
+	   	 printf(" error in args (3), try 'clock /?'\n");
+	   	 return 0;
+	   	}
+	   } else {
+	   	strcpy(ss,"59");
+	   }
+   }
+   		
+   /* convert to number */		
+   month = atoi(MM);
+   day = atoi(DD);
+   hour = atoi(hh);
+   minute = atoi(mm);
+   second = atoi(ss);
+   century = atoi(CC);
+   year = atoi(YY);
+   
+   error = 0;
+   if( month < 1 || month > 12){
+   	printf(" error: month (%d) not vaid, should be 1..12 ! \n",month);
+   	error = 1;
+   }
+
+   if( day < 1 || day > 31){
+   	printf(" error: day (%d) not vaid, should be 1..31 ! \n",day);
+   	error = 1;
+   }   
+
+   if( hour < 0 || hour > 23){
+   	printf(" error: hour (%d) not vaid, should be 0..23 ! \n",hour);
+   	error = 1;
+   }
+
+   if( minute < 0 || minute > 59){
+   	printf(" error: minute (%d) not vaid, should be 0..59 ! \n",minute);
+   	error = 1;
+   }  
+ 
+   if( century != 19 || century != 20){
+   	printf(" error: century (%d) not vaid, should be 19 or 20 ! \n",century);
+   	error = 1;
+   }
+
+   if( year < 0 || year > 99){
+   	printf(" error: year (%d) not vaid, should be 0..99 ! \n",year);
+   	error = 1;
+   }
+
+   if( second < 0 || second > 59){
+   	printf(" error: second (%d) not vaid, should be 0..59 ! \n",second);
+   	error = 1;
+   }
+
+   if(error != 0){
+   	
+   	printf("  ==> MM = %02d, DD = %02d, hh = %02d, mm = %02d, CC = %02d, YY = %02d, ss = %02d\n",month,day,hour,minute,century,year,second);
+   	printf("  set clock with new values ? [y|N]:");
+
+   	answer = toupper(getchar()); printf("%c\n",answer);
+
+   	if(answer == 'Y'){
+   		/* set clock with new values */
+   		y2k.tm_sec = second;
+   		y2k.tm_min = minute;
+   		y2k.tm_hour = hour;
+   		y2k.tm_mday = day;
+   		y2k.tm_mon = month;
+   		y2k.tm_year = year + 100;
+   		y2k.tm_wday = 0;
+   		y2k.tm_yday = 0;
+   		y2k.tm_isdst = 0;
+
+   		//res = ioctl(NULL,NKC_IOCTL_SETCLOCK,&py2k);
+
+   		_ll_settime(&y2k);
+   	}
 
 
+   }
+  } /* end parsing */
 
   return 0;
 }

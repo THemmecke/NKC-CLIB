@@ -3,10 +3,16 @@
 
 
 	.text
-	.global _ll_gettime, _ll_ticks, _ll_getenv, _ll_system, timerinit, timerclose
+	.global _ll_gettime, _ll_settime, _ll_ticks, _ll_getenv, _ll_system, timerinit, timerclose
 
 	
-
+uwait:
+ movem.l %d4,-(%sp)
+ moveq #5*cpu, %d4               /* Ein bißchen warten, da Baugruppe nicht so */
+uwait0:                         /* schnell (Zeit ist CPU-abhängig) */
+ dbra %d4, uwait0
+ movem.l (%sp)+,%d4
+ rts
       
 /************************************************************************
  * struct tm *_ll_gettime(struct tm *tm2)
@@ -34,25 +40,38 @@
 
 
 _ll_gettime:
-	movem.l %a2,-(%sp)
+	movem.l %d3/%a2,-(%sp)
 	
-	move.l 8(%sp),%a2 /* *tm */		
+	move.l 12(%sp),%a2 /* *tm */	
+
+	move %sr, -(%sp)                 /* save status */
+ 	ori #0x0700, %sr                 /* disable interrupts  */	
+
+_ll_gettime2b:
+ 	bsr uwait
+ 	move.b #0x0a, RTC_DS12887_INDEX.w
+ 	move.b RTC_DS12887_DATA.w, %d3            	/* RTC ready? */
+ 	bmi.s _ll_gettime2b                 /* no, wait */   	
 	
 	CMOS_READ #RTC_SECONDS
 	BCD_TO_BIN
 	move.l %d0,0(%a2)
+	bsr uwait
 	
 	CMOS_READ #RTC_MINUTES
 	BCD_TO_BIN
 	move.l %d0,4(%a2)
+	bsr uwait
 
 	CMOS_READ #RTC_HOURS
 	BCD_TO_BIN	
 	move.l %d0,8(%a2)
+	bsr uwait
 	
 	CMOS_READ #RTC_DAY_OF_MONTH
 	BCD_TO_BIN
 	move.l %d0,12(%a2)
+	bsr uwait
 	
 	CMOS_READ #RTC_MONTH
 	BCD_TO_BIN	
@@ -60,12 +79,14 @@ _ll_gettime:
 	sub.l #1,%d0   why ? 
 	*/
 	move.l %d0,16(%a2)
-	
+	bsr uwait
+
 	CMOS_READ #RTC_YEAR	
 	BCD_TO_BIN
 
 /*--	
 	move.l %d0,%d1
+	bsr uwait
 	CMOS_READ #RTC_CENTURY
 	BCD_TO_BIN
 
@@ -76,8 +97,7 @@ _ll_gettime:
 
 	addi.l #100,%d0		/* years since 1900  */
 	move.l %d0,20(%a2) 
-
-	
+	bsr uwait
 	
 	CMOS_READ #RTC_DAY_OF_WEEK	
 	BCD_TO_BIN
@@ -85,8 +105,78 @@ _ll_gettime:
 
 	move.l %a2,%d0
 	
-	movem.l (%sp)+,%a2
+	move (%sp)+, %sr                 /* restore status */
+	movem.l (%sp)+,%d3/%a2
 	rts
+
+
+/************************************************************************
+ * int _ll_settime(struct tm *tm2)
+   set the RTC with the values of tm2
+   return 0 if successful, 1 otherwise
+ ************************************************************************/
+_ll_settime:
+	movem.l %d3/%a2,-(%sp)
+	
+	move.l 12(%sp),%a2 /* *tm */	
+
+	move %sr, -(%sp)                 /* save status */
+ 	ori #0x0700, %sr                 /* disable interrupts  */
+
+_ll_settime2b:
+ 	bsr uwait
+ 	move.b #0x0a, RTC_DS12887_INDEX.w
+ 	move.b RTC_DS12887_DATA.w, %d3            	/* RTC ready? */
+ 	bmi.s _ll_settime2b                 /* no, wait */  	
+
+	move.l 0(%a2),%d0
+	BIN_TO_BCD
+	CMOS_WRITE #RTC_SECONDS,%d0
+	bsr uwait                      
+	
+	move.l 4(%a2),%d0
+	BIN_TO_BCD
+	CMOS_WRITE #RTC_MINUTES,%d0
+	bsr uwait                      
+
+	move.l 8(%a2),%d0
+	BIN_TO_BCD
+	CMOS_WRITE #RTC_HOURS,%d0	
+	bsr uwait                      
+	
+	move.l 12(%a2),%d0
+	BIN_TO_BCD
+	CMOS_WRITE #RTC_DAY_OF_MONTH,%d0
+	bsr uwait                      
+	
+	move.l 16(%a2),%d0
+	BIN_TO_BCD
+	CMOS_WRITE #RTC_MONTH, %d0	
+	bsr uwait                      
+	
+	move.l 20(%a2),%d0 /* years since 1900  */
+	subi.l #100,%d0	
+	BIN_TO_BCD
+	CMOS_WRITE #RTC_YEAR, %d0
+	bsr uwait                      
+
+/*--	
+	FIXME!
+	BIN_TO_BCD
+	CMOS_WRITE #RTC_CENTURY, %d0
+	bsr uwait                      
+	
+
+	move.l 24(%a2),%d0
+	BIN_TO_BCD
+	CMOS_WRITE #RTC_DAY_OF_WEEK,%d0
+	bsr uwait                      
+--*/
+	clr.l %d0
+	move (%sp)+, %sr                 /* restore status */
+	movem.l (%sp)+,%d3/%a2
+	rts
+
 /************************************************************************
  * int _ll_ticks(void)
  	returns processor time since start of program execution
@@ -406,7 +496,9 @@ kqanz:		ds.w 1
 ctrlctxt: 	.ascii " Ctrl-C"
 		.byte 0x0d,0x0a,0x00
 dot: 		.ascii "."
-		.byte 0x00		
+		.byte 0x00	
+
+buffer:   ds.b 256        /* 256B debug buffer */			
 		
 		
 

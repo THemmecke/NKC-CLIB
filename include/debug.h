@@ -13,7 +13,7 @@ static char debugbuf[255];
 #ifdef CONFIG_DEBUG_SIO_OUT
 
 #define dbg(format,arg...) \
-        sprintf(debugbuf,format,##arg); \
+    sprintf(debugbuf,format,##arg); \
 	nkc_ser1_write(debugbuf);
 	
 #define lldbg(format) \
@@ -38,7 +38,7 @@ static char debugbuf[255];
 #else
 
 #define dbg(format,arg...) \
-        sprintf(debugbuf,format,##arg); \
+    sprintf(debugbuf,format,##arg); \
 	nkc_write(debugbuf);
 
 #define lldbg(format) \

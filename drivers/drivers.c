@@ -5,7 +5,8 @@
 
 
 
-struct blk_driver *blk_driverlist = NULL;	/* list of all registered drivers */
+struct blk_driver *blk_driverlist = NULL;	/* list of all registered blk device drivers */
+struct char_driver *char_driverlist = NULL;	/* list of all registered char device drivers */
 
 
 /****************************************************************************
@@ -179,17 +180,29 @@ void init_block_device_drivers(void)
 
 #ifdef CONFIG_DRV_SD    
     sd_initialize(); // initilize SD card
-#endif    
-    
-#ifdef CONFIG_DRV_JD
-#ifdef USE_JADOS
-    jd_initialize(); // initilize JADOS subsystem
-#endif
-#endif     
+#endif       
     
 }
 
-
+/****************************************************************************
+ * Name: init_char_device_drivers
+ *
+ * Description:
+ *   Initailize character device drivers.
+ *
+ * Parameters:
+ *   
+ *
+ * Return:
+ *   
+ *
+ ****************************************************************************/
+void init_char_device_drivers(void)  			
+{    
+#ifdef CONFIG_DRV_RTC
+    rtc_initialize(); // init RTC
+#endif 
+}
 
 
 /****************************************************************************
@@ -216,7 +229,7 @@ void drvinit()
   init_block_device_drivers();
   
   // initialize char evice drivers
-  //init_char_device_drivers();
+  init_char_device_drivers();
   // :
   // :
 }

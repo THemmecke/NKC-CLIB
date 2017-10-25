@@ -129,7 +129,7 @@
 #define NKC_IOCTL_RENAME			10011
 
 
-
+#define NKC_IOCTL_SETCLOCK    10012
 
 
 //static 

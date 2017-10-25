@@ -52,12 +52,11 @@ SECTIONS {
 		. = ALIGN(4) ;
 		
 		/* global variables .comm */
-		*(COMMON)
+		*(COMMON) 
 		. = ALIGN(4) ;
 		_ebss = ALIGN(0x2);		
 	} > ram
-        
-        
+               
 	.stack 0x300000 (NOLOAD):  {
 	 _ramtop = . ;  /* top of ram for program stack -> start*.S , if JADOS is not used (this address will be relocated ! FIXME! - currently an EQU is used inside of start*.S) */
 	} 

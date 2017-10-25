@@ -94,8 +94,54 @@ nkc_wait_ser1_tx_empty:
 	btst.b #4,NKC_SER1_STAT
 	beq nkc_wait_ser1_tx_empty
 	rts
+
+/*  -------------------------- VERSCH. HILFS FUNKTIONEN ------------------------------- */ 	
+
+cli:  .global cli
+      lea TIMER1_CTRL.w,%a0     /* adresse ctrl-reg in a0 */
+      move.b #0,(%a0)          	/* stop timer and interrupts */
+      ori #0x0700, %sr		/* Interrupts aus	*/
+      rts
+      
+sti:  .global sti
+      lea TIMER1_CTRL.w,%a0     /* adresse ctrl-reg in a0 	*/
+      move.b #0b10000001,(%a0)  /* start timer, enable interupt */
+      andi #0xf8ff, %sr		/* Interrups freigeben	*/
+      rts
+      
+      
+      
+/*
+ unsigned char nkc_bcd2bin(unsigned char val)
+*/	  
+nkc_bcd2bin: .global nkc_bcd2bin
+	clr.l %d0
+	move.b 7(%sp),%d0
+	BCD_TO_BIN
+	rts	
+
+/*
+ unsigned char nkc_bin2bcd(unsigned char val)
+*/	  
+nkc_bin2bcd: .global nkc_bin2bcd
+	clr.l %d0
+	move.b 7(%sp),%d0	
+	BIN_TO_BCD 
+	rts		
+
+/*
+ unsigned char nkc_cmos_read(unsigned char index)
+*/	  
+
+nkc_cmos_read: .global nkc_cmos_read
+	move.b 7(%sp),%d1
+	CMOS_READ %d1
+	rts
 	
-/*    --------- calls to GP (trap #1) ----------  */
+
+	
+#ifdef USE_GP	
+/*    ------------------------------------  calls to GP (trap #1) --------------------------------------  */
 
 /*
 void gp_ser1_write_dec_dw(unsigned int val); 
@@ -371,9 +417,24 @@ gp_setpage: .global gp_setpage
 	trap #1
 	rts		
 
+/*
+void gp_showsp()
+*/
+gp_showsp: .global gp_showsp	
+	prthex8 %a7
+#ifdef M68000
+	writeln buffer
+#else
+    writeln buffer(%pc)
+#endif      
+    crlf
+    rts
+
+
+#endif /* USE_GP */
 	  
 #ifdef USE_JADOS
-/*  -------------------------- calls to JADOS (trap #6) ------------------------------- */ 	
+/*  --------------------------------------------------- calls to JADOS (trap #6) --------------------------------------------- */ 	
 /*
  UCHAR jd_fillfcb(struct fcb *FCB,char *name)
  returns 0 if successful
@@ -719,66 +780,13 @@ jd_get_laddr: .global jd_get_laddr
 #endif /* USE_JADOS */
 
 
-/*
-void nkc_showsp()
-*/
-nkc_showsp: .global nkc_showsp	
-	prthex8 %a7
-#ifdef M68000
-	writeln buffer
-#else
-        writeln buffer(%pc)
-#endif      
-        crlf
-        rts
 
-/*  -------------------------- VERSCH. HILFS FUNKTIONEN ------------------------------- */ 	
 
-cli:  .global cli
-      lea TIMER1_CTRL.w,%a0     /* adresse ctrl-reg in a0 */
-      move.b #0,(%a0)          	/* stop timer and interrupts */
-      ori #0x0700, %sr		/* Interrupts aus	*/
-      rts
-      
-sti:  .global sti
-      lea TIMER1_CTRL.w,%a0     /* adresse ctrl-reg in a0 	*/
-      move.b #0b10000001,(%a0)  /* start timer, enable interupt */
-      andi #0xf8ff, %sr		/* Interrups freigeben	*/
-      rts
-      
-      
-      
-/*
- unsigned char nkc_bcd2bin(unsigned char val)
-*/	  
-nkc_bcd2bin: .global nkc_bcd2bin
-	clr.l %d0
-	move.b 7(%sp),%d0
-	BCD_TO_BIN
-	rts	
 
-/*
- unsigned char nkc_bin2bcd(unsigned char val)
-*/	  
-nkc_bin2bcd: .global nkc_bin2bcd
-	clr.l %d0
-	move.b 7(%sp),%d0	
-	BIN_TO_BCD 
-	rts		
-
-/*
- unsigned char nkc_cmos_read(unsigned char index)
-*/	  
-
-nkc_cmos_read: .global nkc_cmos_read
-	move.b 7(%sp),%d1
-	CMOS_READ %d1
-	rts
-	
-	
-
+#if defined USE_JADOS || defined USE_GP
 .data
 
 buffer:		ds.b 255 	
 msg001:	.ascii "jd_directory_test:" 	
-	.byte 0x0d,0x0a,0x00	
+	.byte 0x0d,0x0a,0x00
+#endif		

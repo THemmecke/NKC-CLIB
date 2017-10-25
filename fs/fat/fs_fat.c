@@ -39,8 +39,6 @@ const struct file_operations fat_file_operations =
  *   private variables   
  *******************************************************************************/
 
-static BYTE Buff[262144];      /* Working buffer */
-
 #if _USE_FASTSEEK
 static DWORD SeekTbl[16];      /* Link map table for fast seek feature */
 #endif

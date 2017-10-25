@@ -35,21 +35,40 @@ struct block_operations
 
 };
 
+struct c_operations
+{
+  UINT     (*open)(char *pdevice);
+  UINT     (*close)(void *phandle);
+  UINT     (*read)(void *phandle, UINT address, UINT data);
+  UINT     (*write)(void *phandle, UINT address);
+  UINT     (*ioctl)(void *phandle, int cmd, unsigned long arg);
+};
+
 
 struct blk_driver
 {
-	char					*pdrive;	/* name of drive, i.e. A, B... ,HD, SD... */
-	struct block_operations 		*blk_oper;	/* block operations */
-	struct blk_driver			*next;		/* pointer to next driver in driverlist */
+	char	                       *pdrive;	  /* name of drive, i.e. A, B... ,HD, SD... */
+	struct block_operations 		 *blk_oper;	/* block operations */
+	struct blk_driver			       *next;		  /* pointer to next driver in driverlist */
+};
+
+struct char_driver
+{
+  char                          *pdrive;  /* name of device, i.e. RTC etc. */
+  struct c_operations           *c_oper;  /* char operations */
+  struct char_driver            *next;    /* pointer to next driver in driverlist */
 };
 
 struct blk_driver* get_blk_driver(char *name);
-
+struct char_driver* get_char_driver(char *name);
 
 int xx_initialize(void);
 
 int register_blk_driver(char *pdrive, const struct block_operations  *blk_oper);
 int un_register_blk_driver(char *pdrive);
+
+int register_char_driver(char *pdrive, const struct c_operations  *c_oper);
+int un_register_char_driver(char *pdrive);
 
 
 #endif

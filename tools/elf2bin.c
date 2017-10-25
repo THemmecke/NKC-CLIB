@@ -15,7 +15,7 @@
 
 #include "elf.h"
 
-const char versioninfo[] = "\n elf2bin version 1.0.160101    (C) 2012-2016 Torsten Hemmecke\n\n";
+const char versioninfo[] = "\n elf2bin version 1.0.171025    (C) 2012-2017 Torsten Hemmecke\n\n";
 
 /* ------------- prototypes -------------- */
 
@@ -35,6 +35,7 @@ void do_rela(Elf32_Ehdr* elf_hdr, unsigned int section, unsigned long reltype, u
 void add_bss_reloc(unsigned long offset, unsigned long type, unsigned long value);
 
 unsigned long get_section_offset_by_name(Elf32_Ehdr* elf_hdr, char* name);
+unsigned long get_section_size_by_name(Elf32_Ehdr* elf_hdr, char* name);
 
 void print_elf_hdr(Elf32_Ehdr* hdr);
 void print_sec_hdrs(Elf32_Ehdr* elf_hdr);
@@ -318,13 +319,15 @@ int main(int argc, char **argv)
  
  for(i=0; i<n; i++)     	/* cycle all relevant sections */
  {
- 
- 	if(verbose) printf(" Section [%d]: ",progsegs[i]);
+ 				
+ 	if(verbose) printf(" Section [%d] ('%s'): ",progsegs[i],&pShStrTab[endian(psh[progsegs[i]].sh_name)]);
  	if(verbose) printf(" offset = 0x%08lx, start = 0x%08lx, size = 0x%08lx, ",endian(psh[progsegs[i]].sh_offset), endian(psh[progsegs[i]].sh_addr), endian(psh[progsegs[i]].sh_size));
  	
   	if(pc > endian(psh[progsegs[i]].sh_addr))	/* check if sections overlap */
   	{
-  		printf(" sections overlap !\n Missing definition in linker script ?\n");
+  		printf(" sections '%s' and '%s' overlap (%ld bytes) !\n Missing definition in linker script ?\n",
+  			&pShStrTab[endian(psh[progsegs[i-1]].sh_name)],&pShStrTab[endian(psh[progsegs[i]].sh_name)], pc - endian(psh[progsegs[i]].sh_addr));
+
   		CleanUp();
   		exit(1);
   	}
@@ -353,9 +356,16 @@ int main(int argc, char **argv)
 	unsigned long _data  = get_section_offset_by_name(get_elf32_header((void*)pelf), ".data");
 	unsigned long _bss  = get_section_offset_by_name(get_elf32_header((void*)pelf), ".bss");
 		
-	printf("\n \'text\' starts at 0x%08lx\n",_text);
-	printf(" \'data\' starts at 0x%08lx\n",_data);
-	printf(" \'bss\'  starts at 0x%08lx\n",_bss);
+
+	unsigned long _text_size = get_section_size_by_name(get_elf32_header((void*)pelf), ".text");
+	unsigned long _data_size = get_section_size_by_name(get_elf32_header((void*)pelf), ".data");
+	unsigned long _bss_size  = get_section_size_by_name(get_elf32_header((void*)pelf), ".bss");
+	unsigned long _prg_size = _text_size+_data_size+_bss_size;
+
+	printf("\n \'text\' starts at 0x%08lx (size 0x%08lx / %4ld KByte)\n",_text, _text_size, _text_size/1024);
+	printf(  " \'data\' starts at 0x%08lx (size 0x%08lx / %4ld KByte)\n",_data, _data_size, _data_size/1024);
+	printf(  " \'bss\'  starts at 0x%08lx (size 0x%08lx / %4ld KByte)\n",_bss, _bss_size, _bss_size/1024);
+	printf("\n                     program size 0x%08lx / %4ld KByte\n",_prg_size, _prg_size/(unsigned long)1024 );
 	
 	
         if(addreloc) 
@@ -422,7 +432,9 @@ int main(int argc, char **argv)
 		  preloc = preloc->pnext;		
 	    }
 		  
-	    if(verbose) printf(" %ld relocations added ...\n",rr);	
+	    if(verbose) printf(" %ld relocations added (%ld bytes) ...\n",rr,rr*12);
+	    else printf(" %ld relocations added (%ld bytes) ...\n",rr,rr*12);
+
 	    rr = endian(rr);
 	    //int nendpos = ftell(pbinfile);
 	    fseek(pbinfile,npos,SEEK_SET);
@@ -770,6 +782,26 @@ unsigned long get_section_offset_by_name(Elf32_Ehdr* elf_hdr, char* name)
 	 {
 	 	if(strstr(&pShStrTab[endian(psh[i].sh_name)],name)) {			// section "name"				
 			return endian(psh[i].sh_addr);
+		}
+	}
+}
+
+unsigned long get_section_size_by_name(Elf32_Ehdr* elf_hdr, char* name)
+{
+	int i;
+	unsigned long number = endian(((unsigned long)elf_hdr->e_shnum) << 16);		/* number of section headers      */
+	unsigned long shoffset = endian(elf_hdr->e_shoff);				/* offset to section header table */
+	Elf32_Shdr *psh = (Elf32_Shdr *) ((unsigned long)elf_hdr+shoffset);		/* points to start of section headers */
+	
+	Elf32_Shdr *pShStrTabHdr = (Elf32_Shdr *)((unsigned long)psh + endian(((unsigned long)elf_hdr->e_shstrndx) << 16)*sizeof(Elf32_Shdr));  
+						/* pShStrTabHdr points to section header of .shstrtab */
+
+	char* pShStrTab = (char*)((unsigned long)elf_hdr + endian(pShStrTabHdr->sh_offset)); /* pShStrTab points to section header string table */
+
+	for(i=0;i<number; i++)
+	 {
+	 	if(strstr(&pShStrTab[endian(psh[i].sh_name)],name)) {			// section "name"				
+			return endian(psh[i].sh_size);
 		}
 	}
 }

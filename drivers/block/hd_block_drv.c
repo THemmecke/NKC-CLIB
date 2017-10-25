@@ -569,35 +569,36 @@ static DRESULT hd_ioctl(struct _dev *devp, int cmd, unsigned long arg)
     // handles calls from FAT FS module .... ( ff.c )
     case CTRL_SYNC:
         drvgide_lldbg(" ->CTRL_SYNC\n"); 
-	// no need to call anything....
-	res = RES_OK;
-	break;
+      	// no need to call anything....
+      	res = RES_OK;
+        break;
 
     case FS_IOCTL_DISK_GET_SECTOR_COUNT:
     case GET_SECTOR_COUNT: // return available sectors on the device
         drvgide_lldbg(" ->FS_IOCTL_DISK_GET_SECTOR_COUNT\n");
-	*(DWORD*)arg = Stat[devp->pdrv].n_sectors;
-	res = RES_OK;
-	break;
+      	*(DWORD*)arg = Stat[devp->pdrv].n_sectors;
+      	res = RES_OK;
+        break;
 
     case FS_IOCTL_DISK_GET_SECTOR_SIZE:
     case GET_SECTOR_SIZE: // return sector size in bytes
         drvgide_lldbg(" ->FS_IOCTL_DISK_GET_SECTOR_SIZE\n");
-	*(WORD*)arg = Stat[devp->pdrv].sz_sector;
-	res = RES_OK;
-	break;
+      	*(WORD*)arg = Stat[devp->pdrv].sz_sector;
+      	res = RES_OK;
+        break;
 	
     case GET_BLOCK_SIZE: // return erase block size of flash memory in units of sectors
         drvgide_lldbg(" ->GET_BLOCK_SIZE\n");
-	*(DWORD*)arg = 128;
-	res = RES_OK;
-	break;
+        // FIXME
+        *(DWORD*)arg = 128;
+        res = RES_OK;
+        break;
 	
     case CTRL_ERASE_SECTOR:
         drvgide_lldbg(" ->CTRL_ERASE_SECTOR\n");
-	// FIXME
-	res = RES_OK;
-	break;
+      	// FIXME
+      	res = RES_OK;
+        break;
 	
     case FS_IOCTL_GET_DISK_DRIVE_STATUS:  
       drvgide_lldbg(" ->FS_IOCTL_GET_DISK_DRIVE_STATUS\n");
@@ -608,27 +609,27 @@ static DRESULT hd_ioctl(struct _dev *devp, int cmd, unsigned long arg)
       result = idetifyIDE(devp->pdrv+1, (struct _deviceinfo *)arg );
       
       switch(result){ // FIXME
-      default:
-	    res = RES_OK;
+        default:
+  	    res = RES_OK;
       }
-
       break;
+
     case GET_DISK_STATUS:
         drvgide_lldbg(" ->GET_DISK_STATUS\n");
-	*(DSTATUS*)arg = Stat[devp->pdrv].status;
-	res = RES_OK;
-	break;
+      	*(DSTATUS*)arg = Stat[devp->pdrv].status;
+      	res = RES_OK;
+        break;
 		
     case FS_IOCTL_DISK_INIT: 
       // args: struct _dev *devp<=phydrv, int cmd<=FS_IOCTL_DISK_INIT, unsigned long arg <=NULL
     case CTRL_DISK_INIT:
         drvgide_lldbg(" ->FS_IOCTL_DISK_INIT\n");
 	
-	switch( disk_initialize (devp->pdrv) ){ // DSTATUS FIXME
-	  default:
-	     res = RES_OK;
-	}
-	break;
+      	switch( disk_initialize (devp->pdrv) ){ // DSTATUS FIXME
+      	  default:
+      	     res = RES_OK;
+      	}
+        break;
     
   }
   

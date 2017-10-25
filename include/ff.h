@@ -246,15 +246,12 @@ unsigned long endian(unsigned long val);
 /* File access control and file status flags (FIL.flag) */
 
 #define	FA_READ			0x01
-#define	FA_READ			_F_READ
 #define	FA_OPEN_EXISTING	0x00
 
 #if !_FS_READONLY
 #define	FA_WRITE		0x02
-//#define	FA_WRITE		_F_WRIT
 // create as NEW file, i.e. create only if it does not exist !
 #define	FA_CREATE_NEW		0x04
-//#define	FA_CREATE_NEW		_F_CREATE
 // create as NEW no matter if it already exists (overwrite)
 #define	FA_CREATE_ALWAYS	0x08
 //

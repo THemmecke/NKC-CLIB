@@ -2,6 +2,27 @@
 #define __MACROS_H
 
 
+/*
+macros are defined like this:
+
+.macro <mname> <arg1> <arg2> .... <argn>
+.endm
+
+args are accessed \<argn> inside the macro
+
+macros are used as:
+
+<mname> <arg1>,<arg2>,....<argn>
+
+
+some macros need a buffer in memory:
+buffer:   ds.b 256        
+
+for more information on macros (default values, vaargs etc.) consult the GNU as documentation.
+https://sourceware.org/binutils/docs-2.18/as/Macro.html
+
+*/
+
 /* DEBUG MACROS */
 #ifdef CONFIG_DEBUG_GIDE_S
 
@@ -153,6 +174,15 @@
         movem.l (%a7)+,%a0-%a6/%d0-%d7
 .endm
 
+.macro prtdec8  value                   /* gibt DWORD DEC Zahl (32bit/DWORD) aus*/
+                                    /* IN: WERT*/
+        movem.l %a0-%a6/%d0-%d7,-(%a7)
+        move.l \value,%d0
+        lea buffer(%pc),%a0
+        moveq #_PRINT8D,%d7
+        trap #1
+        movem.l (%a7)+,%a0-%a6/%d0-%d7
+.endm
 
 .macro prthex8  value            /* gibt 8stellige Hex Zahl aus */
                                  /* In: WERT */
@@ -185,6 +215,13 @@
 	move.b \index,RTC_DS12887_INDEX.w
 	move.b RTC_DS12887_DATA.w,%d0
 	movem.l (%a7)+,%a0-%a1
+.endm
+
+.macro CMOS_WRITE index data
+    movem.l %a0-%a1,-(%a7)
+    move.b \index,RTC_DS12887_INDEX.w
+    move.b \data,RTC_DS12887_DATA.w
+    movem.l (%a7)+,%a0-%a1
 .endm
 
 .macro BCD_TO_BIN
