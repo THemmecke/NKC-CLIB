@@ -38,4 +38,25 @@ static DRESULT hd_ioctl(struct _dev *devp, int cmd, unsigned long arg);
 #endif
 
 
+/* GIDE commands (_IDEDISK) */
+
+#define _IDEDISK_CMD_READ	1
+#define _IDEDISK_CMD_WRITE 	2
+#define _IDEDISK_CMD_TEST_UNIT_READY 8
+#define _IDEDISK_CMD_READ_CAPACITY 22
+#define _IDEDISK_CMD_INQUIRY 24
+
+
+struct _driveinfo			//		(32)
+{
+	USHORT	numcyl;			// +0  	(2)
+	BYTE	numhead;		// +2	(1)
+	BYTE	numsec;			// +3	(1)
+	ULONG	nkcmode;		// +4	(4)
+	char    idename[24];	// +8	(24)
+	};
+//}__attribute__ ((packed));
+
+
+
 #endif

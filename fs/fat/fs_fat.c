@@ -6,10 +6,9 @@
 #include <time.h>
 #include <ioctl.h>
 #include <fs.h>
-#include <ff.h>
 #include <debug.h>
-#include <gide.h>
 
+#include "ff.h"
 #include "fs_fat.h"
 
 const struct file_operations fat_file_operations =

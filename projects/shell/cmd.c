@@ -5,18 +5,17 @@
 #include <errno.h>
 
 #include <fs.h>
-#include <ff.h>
-#include <fs_nkc.h>
-#include <gide.h>
-
 
 #include <debug.h>
 
+#include "sdcard.h"
 #include "cmd.h"
 #include "shell.h"
 
-
+#include "../../fs/fat/ff.h"
+#include "../../fs/nkc/fs_nkc.h"
 #include "../../nkc/llnkc.h"
+#include "../../nkc/nkc.h"
 
 extern int _ll_settime(struct tm *tm2);
 
@@ -2773,7 +2772,7 @@ int cmd_clock(char* args)
 }
 
 
-
+/* ####################### TEST REGION ########################################## */
 extern char   _start;
 extern char   __BUILD_DATE;
 extern char   __BUILD_NUMBER;
@@ -2784,9 +2783,44 @@ extern char   __CLIB_BUILD_NUMBER;
 extern unsigned long   _CLIB_BUILD_DATE;
 extern unsigned long   _CLIB_BUILD_NUMBER;
 
+
+
 int cmd_test(char* args)
 {
-  
+  DRESULT res;
+  union csd_reg csd;
+  BYTE *bp;
+  //struct csd_reg_v1_0 csd;
+  int i;
+
+  printf(" TEST....\n");
+
+  //res = _sd_rdblk(SPIH0_CS, CMD9, 16, &csd);
+
+  res = sd_init(SPIH0_CS);
+
+  res = sd_rd_csd(SPIH0_CS, &csd);
+
+
+  printf(" CSD_STRUCTURE = %d\n", csd.v10.CSD_STRUCTURE);
+  printf(" SECTOR_SIZE   = %d\n", csd.v10.SECTOR_SIZE);
+  printf(" C_SIZE        = %d\n", csd.v10.C_SIZE);
+  printf(" C_SIZE_MULT   = %d\n", csd.v10.C_SIZE_MULT);
+
+
+  bp = (BYTE*)&csd;
+
+  for(i=0; i< sizeof(csd); i++){
+    printf("%02X ",bp[i]);
+  }
+
+/*
+  printf(" CSD_STRUCTURE = %d\n", csd.CSD_STRUCTURE);
+  printf(" SECTOR_SIZE   = %d\n", csd.SECTOR_SIZE);
+  printf(" C_SIZE        = %d\n", csd.C_SIZE);
+  printf(" C_SIZE_MULT   = %d\n", csd.C_SIZE_MULT);
+*/
+  return 0;
   printf("Build date  : %u\n", (unsigned long) &__BUILD_DATE - (unsigned long) &_start);
   printf("Build number: %u\n", (unsigned long) &__BUILD_NUMBER - (unsigned long) &_start);
   

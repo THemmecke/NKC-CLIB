@@ -1,14 +1,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <types.h>
-#include <ff.h>
 #include <ioctl.h>
 #include <errno.h>
 #include <debug.h>
 
-#include <gide.h>
 #include <fs.h> 
 
+#include "../../fs/fat/ff.h"
 #include "shell.h"
 #include "cmd.h"
 

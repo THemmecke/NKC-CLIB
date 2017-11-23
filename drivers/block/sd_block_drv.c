@@ -33,9 +33,9 @@
 #include <errno.h>
 #include <drivers.h>
 #include <ioctl.h>
-#include <sd.h>
 #include "sd_block_drv.h"
 #include "sdS.h"
+#include "../../nkc/nkc.h"  // traps
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -74,6 +74,13 @@ typedef struct {
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+// FIXME: should use compiler switch !  
+// old GP version
+char* const SDTYPE[] = {"SD/MMC","SDHC"}; 
+// new GP version
+//char* const SDTYPE[] = {"MMC","SDv1","SDv2","SDHC"};
+
 /*-----------------------------------------------------------------------*/
 /* Low level disk I/O module skeleton for Petit FatFs (C)ChaN, 2009      */
 /*-----------------------------------------------------------------------*/
@@ -110,6 +117,9 @@ static void init_ff(void)
 	memset(Buffer,0,BUFSIZE);						 /* reset buffer */
 }
 
+
+//#define VARIANT01
+
 static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 {
 	DSTATUS stat;
@@ -120,9 +130,11 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 	drvsd_dbg("sd disk_initialize (%d)...\n",pdrv);
 	
 	
-	//result = idetifySD(pdrv+1, &di);	// direct
+  #if defined VARIANT01
+	result = idetifySD(pdrv+1, &di);	// direct
+  #else
 	pdi = sdtest(pdrv+1); 			// call GP
-	//result = sdtest(pdrv+1,&pdi);			// Variant 2: result is 0 or -1, so variant 1 suffices
+  #endif
 
 	switch(result){ 
 	  default:
@@ -132,44 +144,55 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 	}
 		
 	Stat[pdrv].status = stat;	
+
+  #if defined VARIANT01
+  Stat[pdrv].sz_sector = di.bpsec; // obsolte value ? should always be 512 ?
+  #else
 	Stat[pdrv].sz_sector = pdi->bpb; //512; /* information should be read from the device =pdi->bpb ? */
+  #endif
 	
 	if(pdi == NULL) {
 	  drvsd_lldbgwait("error: no device ...\n");
 	  return STA_NODISK;
 	}
 	
+  #if defined VARIANT01
+  Stat[pdrv].n_sectors = di.spcard;
+  #else
 	//Stat[pdrv].n_sectors = di.cylinders * di.heads *di.sptrack; // sectors per card
 	Stat[pdrv].n_sectors = pdi->size;
-	
+	#endif
+
 	drvgide_dbg("...\n");
 	
-//	if(!Stat[pdrv].status)
-//	{
-//		drvsd_dbg(" Model: %s\n",di.modelnum);
-//		drvsd_dbg("   Cylinders      : %u\n",di.cylinders);
-//		drvsd_dbg("   Cylinders (CL) : %u\n",di.ccylinder);
-//		drvsd_dbg("   Heads          : %u\n",di.heads);
-//		drvsd_dbg("   Heads (CL)     : %u\n",di.cheads);
-//		drvsd_dbg("   Sectors/Card   : %lu\n",di.spcard);
-//		drvsd_dbg("   Sectors (CL)   : %lu\n",di.ccinsect);
-//		drvsd_dbg("   LBA-Sectors    : %lu\n",di.lbasec);
-//		drvsd_dbg("   Tracks         : %u\n",di.csptrack);
-//		drvsd_dbg("   Sec/Track      : %u\n",di.sptrack);
-//		drvsd_dbg("   Sec/Track (CL) : %u\n",di.csptrack);
-//		drvsd_dbg("   Bytes/Track    : %u\n",di.bptrack);
-//		drvsd_dbg("   Bytes/Sector   : %u\n",di.bpsec);
-//		drvsd_dbg("   Capabilities   : 0x%0X\n",di.cap);
-//
-//		drvsd_lldbgwait("KEY...\n");	
-//		
-//	} else Stat[pdrv].status = STA_NODISK;
-	
-	
+  #if defined VARIANT01
+	if(!Stat[pdrv].status)
+	{
+		drvsd_dbg(" Model: %s\n",di.modelnum);
+		drvsd_dbg("   Cylinders      : %u\n",di.cylinders);
+		drvsd_dbg("   Cylinders (CL) : %u\n",di.ccylinder);
+		drvsd_dbg("   Heads          : %u\n",di.heads);
+		drvsd_dbg("   Heads (CL)     : %u\n",di.cheads);
+		drvsd_dbg("   Sectors/Card   : %lu\n",di.spcard);
+		drvsd_dbg("   Sectors (CL)   : %lu\n",di.ccinsect);
+		drvsd_dbg("   LBA-Sectors    : %lu\n",di.lbasec);
+		drvsd_dbg("   Tracks         : %u\n",di.csptrack);
+		drvsd_dbg("   Sec/Track      : %u\n",di.sptrack);
+		drvsd_dbg("   Sec/Track (CL) : %u\n",di.csptrack);
+		drvsd_dbg("   Bytes/Track    : %u\n",di.bptrack);
+		drvsd_dbg("   Bytes/Sector   : %u\n",di.bpsec);
+		drvsd_dbg("   Capabilities   : 0x%0X\n",di.cap);
+
+		drvsd_lldbgwait("KEY...\n");	
+		
+	} else Stat[pdrv].status = STA_NODISK;
+
+  #else
 	drvsd_dbg(" Model: %s\n",pdi->sdname);
 	drvsd_dbg("   bytes per block: %u\n",pdi->bpb);
 	drvsd_dbg("   type           : %u (%s)\n",pdi->type, SDTYPE[pdi->type]);
 	drvsd_dbg("   size in sects  : %lu\n",pdi->size);
+  #endif
 	
         drvsd_lldbgwait("KEY...\n");	
 
@@ -281,7 +304,7 @@ static DRESULT sd_read(struct _dev *devp, char *buffer, UINT start_sector, UINT 
   
   
      
-  res = sddisk(CMD_READ,start_sector,num_sectors,disk,buffer);	/* this is a GP call ... */
+  res = sddisk(_SDDISK_CMD_READ,start_sector,num_sectors,disk,buffer);	/* this is a GP call ... */
   
   switch(res){
     /*  0: success
@@ -348,7 +371,7 @@ static DRESULT sd_write(struct _dev *devp, char *buffer, UINT start_sector, UINT
   drvsd_lldbgdec("   sect : ",start_sector);
   drvsd_lldbgdec("   num  : ",num_sectors);
 
-  res = sddisk(CMD_WRITE,start_sector,num_sectors,disk,buffer);	/* this is a GP call ... */
+  res = sddisk(_SDDISK_CMD_WRITE,start_sector,num_sectors,disk,buffer);	/* this is a GP call ... */
   
   switch(res){
     /*  0: success

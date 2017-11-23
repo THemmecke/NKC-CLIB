@@ -1,7 +1,7 @@
 #ifndef __INCLUDE_IOCTL_H
 #define __INCLUDE_IOCTL_H
 
-#include <ff.h>
+#include "../fs/fat/ff.h"
 // additional file operations via ioctrl
 
 // general file system functions =============================

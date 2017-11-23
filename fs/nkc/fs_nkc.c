@@ -5,9 +5,10 @@
 #include <fs.h>
 #include <debug.h>
 #include <ioctl.h>
-#include <ff.h>
-#include <fs_nkc.h>
 
+
+#include "../fat/ff.h" /* using some struct from FAT fileystem ... */
+#include "fs_nkc.h"
 #include "../../nkc/llnkc.h"
 
 
@@ -107,15 +108,12 @@ static  int alloc_new_track(struct jdfcb *pfcb){
 		/* we found a free track */
 		fsnkc_dbg("alloc_new_track| found: FAT(%d)=[0x%04x|0x%04x]\n",fat_index,FAT[fat_index].ancestor,FAT[fat_index].successor);
 
-
 		FAT[fat_index].ancestor = pfcb->curtrack;
 		FAT[fat_index].successor = 0xFFFF;
 		FAT[pfcb->curtrack].successor = fat_index;
 
 		pfcb->curtrack = pfcb->lasttrack = fat_index;
 		pfcb->curcluster = pfcb->endcluster = 0;
-
-
 
 		return FR_OK;
 	}
@@ -2078,6 +2076,5 @@ void nkcfs_init_fs(void)
 	fsnkc_dbg(" Address of nkc_file_operations: 0x%x\n",(int)&nkc_file_operations);
 	fsnkc_dbg(" Address of ...->open: 0x%x\n",(int)nkc_file_operations.open);
 	fsnkc_lldbgwait("...nkcfs_init_fs\n");
-
 
 }

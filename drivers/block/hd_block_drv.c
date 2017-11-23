@@ -21,7 +21,6 @@
  ****************************************************************************/
 #include <debug.h>
 #include <errno.h>
-#include <gide.h>
 #include <drivers.h>
 #include <ioctl.h>
 #include "hd_block_drv.h"
@@ -359,7 +358,7 @@ static DRESULT hd_read(struct _dev *devp, char *buffer, DWORD start_sector, DWOR
   drvgide_dbg("hd_block_drv.c|hd_read: disk %d, sector 0x%x , %d sectors --> buffer 0x%x\n",disk,start_sector, num_sectors, buffer);
   
   
-  result = _ide(CMD_READ,start_sector,num_sectors,disk+1,buffer);  /* direct PIO mode reading, 1st disk == 1 */
+  result = _ide(_IDEDISK_CMD_READ,start_sector,num_sectors,disk+1,buffer);  /* direct PIO mode reading, 1st disk == 1 */
                                                                    /* idedisk routine uses GP and here 1st disk is 0 (Master) and second is 1 (Slave) */
   
   drvgide_dbg(" _ide ->result= %d\n",result);
@@ -421,7 +420,7 @@ static DRESULT hd_write(struct _dev *devp, char *buffer, DWORD start_sector, DWO
   
   drvgide_dbg("hd_block_drv.c|hd_write: buffer 0x%x --> disk %d, sector 0x%x , %d sectors\n",buffer,disk,start_sector, num_sectors);
   
-  result = _ide(CMD_WRITE,start_sector,num_sectors,disk+1,buffer);  /* direct PIO mode writing, 1st disk == 1 */
+  result = _ide(_IDEDISK_CMD_WRITE,start_sector,num_sectors,disk+1,buffer);  /* direct PIO mode writing, 1st disk == 1 */
 								   /* idedisk routine uses GP and here 1st disk is 0 (Master) and second is 1 (Slave) */
   
   drvgide_dbg(" _ide ->result= %d\n",result);

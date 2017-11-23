@@ -3,12 +3,12 @@
 /*-----------------------------------------------------------------------*/
 
 #include <fs.h>			/* Declarations of file system and block device API */
-#include <ff.h>
 #include <ioctl.h>		/* include ioctl definitions */
 #include <errno.h>
 #include <drivers.h>
 #include <debug.h>
 
+#include "ff.h"
 #include "diskio.h"
 
 
