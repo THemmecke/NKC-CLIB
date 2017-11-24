@@ -2387,11 +2387,11 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 	
 		i = pfstabentry->partition;						/* Partition number: 0:auto, 1-4:forced */
 		ff_dbg(" ff.c|find_volume: partition = %d\n",i);
-		if (i) i--;
-		do {								/* Find an FAT volume */
+		//if (i) i--;
+		//do {								/* Find an FAT volume */
 			bsect = br[i];
 			fmt = bsect ? check_fs(fs, bsect) : 2;	/* Check the partition */		
-		} while (!(pfstabentry->pdrv) && fmt && ++i < 4);	
+		//} while (!(pfstabentry->pdrv) && fmt && ++i < 4);	
 	}
 	if (fmt == 3) return FR_DISK_ERR;		/* An error occured in the disk I/O layer */
 	if (fmt){
