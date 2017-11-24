@@ -2270,7 +2270,7 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 	FATFS *fs;
 	FRESULT res;
 
-	ff_dbg(" ff.c|find_volume....\n"); 
+	ff_dbg(" ff.c|find_volume (%s)....\n",*path); 
 
 	if(mounting) { /* if mounting, we are called from f_mount and have to behave different */
 	  ff_dbg(" ff.c|find_volume: called by f_mount\n");
@@ -2341,6 +2341,7 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 	fs->fs_type = 0;					/* Clear the file system object */
 	fs->drv = pfstabentry->pdrv;
 	
+	/* FIXME: the drive should only be initialized once - i.e. when the first partition is mounted */
 	stat = disk_initialize(fs->pfstab);	/* Initialize the physical drive */
 	ff_dbg(" ff.c|find_volume: disk_initialize = %d", stat);
 	ff_lldbgwait(" (KEY)\n");
@@ -2386,11 +2387,11 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 	
 		i = pfstabentry->partition;						/* Partition number: 0:auto, 1-4:forced */
 		ff_dbg(" ff.c|find_volume: partition = %d\n",i);
-		if (i) i--;
-		do {								/* Find an FAT volume */
+		//if (i) i--;
+		//do {								/* Find an FAT volume */
 			bsect = br[i];
 			fmt = bsect ? check_fs(fs, bsect) : 2;	/* Check the partition */		
-		} while (!(pfstabentry->pdrv) && fmt && ++i < 4);	
+		//} while (!(pfstabentry->pdrv) && fmt && ++i < 4);	
 	}
 	if (fmt == 3) return FR_DISK_ERR;		/* An error occured in the disk I/O layer */
 	if (fmt){
