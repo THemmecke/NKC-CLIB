@@ -130,7 +130,7 @@ typedef enum {
 	RES_PARERR,		/* 4: Invalid Parameter */	
 	RES_EOF,		/* 5: end of file reached */
 	RES_NOMEM,		/* 6: not enough memory */
-	RES_DISKFULL		/* 7: disk full */
+	RES_DISKFULL	/* 7: disk full */
 } DRESULT;
 
 /* ***************************** disk i/o status return codes ********************************* */
@@ -143,6 +143,10 @@ typedef BYTE	DSTATUS;
 #define STA_NOINIT		0x01	/* Drive not initialized */
 #define STA_NODISK		0x02	/* No medium in the drive */
 #define STA_PROTECT		0x04	/* Write protected */
+#define STA_TIMEOUT		0x08	/* Timeoute in operation */
+#define STA_COM_ERROR	0x10 	/* communication error */
+#define STA_CRC_ERROR	0x20
+#define STA_PAR_ERROR   0x40
 
 
 

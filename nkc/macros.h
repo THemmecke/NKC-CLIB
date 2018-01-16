@@ -102,6 +102,14 @@ https://sourceware.org/binutils/docs-2.18/as/Macro.html
         movem.l (%a7)+,%a0-%a6/%d0-%d7
 .endm
 
+.macro prnt token
+        movem.l %a0-%a6/%d0-%d7,-(%a7)
+        move.b #\token,%d0
+        moveq #_CO2,%d7
+        trap #1
+        movem.l (%a7)+,%a0-%a6/%d0-%d7
+.endm
+
 .macro prntdot             
         movem.l %a0-%a6/%d0-%d7,-(%a7)
         move.b #'.',%d0
@@ -109,6 +117,7 @@ https://sourceware.org/binutils/docs-2.18/as/Macro.html
         trap #1
         movem.l (%a7)+,%a0-%a6/%d0-%d7
 .endm
+
 
 
 .macro crlf                      
@@ -167,7 +176,8 @@ https://sourceware.org/binutils/docs-2.18/as/Macro.html
 .macro prthex2  value                 	/* gibt 2stellige HEX Zahl aus*/
                                 	/* IN: WERT*/
         movem.l %a0-%a6/%d0-%d7,-(%a7)
-        move.l \value,%d0
+        clr %d0
+        move.b \value,%d0
         lea buffer(%pc),%a0
         moveq #_PRINT2X,%d7
         trap #1

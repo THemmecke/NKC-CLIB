@@ -77,6 +77,8 @@ static volatile STAT Stat[MAX_DRIVES]; /* first drive is 0, GP starts at 1 ! */
 static BYTE Buffer[BUFSIZE];
 static volatile _BUFSTAT stat;
 
+static BOOL isInitialized; /* FIXME: hold flag for every drive that is already initialized */
+
 /*-----------------------------------------------------------------------*/
 
 static const struct block_operations hd_bops =
@@ -187,7 +189,7 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 	UINT result;
 	struct _deviceinfo di;
 	
-	drvgide_dbg("disk_initialize (%d)...\n",pdrv);
+	drvgide_dbg("hd_block_drv: disk_initialize (%d)...\n",pdrv);
 	
 	result = idetifyIDE(pdrv+1, &di);  // call IDE direct
 
@@ -647,6 +649,8 @@ DSTATUS hd_initialize()
   DSTATUS res;
   
   drvgide_lldbg("hd_initialize\n");
+
+  isInitialized = FALSE;
   
   init_ff();      // initialize diskio system
   //res = disk_initialize(0); // initialize GIDE, there is only one GIDE drive yet (disk should be inizialized while mounting in open() )

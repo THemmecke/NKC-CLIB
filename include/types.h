@@ -16,6 +16,7 @@ typedef unsigned char	UCHAR;
 typedef unsigned char	BYTE;
 
 #define u8 UCHAR
+#define uint8_t UCHAR
 
 /* These types must be 16-bit integer */
 typedef short		SHORT;
@@ -24,6 +25,7 @@ typedef unsigned short	WORD;
 typedef unsigned short	WCHAR;
 
 #define u16 USHORT
+#define uint16_t USHORT
 
 /* These types must be 32-bit integer */
 typedef long		LONG;
@@ -31,6 +33,12 @@ typedef unsigned long	ULONG;
 typedef unsigned long	DWORD;
 
 #define u32 ULONG
+#define uint32_t ULONG
+
+#ifndef _SIZE_T
+#define _SIZE_T
+#define size_t unsigned int
+#endif
 
 
 /* These types must be 64-bit integer */

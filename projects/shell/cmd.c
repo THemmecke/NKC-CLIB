@@ -8,7 +8,6 @@
 
 #include <debug.h>
 
-#include "sdcard.h"
 #include "cmd.h"
 #include "shell.h"
 
@@ -16,6 +15,9 @@
 #include "../../fs/nkc/fs_nkc.h"
 #include "../../nkc/llnkc.h"
 #include "../../nkc/nkc.h"
+#include "./../drivers/block/sdcard.h"
+#include "./../drivers/block/sd_block_drv.h"
+
 
 extern int _ll_settime(struct tm *tm2);
 
@@ -1424,6 +1426,9 @@ int cmd_copy(char *args)
      return 0;
    }
    printf("Start Copy %s ==> %s ",fullpath1,fullpath2);
+   #ifdef CONFIG_DEBUG 
+     printf("\n");
+   #endif
    p1 = 0;
    for (;;) {
      //res = f_read(&file[0], Buff, sizeof Buff, &s1);
@@ -1432,17 +1437,26 @@ int cmd_copy(char *args)
        printf("src at eof !\n");
        break;   /* error or eof */
      }
+
+     #ifdef CONFIG_DEBUG 
+     printf("%d bytes read from source\n",s1);
+     #endif
      //res = f_write(&file[1], Buff, s1, &s2);
 
      //printf(" %d bytes read from source file [KEY].\n",s1);
      //getchar();
 
-     s2 = fwrite(Buff, 1, s1, file[1]); 
+     s2 = fwrite(Buff, 1, s1, file[1]);         
 
      //printf(" %d bytes written to destination file [KEY].\n",s2);
      //getchar();
 
      p1 += s2;
+
+     #ifdef CONFIG_DEBUG 
+     printf("%d bytes written to destination (total %d)\n",s2,p1);
+     #endif
+
      if (s2 < s1) {
        printf("error or disk full !\n");
        break;   /* error or disk full */
@@ -2783,44 +2797,155 @@ extern char   __CLIB_BUILD_NUMBER;
 extern unsigned long   _CLIB_BUILD_DATE;
 extern unsigned long   _CLIB_BUILD_NUMBER;
 
-
+static BYTE sd_buffer[2*SD_BLOCKSIZE];
 
 int cmd_test(char* args)
 {
   DRESULT res;
+  DSTATUS sta;
   union csd_reg csd;
+  struct cid_reg cid;
+  struct _sddriveinfo di;
   BYTE *bp;
+  unsigned int capacity, nsectors, sector, bpb, BLOCKNR, BLOCK_LEN, MULT;
   //struct csd_reg_v1_0 csd;
-  int i;
+  unsigned int i,j;
+  DWORD addr;
+  char c;
+  struct _dev dev;
 
   printf(" TEST....\n");
 
-  //res = _sd_rdblk(SPIH0_CS, CMD9, 16, &csd);
-
-  res = sd_init(SPIH0_CS);
-
-  res = sd_rd_csd(SPIH0_CS, &csd);
-
-
-  printf(" CSD_STRUCTURE = %d\n", csd.v10.CSD_STRUCTURE);
-  printf(" SECTOR_SIZE   = %d\n", csd.v10.SECTOR_SIZE);
-  printf(" C_SIZE        = %d\n", csd.v10.C_SIZE);
-  printf(" C_SIZE_MULT   = %d\n", csd.v10.C_SIZE_MULT);
-
-
-  bp = (BYTE*)&csd;
-
-  for(i=0; i< sizeof(csd); i++){
-    printf("%02X ",bp[i]);
+  if(sd_init(0) == NULL){
+  	printf(" sd_init failed ...\n");
+  	return 0;
   }
 
-/*
-  printf(" CSD_STRUCTURE = %d\n", csd.CSD_STRUCTURE);
-  printf(" SECTOR_SIZE   = %d\n", csd.SECTOR_SIZE);
-  printf(" C_SIZE        = %d\n", csd.C_SIZE);
-  printf(" C_SIZE_MULT   = %d\n", csd.C_SIZE_MULT);
-*/
+ 
+  sta = sd_rd_csd(0, &csd);
+
+  switch(csd.v10.CSD_STRUCTURE){
+  	case 0:  // CSD Version 1.0: Version 1.01-1.10/Version 2.00/Standard Capacity 
+	  printf(" CSD_STRUCTURE    = %d\n", csd.v10.CSD_STRUCTURE);
+	  printf(" SECTOR_SIZE      = %d\n", csd.v10.SECTOR_SIZE);
+	  printf(" C_SIZE           = %d\n", csd.v10.C_SIZE);
+	  printf(" C_SIZE_MULT      = %d\n", csd.v10.C_SIZE_MULT);
+	  printf(" READ_BL_LEN      = %d\n", csd.v10.READ_BL_LEN);
+	  printf(" READ_BL_PARTIAL  = %d\n", csd.v10.READ_BL_PARTIAL);
+	  printf(" WRITE_BL_LEN     = %d\n", csd.v10.WRITE_BL_LEN);
+	  printf(" WRITE_BL_PARTIAL = %d\n", csd.v10.WRITE_BL_PARTIAL);
+	  printf(" FILE_FORMAT_GRP  = %d\n", csd.v10.FILE_FORMAT_GRP);
+	  printf(" FILE_FORMAT      = %d\n", csd.v10.FILE_FORMAT);
+	  printf(" CRC              = %d\n", csd.v10.CRC);
+	  printf(" ====>\n");
+
+	  bpb = 2 << (csd.v10.READ_BL_LEN -1);
+	  MULT = 2 << (csd.v10.C_SIZE_MULT+1);
+	  BLOCKNR = MULT * (csd.v10.C_SIZE +1);
+	  BLOCK_LEN = 2 << (csd.v10.READ_BL_LEN -1);
+	  capacity = BLOCKNR * BLOCK_LEN ;
+	  nsectors = BLOCKNR;
+	  printf(" nsectors         = %d\n",BLOCKNR);
+	  printf(" Capacity (MB)    = %d\n",capacity/(1024*1024));
+
+
+	  break;   
+	case 1:  // SDHC-Card: CSD Version 2.0: Version 2.00-High Capacity	
+	  printf(" CSD_STRUCTURE    = %d\n", csd.v20.CSD_STRUCTURE);
+	  printf(" SECTOR_SIZE      = %d\n", csd.v20.SECTOR_SIZE);
+	  printf(" C_SIZE           = %d\n", csd.v20.C_SIZE);
+	  printf(" READ_BL_LEN      = %d\n", csd.v20.READ_BL_LEN);
+	  printf(" READ_BL_PARTIAL  = %d\n", csd.v20.READ_BL_PARTIAL);	  
+	  printf(" WRITE_BL_LEN     = %d\n", csd.v20.WRITE_BL_LEN);
+	  printf(" WRITE_BL_PARTIAL = %d\n", csd.v20.WRITE_BL_PARTIAL);
+	  printf(" CRC              = %d\n", csd.v20.CRC);
+	  printf(" ====>\n");
+	  nsectors = (csd.v20.C_SIZE + 1);
+	  capacity = nsectors * 512 ;
+	  printf(" nsectors         = %d\n",nsectors);
+	  printf(" Capacity (GB)    = %d\n",capacity/(1024*1024));
+	  break;
+	case 2: // MMC ?
+	   printf(" this is maybe a MMC card ...");
+	   break;
+	default: // reserved
+	   printf(" this is an unknown sd card, CSD_STRUCTURE = %d\n",csd.v10.CSD_STRUCTURE);   	  
+	}
+
+
+
+
+
+  sta = sd_rd_cid(0, &cid);
+
+  printf(" MID              = %d\n", cid.MID);
+  printf(" OID              = %c%c\n", cid.OID[0],cid.OID[1]);
+  printf(" PNM              = %c%c%c%c%c\n", cid.PNM[0],cid.PNM[1],cid.PNM[2],cid.PNM[3],cid.PNM[4]);
+  printf(" PRV              = %d\n", cid.PRV);
+  printf(" PSN              = %u\n", cid.PSN);
+  printf(" MDT              = %d\n", cid.MDT);
+  printf(" CRC              = %d\n", cid.CRC);
+ 
+
+printf(" Random Read/Write to/from SD Card..."); getchar(); printf("\n"); 
+
+i=0;
+dev.pdrv = 0;
+c=0;
+while(c != 'e'){
+	sector = rand() % (nsectors-3);	/* sector = 0...nsectors-3 (we like to read 2 sectors at once)  */
+    if((res=sd_read  ( &dev, sd_buffer, sector, 2 )) != RES_OK)
+    {
+    	printf("error %d reading sector %d-%d (%d)\n",res,sector,sector+1,i);
+    	c=getchar();
+    }
+
+    sector = rand() % (nsectors-3);	/* sector = 0...nsectors-2 */
+    if((res=sd_write  ( &dev, sd_buffer, sector, 2 )) != RES_OK)
+    {
+    	printf("error %d writing sector %d-%d (%d)\n",res,sector,sector+1,i);
+    	c=getchar();
+    }
+    printf("."); i++;
+}
+// for(i=0; i<2*SD_BLOCKSIZE;i++) sd_buffer[i]=i;
+
+
+// dev.pdrv = 0;
+// for(i=0; i<1000; i+=2){
+// 	  sd_read  ( &dev, sd_buffer, i+1000, 2 );
+//     sd_write ( &dev, sd_buffer, i, 2 );
+// }
+  
+
+  memset(sd_buffer,0xaa,2*SD_BLOCKSIZE);
+  
+//  sd_write_nblock (0, 3, 2, sd_buffer);
+//  sd_write_nblock (0, 5, 2, sd_buffer);
+
+
+  printf(" Read SD Card..."); getchar(); printf("\n");
+
+  addr=0x3c00;
+  do{
+
+  	sd_read_nblock (0, addr, 2, sd_buffer);
+
+  	i=0;
+  	while(i<2*SD_BLOCKSIZE)
+  	{
+  		printf("%02X",sd_buffer[i]);
+  		i++;
+  	}
+  	c=getchar();
+  	addr++;
+  	addr++;
+  }while(c != 'e');
+
   return 0;
+
+
+
   printf("Build date  : %u\n", (unsigned long) &__BUILD_DATE - (unsigned long) &_start);
   printf("Build number: %u\n", (unsigned long) &__BUILD_NUMBER - (unsigned long) &_start);
   

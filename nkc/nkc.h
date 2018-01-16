@@ -475,6 +475,9 @@ $FFFFFF01 - SPI-Daten-Register
 
 SD-Card Specifications:
 
+SD 			 ... 2GB	FAT16
+SDHC    4GB  ... 32GB	FAT32
+SDXC	64GB ... 2TB	exFAT
 
 Information Registers:
 

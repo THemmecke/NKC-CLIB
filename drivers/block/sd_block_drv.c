@@ -34,7 +34,7 @@
 #include <drivers.h>
 #include <ioctl.h>
 #include "sd_block_drv.h"
-#include "sdS.h"
+#include "sdcard.h"
 #include "../../nkc/nkc.h"  // traps
 
 /****************************************************************************
@@ -77,7 +77,7 @@ typedef struct {
 
 // FIXME: should use compiler switch !  
 // old GP version
-char* const SDTYPE[] = {"SD/MMC","SDHC"}; 
+char* const SDTYPE[] = {"SD/MMC","SDHC/SDXC"}; 
 // new GP version
 //char* const SDTYPE[] = {"MMC","SDv1","SDv2","SDHC"};
 
@@ -124,24 +124,17 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 {
 	DSTATUS stat;
 	UINT result = RES_OK;
-	struct _deviceinfo di;
+	//struct _deviceinfo di;
 	struct _sddriveinfo *pdi;
 	
 	drvsd_dbg("sd disk_initialize (%d)...\n",pdrv);
 	
-	
-  #if defined VARIANT01
-	result = idetifySD(pdrv+1, &di);	// direct
-  #else
-	pdi = sdtest(pdrv+1); 			// call GP
-  #endif
+	pdi = sd_init(pdrv); 		
 
-	switch(result){ 
-	  default:
-	    if(pdi){ // if pointer to _driveinfo is valid -> stat = OK
+	if(pdi){ // if pointer to _driveinfo is valid -> stat = OK
 	      stat = STA_OK;
-	    }
 	}
+	
 		
 	Stat[pdrv].status = stat;	
 
@@ -156,45 +149,17 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 	  return STA_NODISK;
 	}
 	
-  #if defined VARIANT01
-  Stat[pdrv].n_sectors = di.spcard;
-  #else
 	//Stat[pdrv].n_sectors = di.cylinders * di.heads *di.sptrack; // sectors per card
 	Stat[pdrv].n_sectors = pdi->size;
-	#endif
-
+	
 	drvgide_dbg("...\n");
 	
-  #if defined VARIANT01
-	if(!Stat[pdrv].status)
-	{
-		drvsd_dbg(" Model: %s\n",di.modelnum);
-		drvsd_dbg("   Cylinders      : %u\n",di.cylinders);
-		drvsd_dbg("   Cylinders (CL) : %u\n",di.ccylinder);
-		drvsd_dbg("   Heads          : %u\n",di.heads);
-		drvsd_dbg("   Heads (CL)     : %u\n",di.cheads);
-		drvsd_dbg("   Sectors/Card   : %lu\n",di.spcard);
-		drvsd_dbg("   Sectors (CL)   : %lu\n",di.ccinsect);
-		drvsd_dbg("   LBA-Sectors    : %lu\n",di.lbasec);
-		drvsd_dbg("   Tracks         : %u\n",di.csptrack);
-		drvsd_dbg("   Sec/Track      : %u\n",di.sptrack);
-		drvsd_dbg("   Sec/Track (CL) : %u\n",di.csptrack);
-		drvsd_dbg("   Bytes/Track    : %u\n",di.bptrack);
-		drvsd_dbg("   Bytes/Sector   : %u\n",di.bpsec);
-		drvsd_dbg("   Capabilities   : 0x%0X\n",di.cap);
-
-		drvsd_lldbgwait("KEY...\n");	
-		
-	} else Stat[pdrv].status = STA_NODISK;
-
-  #else
 	drvsd_dbg(" Model: %s\n",pdi->sdname);
 	drvsd_dbg("   bytes per block: %u\n",pdi->bpb);
 	drvsd_dbg("   type           : %u (%s)\n",pdi->type, SDTYPE[pdi->type]);
 	drvsd_dbg("   size in sects  : %lu\n",pdi->size);
-  #endif
-	
-        drvsd_lldbgwait("KEY...\n");	
+  
+  drvsd_lldbgwait("KEY...\n");	
 
 	return Stat[pdrv].status;
 }
@@ -224,16 +189,14 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 
 static UINT sd_open(struct _dev *devp)
 {
-  struct _sddriveinfo* pdi;
-  BYTE disk;  
+  struct _sddriveinfo* pdi; 
   DSTATUS stat = STA_OK;
   
   drvsd_lldbg("sd_open\n");
    
   if(devp == NULL) return EINVAL;    
-  disk = devp->pdrv+1;
   
-  pdi = sdtest(disk); /* this is a GP call ... */
+  pdi = sd_init(devp->pdrv); 
   
   if(pdi == NULL) return EINVDRV;
   
@@ -287,52 +250,21 @@ static UINT sd_close(struct _dev *devp)
  *
  ****************************************************************************/
 
-static DRESULT sd_read(struct _dev *devp, char *buffer, UINT start_sector, UINT num_sectors)
+//static 
+DRESULT sd_read(struct _dev *devp, char *buffer, UINT start_sector, UINT num_sectors)
 {
 
-  DRESULT res;
-  BYTE disk; 
+  DRESULT res; 
   
   drvsd_lldbg("sd_read\n");
 
   if(devp == NULL) return EINVAL;
-  disk = devp->pdrv+1;
 
   drvsd_lldbgdec("   disk : ",devp->pdrv);
   drvsd_lldbgdec("   sect : ",start_sector);
   drvsd_lldbgdec("   num  : ",num_sectors);
   
-  
-     
-  res = sddisk(_SDDISK_CMD_READ,start_sector,num_sectors,disk,buffer);	/* this is a GP call ... */
-  
-  switch(res){
-    /*  0: success
-     * -1: RDY timeout 
-     * -2: DRQ timeouot
-     * -3: BUSY timeout
-     * 
-     *  -100: unknown command 
-     */
-    case 0: 
-      res = RES_OK;
-      drvsd_lldbg(" sd_read-OK\n");
-      break;
-    case -1:
-    case -2:
-    case -3:
-      res = RES_NOTRDY;
-      drvsd_lldbg(" sd_read-NOTRDY\n");
-      break;
-    case -100:
-      res = RES_PARERR;
-      drvsd_lldbg(" sd_read-PARERR(1)\n");
-      break;
-    
-    default:
-      res = RES_PARERR;
-      drvsd_lldbg(" sd_read-PARERR(2)\n");
-  }
+  res = sd_read_nblock (devp->pdrv, start_sector, num_sectors, buffer);
   
   return res;
 }
@@ -355,51 +287,22 @@ static DRESULT sd_read(struct _dev *devp, char *buffer, UINT start_sector, UINT 
  *   res 
  ****************************************************************************/
 
-static DRESULT sd_write(struct _dev *devp, char *buffer, UINT start_sector, UINT num_sectors)
+//static 
+DRESULT sd_write(struct _dev *devp, char *buffer, UINT start_sector, UINT num_sectors)
 {
   DRESULT res;
-  BYTE disk;
   
   drvsd_lldbg("sd_write\n");
 
   if(devp == NULL) return EINVAL;
   if(buffer == NULL) return EINVAL;
   
-  disk = devp->pdrv+1;
     
   drvsd_lldbgdec("   disk : ",devp->pdrv);
   drvsd_lldbgdec("   sect : ",start_sector);
   drvsd_lldbgdec("   num  : ",num_sectors);
-
-  res = sddisk(_SDDISK_CMD_WRITE,start_sector,num_sectors,disk,buffer);	/* this is a GP call ... */
   
-  switch(res){
-    /*  0: success
-     * -1: RDY timeout 
-     * -2: DRQ timeouot
-     * -3: BUSY timeout
-     * 
-     *  -100: unknown command 
-     */
-    case 0: 
-      res = RES_OK;
-      drvsd_lldbg(" sd_write-OK\n");
-      break;
-    case -1:
-    case -2:
-    case -3:
-      res = RES_NOTRDY;
-      drvsd_lldbg(" sd_write-NOTRDY\n");
-      break;
-    case -100:
-      res = RES_PARERR;
-      drvsd_lldbg(" sd_write-PARERR(1)\n");
-      break;
-    
-    default:
-      res = RES_PARERR;
-      drvsd_lldbg(" sd_write-PARERR(2)\n");
-  }
+  res = sd_write_nblock (devp->pdrv, start_sector, num_sectors, buffer);
   
   return res;
 
@@ -431,9 +334,8 @@ static DRESULT sd_geometry(struct _dev *devp, struct geometry *geometry)
     drvsd_lldbg(" error: no physical device given\n");
     return RES_PARERR;  
   }
-  disk = devp->pdrv+1;
     
-  pdi = sdtest(disk); /* this is a GP call ... */
+  pdi = sd_init(devp->pdrv);  // FIXME: need another function for that ...
   
   if(pdi == NULL){
     geometry->available = FALSE;
@@ -467,7 +369,7 @@ static DRESULT sd_geometry(struct _dev *devp, struct geometry *geometry)
  * Note: this routine should be redefined in sdS.S 
  *
  ****************************************************************************/
-DRESULT idetifySD(BYTE disk, struct _deviceinfo *p){
+DRESULT idetifySD(BYTE disk, struct _deviceinfo *p){  // FIXME: need another version
   struct geometry g;
   struct _dev d;
   
