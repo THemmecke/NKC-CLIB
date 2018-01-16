@@ -12,8 +12,11 @@
 /doc/syntax.txt
 /projects/TEST/NKC68K.ROM_.S
 /projects/shell/SDCARD-Analyse.txt
-/projects/shell/SDCARD.bin
 /projects/shell/SDCARD.img
-/projects/shell/SDCARD_.bin
 /projects/shell/jados.img
 /projects/shell/jados.img.ReadMe.txt
+/projects/shell/*.map
+/projects/shell/*.ROM
+/projects/shell/*.bin
+/projects/shell/*.out
+/projects/shell/*.log
