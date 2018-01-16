@@ -5,9 +5,10 @@
 #include <fs.h>
 #include <debug.h>
 #include <ioctl.h>
-#include <ff.h>
-#include <fs_nkc.h>
 
+
+#include "../fat/ff.h" /* using some struct from FAT fileystem ... */
+#include "fs_nkc.h"
 #include "../../nkc/llnkc.h"
 
 
@@ -107,7 +108,6 @@ static  int alloc_new_track(struct jdfcb *pfcb){
 		/* we found a free track */
 		fsnkc_dbg("alloc_new_track| found: FAT(%d)=[0x%04x|0x%04x]\n",fat_index,FAT[fat_index].ancestor,FAT[fat_index].successor);
 
-
 		FAT[fat_index].ancestor = pfcb->curtrack;
 		FAT[fat_index].successor = 0xFFFF;
 		FAT[pfcb->curtrack].successor = fat_index;
@@ -115,12 +115,46 @@ static  int alloc_new_track(struct jdfcb *pfcb){
 		pfcb->curtrack = pfcb->lasttrack = fat_index;
 		pfcb->curcluster = pfcb->endcluster = 0;
 
-
-
 		return FR_OK;
 	}
 
 	return FR_DISKFULL;
+}
+
+/* revert alloc_new_track */
+static  int de_alloc_new_track(struct jdfcb *pfcb){
+
+	FATentry *FAT;
+	int fat_index,dir_index,sub_index;
+	DRESULT dres;
+	struct _dev dev;
+	JDFS *pJDFs;
+	struct fstabentry* pfstab;
+	struct jddir *pdir;
+
+	fsnkc_dbg("fs_nkc.c|de_alloc_new_track ...\n");
+
+	FAT = pfcb->pfs->pFAT;
+	fat_index = FAT_BASE;
+	pfstab  = pfcb->pfs->pfstab;	/* pointer to file related fstab entry */
+	dev.pdrv = pfstab->pdrv; 			/* physical drive number 				*/
+
+	pJDFs = (JDFS *)pfstab->pfs;		/* pointer to JADOS file system object  */
+
+
+	/* we found a free track */
+	fsnkc_dbg("alloc_new_track| found: FAT(%d)=[0x%04x|0x%04x]\n",fat_index,FAT[fat_index].ancestor,FAT[fat_index].successor);
+	
+	fat_index = pfcb->curtrack;
+	pfcb->curtrack = FAT[fat_index].ancestor;
+	FAT[fat_index].ancestor = 0xE5E5;
+	FAT[fat_index].successor = 0xE5E5;
+
+	fat_index = pfcb->curtrack;
+	pfcb->lasttrack = pfcb->curtrack;
+	FAT[fat_index].successor = 0xFFFF;
+
+	return FR_OK;
 }
 
 
@@ -170,7 +204,7 @@ static int update_dir(struct jdfcb *pfcb){
 	fsnkc_dbg("             length     : %d\n",pfcb->length );
 
     memcpy(&pdir[dir_index],pfcb,sizeof(struct jddir));
-	pdir[dir_index].id = 0x00; /* mark entry as valid */
+	pdir[dir_index].id = 0x0000; /* mark entry as valid */
 
 	return FR_OK;
 }
@@ -247,7 +281,7 @@ static  int alloc_new_file(struct jdfcb *pfcb){
 			pfcb->dir_index = dir.index;
 			pfcb->starttrack = pfcb->curtrack = pfcb->lasttrack = fat_index;
 			pfcb->curcluster = pfcb->endcluster = pfcb->endbyte = pfcb->length = pfcb->crpos = 0;
-			pfcb->length = 1; /* file length in cluster */
+			pfcb->length = 1; /* file length in cluster, minimium file length is 1 cluster */
 			pfcb->eof = 1;	/* we are currently at end of file */
 			pfcb->mode = 0xE5;
 
@@ -348,6 +382,7 @@ static DRESULT nkcfs_read_cluster(struct jdfcb *pfcb){
 		pfcb->curtrack = next_track;
 		pfcb->curcluster = 0;
 		pfcb->crcluster++;
+		pfcb->crpos = 0;	// reset current relative cluster position to 0
 
 	}else{
 		/* proceed to next cluster */
@@ -362,19 +397,6 @@ static DRESULT nkcfs_read_cluster(struct jdfcb *pfcb){
 		pfcb->crpos = 0;	// reset current relative cluster position to 0
 
 	}
-
-	if(pfcb->curcluster == pfcb->length) {
-		/* we are at eof ! */
-			pfcb->eof = 1;
-			return FR_EOF;
-	}
-	// ----------------------------------------------------------------------------------------------------
-
-
-
-	/* call blk driver read:
-	   read(struct _dev *devp, char *buffer, UINT start_sector, UINT num_sectors)
-	*/
 
 	start_sector =  FCLUSTER + pfcb->pfs->id * PART_SIZE 	/* partition start cluster 		*/
 	                //+ pfcb->starttrack * TRACK_SIZE
@@ -471,9 +493,6 @@ static DRESULT nkcfs_write_cluster(struct jdfcb *pfcb){
 			}else{
 				/* file has grown */
 				pfcb->endcluster = 0;				/* last cluster of last track */
-				pfcb->length++;						/* increment length in clusters */
-				//pfcb->curtrack = next_track;		/* current track 		*/
-		        //pfcb->lasttrack  = pfcb->curtrack;	/* last track of file 	*/
 		        pfcb->eof = 1;
 			}		
 		}else{
@@ -494,9 +513,17 @@ static DRESULT nkcfs_write_cluster(struct jdfcb *pfcb){
 
 	fsnkc_dbg("fs_nkc.c: nkcfs_write_cluster: cluster/sector=%d/%d  \n     curtrack: %d, curcluster: %d\n", start_cluster, start_cluster * pfcb->pfs->pjdhd->spc,pfcb->curtrack,pfcb->curcluster);
 
+
+	start_cluster = start_cluster * pfcb->pfs->pjdhd->spc;	/* von cluster in sector umrechnen ! */
+
+	if(pfcb->pfs->pjdhd->nsectors < start_cluster) {
+		de_alloc_new_track(pfcb);
+		return FR_INVALID_PARAMETER;
+	}
+
 	dres = pfstab->pblkdrv->blk_oper->write( &dev,
 											pfcb->pbuffer,
-											start_cluster * pfcb->pfs->pjdhd->spc,		/* von cluster in sector umrechnen ! */
+											start_cluster,								
 											pfcb->pfs->pjdhd->spc); 	                /* write complete cluster == sectors per cluster */
 
 	if(dres != RES_OK){
@@ -505,20 +532,21 @@ static DRESULT nkcfs_write_cluster(struct jdfcb *pfcb){
 		return FR_INVALID_PARAMETER;
 	}
 
-	// ----------------------------------------------------------------------------------------------------
-	fsnkc_dbg("fs_nkc.c: nkcfs_write_cluster: proceed to next cluster ...\n");
+	return FR_OK;
+}
+
+void alloc_new_cluster(struct jdfcb *pfcb){
+	fsnkc_dbg("fs_nkc.c: alloc_new_cluster ...\n");
 	/* proceed to next cluster */
 	pfcb->curcluster++;					/* current track realive cluster */
-	pfcb->crcluster++;					/* current file realtive cluster */
+	pfcb->crcluster++;					/* current file realtive cluster */	
+	pfcb->crpos = 0;					/* current cluster relative position */
 
 	if(pfcb->curtrack == pfcb->lasttrack &&
 		pfcb->curcluster > pfcb->endcluster){
 		pfcb->endcluster = pfcb->curcluster; /* adjust endcluster */
-		pfcb->length++;						 /* increment length in clusters */			
+		pfcb->length++;						 /* adjust length in clusters */					
 	}
-
-	pfcb->crpos = 0;	/* current cluster relative position */
-
 	return FR_OK;
 }
 
@@ -529,12 +557,6 @@ FRESULT nkcfs_mount(unsigned char  mount, 		/* 1=> mount, 0=> unmount */
 		    struct fstabentry *pfstab		/* pointer to fstabentry with info of drive to be mounted/unmounted */
 )
 {
-  /*
-   * - check if path points to a valid JADOS harddisk
-   * - check if path points to a valid JADOS drive/partition on the harddsk
-   * - allocate memory for hd info and read in hd info
-   * - allocate memory for partition/drive info and read in drive info
-   */
   JDFS *pJDFs;
   FATentry *pFAT;
   struct jddir *pDIR;
@@ -594,6 +616,12 @@ FRESULT nkcfs_mount(unsigned char  mount, 		/* 1=> mount, 0=> unmount */
     if(!pJDHd) { /* --------------------------- initialize drive information START ------------------------------------ */
         dres = pfstab->pblkdrv->blk_oper->ioctl(&dev, FS_IOCTL_DISK_INIT, 0);
 
+        if(dres != RES_OK){
+			fsnkc_dbg(" nkcfs_mount: error %d in call to blk-ioctl ...\n",dres);
+			free(pJDFs);
+			return dres + DRESULT_OFFSET;
+		}
+
         fsnkc_dbg("nkcfs_mount: no hd descriptor available, init drive, read in drive info and create one\n");
 
 		switch(dres){
@@ -625,8 +653,14 @@ FRESULT nkcfs_mount(unsigned char  mount, 		/* 1=> mount, 0=> unmount */
 		// check valid partitions
 		fsnkc_dbg(" nkcfs_mount: check partitions ...\n");
 		dres = pfstab->pblkdrv->blk_oper->geometry(&dev, &geo);
-		//geo.nsectors (sectors on card)
-		//geo.sectorsize (bytes per sector)
+
+		if(dres != RES_OK){
+			fsnkc_dbg(" nkcfs_mount: error %d in call to geometry ...\n",dres);
+			free(pJDFs);
+		    free(pJDHd);
+			return dres + DRESULT_OFFSET;
+		}
+
 		pJDHd->csize = CLUSTERSIZE ;					/* JADOS uses 1024 bytes per 'sector' */
 		pJDHd->spc = CLUSTERSIZE / geo.sectorsize; 	/* sectors per cluster = 2 for a device with 512 bytes sector size */
 		pJDHd->nsectors = geo.nsectors;
@@ -675,23 +709,39 @@ FRESULT nkcfs_mount(unsigned char  mount, 		/* 1=> mount, 0=> unmount */
 		  fsnkc_dbg("      yes\n");
 		}
 
-
 		// walk through the disk ....
 		fsnkc_dbg(" nkcfs_mount: valid partitions are: \n"); 
-		for(i=0,ssector=0; i < MAX_PARTITIONS && ssector < pJDHd->nsectors; i++) {
-		  
-		  ssector = (FCLUSTER + i*PART_SIZE) * pJDHd->spc;
-		  fsnkc_dbg(" check if partition %d startig at sector %d is valid ...\n ",i,ssector);
-		  pfstab->pblkdrv->blk_oper->read(&dev, pboot, ssector, 1); // we use pboot as tmp buffer
+		dres = RES_OK;
+		i=0;
+		ssector = FCLUSTER * pJDHd->spc; /* 1st sector */
 
-		  if(pboot[0] == 0xE5 && pboot[1] == 0xE5 && pboot[2] == 0xE5 && pboot[3] == 0xE5)
-		  {
-		    pJDHd->pvalid[i] = 1;
-		    fsnkc_dbg(" -----> YES \n");
-		  }else{
-		  	fsnkc_dbg(" -----> NO\n")
-		  }
-		}
+		do{
+					  
+		    fsnkc_dbg(" check if partition %d startig at sector %d is valid (maxsector = %d)...\n ",i,ssector,pJDHd->nsectors);
+		    dres = pfstab->pblkdrv->blk_oper->read(&dev, pboot, ssector, 1); // we use pboot as tmp buffer
+
+		    if(dres != RES_OK){		  
+			    fsnkc_dbg("nkcfs_mount error %d blk-read (1)\n", dres);
+			    free(pJDFs);
+			    free(pJDHd);
+			    free(pboot);
+			    return dres + DRESULT_OFFSET;
+		    }
+
+		    if(pboot[0] == 0xE5 && pboot[1] == 0xE5 && pboot[2] == 0xE5 && pboot[3] == 0xE5)
+		    {
+		      pJDHd->pvalid[i] = 1;
+		      fsnkc_dbg(" -----> YES \n");
+		    }else{
+		      fsnkc_dbg(" -----> NO\n")
+		    }
+
+			i++;
+			// calc next sector, check in while for validity
+			ssector = (FCLUSTER + i*PART_SIZE) * pJDHd->spc;
+
+		} while(i < MAX_PARTITIONS && ssector < pJDHd->nsectors && dres == RES_OK);
+		
 
 		// initialize new descriptor
 		pJDHd->pnext = NULL;
@@ -730,6 +780,13 @@ FRESULT nkcfs_mount(unsigned char  mount, 		/* 1=> mount, 0=> unmount */
 												(FCLUSTER + pJDFs->id * PART_SIZE) * pJDHd->spc, /* start sector */
 												FAT_SIZE * pJDHd->spc); 			/* number of sectors = FAT size in clusters * sectors per cluster */
 
+	if(dres != RES_OK){		  
+	    fsnkc_dbg("nkcfs_mount error %d blk-read (2)\n", dres);
+		free(pJDFs);
+		free(pFAT);
+	    return dres + DRESULT_OFFSET;
+	}
+
 	pJDFs->pFAT = pFAT;		/* add FAT */
 
 	/* --------------------------- read/store DIR ------------------------------------ */
@@ -750,8 +807,46 @@ FRESULT nkcfs_mount(unsigned char  mount, 		/* 1=> mount, 0=> unmount */
   								+   FAT_SIZE * pJDHd->spc,							/* DIRs start sector     	*/
   									DIR_SIZE * pJDHd->spc);							/* DIR size  in sectors */
 
+	if(dres != RES_OK){		  
+	    fsnkc_dbg("nkcfs_mount error %d blk-read (2)\n", dres);
+	    free(pDIR);
+		free(pJDFs);
+		free(pFAT);
+	    return dres + DRESULT_OFFSET;
+	}
+
 	pJDFs->pDIR = pDIR;		/* add DIR */
 
+	/* DEBUG: dump directory */
+	#ifdef CONFIG_DEBUG_FS_NKC_
+	unsigned int ii,d,y,m;
+	struct jddir *pdir;
+	char tmp[10];
+
+	pdir = pDIR;
+	for(ii=0; ii<NUM_JD_DIR_ENTRIES;ii++){
+		printf(" ii:%d\n", ii);
+		printf(" id:0x%04x\n", pdir[ii].id);
+		strncpy(tmp,pdir[ii].filename,8); tmp[8]=0;
+		printf(" filename: %s\n", tmp);
+		printf(" res01: 0x%04x\n", pdir[ii].reserved01);
+		strncpy(tmp,pdir[ii].fileext,3); tmp[3]=0;
+		printf(" fileexet: %s\n", tmp);
+		printf(" res02: 0x%02x\n", pdir[ii].reserved02);
+		printf(" starttrack: %d\n", pdir[ii].starttrack);
+		printf(" endcluster: %d\n", pdir[ii].endcluster);
+		printf(" endbyte: 0x%04x\n", pdir[ii].endbyte);
+		d = ((pdir[ii].date & 0x0000000F))       + (((pdir[ii].date & 0x000000F0) >> 4) *10);  /* day */
+    	m = ((pdir[ii].date & 0x00000F00) >> 8)  + (((pdir[ii].date & 0x0000F000) >> 12) *10); /* month */
+  		y = ((pdir[ii].date & 0x000F0000) >> 16) + (((pdir[ii].date & 0x00F00000) >> 20) *10); /* year */
+		printf(" date: %02d.%02d.%02d\n", d, m, y);
+		printf(" length: %d\n", pdir[ii].length);
+		printf(" mode: 0x%02x\n", pdir[ii].mode);
+		printf(" res03: 0x%04x\n", pdir[ii].reserved03);
+		printf(" res04: 0x02x\n", pdir[ii].reserved04);
+		getchar();
+	}
+	#endif
 
     pfstab->pfs = pJDFs;								/* return pointer to JADOS file system in fstab entry */
     ((JDFS*)pfstab->pfs)->fs_id = FS_TYPE_JADOS;		/* idetify this filesystem (id's defined in fs.h) */
@@ -877,7 +972,6 @@ static int     nkcfs_readdir(struct _file *filp, DIR *dir,FILINFO* finfo) {
 
 }
 
-
 /* close directory *dir (filp is not used) */
 static int     nkcfs_closedir(struct _file *filp, DIR *dir) {
   fsnkc_dbg("fs_nkc.c: [ nkcfs_closedir ...\n");
@@ -912,12 +1006,9 @@ static int nkcfs_getfree(struct fstabentry* pfstab,DWORD *nclst) {
 
   dev.pdrv = pfstab->pdrv;
   /* read directory to buffer , i.e partitions sector 0 (0-1 with 512 bytes sector size) */
-
-  dres = pfstab->pblkdrv->blk_oper->read( &dev, JDFAT, (MBR_SIZE)*pJDHd->spc                                    /* start of first FAT table */
-  													  +	pfstab->partition*PART_SIZE*pJDHd->csize*pJDHd->spc,  	/* partitions FAT table */
-  														FAT_SIZE * pJDHd->spc);									/* FAT size   */
-
-
+  dres = pfstab->pblkdrv->blk_oper->read( &dev, JDFAT,
+												(FCLUSTER + pJDFs->id * PART_SIZE) * pJDHd->spc, /* start sector */
+												FAT_SIZE * pJDHd->spc); 			/* number of sectors = FAT size in clusters * sectors per cluster */
   /* count free FAT entries */
   n=0;
   for(ii=0; ii < FAT_ENTRIES; ii++)
@@ -941,13 +1032,9 @@ static int nkcfs_getfree(struct fstabentry* pfstab,DWORD *nclst) {
  *******************************************************************************/
 //static int nkcfs_ioctl(struct _file *filp, int cmd, unsigned long arg){
 static int nkcfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg){
-//  long p1,p2;
-//  WORD w;
-//  DWORD dw;
+
   char cdrive[2];
   FRESULT res;
-//  char tmp[10];
-//  struct _deviceinfo di;
   struct _file File;
 
   fsnkc_dbg("fs_nkc.c: [ nkcfs_ioctl (cmd = %d)...\n",cmd);
@@ -973,11 +1060,6 @@ static int nkcfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg){
       res = FR_OK;
       break;
     // ****************************** open directory **************************************
-//    case FS_IOCTL_OPEN_DIR:
-//			      res = nkcfs_opendir(((struct ioctl_opendir*)arg)->dp,   // OUT: DIR structure
-//					          ((struct ioctl_opendir*)arg)->path);// IN : Path, i.e. drive
-//			      break;
-
     case FS_IOCTL_OPEN_DIR:
 			      fsnkc_dbg(" FS_IOCTL_OPEN_DIR(1):   path = 0x%0x (%s)\n",((struct ioctl_opendir*)arg)->path,((struct ioctl_opendir*)arg)->path);
 			      File.p_fstab = pfstab;
@@ -987,18 +1069,11 @@ static int nkcfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg){
 			      break;
      // ****************************** read directory ******************************
     case FS_IOCTL_READ_DIR:
-//			      res = nkcfs_readdir_( ((struct ioctl_nkc_dir*)arg)->pfstab,
-//						    (struct jddir*)((struct ioctl_nkc_dir*)arg)->pbuf);
-//			      break;
-
 			      fsnkc_dbg(" fs_nkc.c| FS_IOCTL_READ_DIR: (%s)\n",(char*)arg);
 			      res = nkcfs_readdir(NULL,((struct ioctl_readdir*)arg)->dp,
 						       ((struct ioctl_readdir*)arg)->fno);
 			      break;
     // ****************************** close directory ******************************
-//    case FS_IOCTL_CLOSE_DIR:
-//			      res = nkcfs_closedir((DIR*)arg);			      // IN: DIR structure
-//			      break;
     case FS_IOCTL_CLOSE_DIR:
 			      fsnkc_dbg(" fs_nkc.c| FS_IOCTL_CLOSE_DIR: (0x%0x)\n",(DIR*)arg);
 			      res = nkcfs_closedir(NULL,(DIR*)arg);
@@ -1024,9 +1099,9 @@ static int nkcfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg){
       fsnkc_dbg("fs_nkc.c: - FS_IOCTL_MOUNT -\n");
 
       if(!arg){
-	res = FR_INVALID_PARAMETER;
-	fsnkc_lldbgwait("fs_nkc: error: invalid parameter arg=NULL !\n");
-	break;
+		res = FR_INVALID_PARAMETER;
+		fsnkc_lldbgwait("fs_nkc: error: invalid parameter arg=NULL !\n");
+		break;
       }
 
       res = nkcfs_mount(1, ((struct fstabentry*)arg));
@@ -1173,11 +1248,11 @@ static int nkcfs_open(struct _file *filp)
    if(filp->f_oflags & _F_CREATE) mode |= FA_CREATE_NEW; // _F_CREATE = 0x800, FA_CREATE_NEW = 4
 
    							// es wird von "oben" immer "create new" uebergeben, wenn eine Datei zum Schreiben geoeffnet werden soll
-   							// das fuehrt richtigerweise zu einem Fehler => check upper layer !
+   							// das fuehrt richtigerweise zu einem Fehler => FIXME: check upper layer !
 
    res = find_file(filp,&dir,&jdir); /* fetch file information */
 
-   fsnkc_dbg("fs_nkc.c: mode = 0x%x\n",mode);
+   fsnkc_dbg("fs_nkc.c|nkcfs_open: mode = 0x%x\n",mode);
 
    switch (res) {
      case EINVAL:
@@ -1205,17 +1280,23 @@ static int nkcfs_open(struct _file *filp)
      		}
 
      		/* ---------------------------------------- fill FCB structure (new file) ----------------------------- */
-     		fsnkc_dbg(" fill fcb:");
-
+     		fsnkc_dbg("|nkcfs_open: fill fcb:\n");
+     		/*------ standard ----- */
      		pfcb->lw = filp->p_fstab->partition + 5; 		/* = partition number + 5 for harddisk partitions  */
 
      		strcpy(pfcb->filename,jdir.filename);
      		strcpy(pfcb->fileext,jdir.fileext);
 
+
      		fsnkc_dbg("    filename :%s\n",pfcb->filename);
      		fsnkc_dbg("    fileext  :%s\n",pfcb->fileext);
 
-			pfcb->date = 0; /* FIXME */ 			
+			pfcb->date = 0; /* FIXME */ 
+
+			pfcb->length = 1; /* minimum file length */
+			pfcb->endcluster = 0;		
+			pfcb->endbyte = 0;
+			pfcb->mode = 0xE5;
 
 			pfcb->status = 1; /* 1=opened ! */
 			/* allocate a transfer buffer of size min sectorsize */
@@ -1306,7 +1387,7 @@ static int nkcfs_open(struct _file *filp)
 			pfcb->status = 1; /* 1=opened ! */
 			pfcb->curtrack = jdir.starttrack; /* current track */
 			pfcb->curcluster = 0; /* current cluster in current track (track relative) */
-			pfcb->lasttrack = 0;
+			pfcb->lasttrack = 0; /* FIXME: '0' is wrong but doesn't matter here. Can be retreived cycling through FAT */
 			/* allocate a transfer buffer of size min sectorsize */
 			pfcb->pbuffer = malloc(BUFFER_SIZE);
 			/*------ non standard ----- */
@@ -1336,7 +1417,7 @@ static int nkcfs_open(struct _file *filp)
     filp->private = (void*)pfcb;
 
     if(iread){
-	   fsnkc_dbg("fs_nkc.c|nkcfs_open: read first cluster ....\n");
+	   fsnkc_dbg("fs_nkc.c|nkcfs_open: load first cluster to buffer ....\n");
 
 	   dev.pdrv = pfcb->pfs->pfstab->pdrv; 			/* physical drive number 				*/
 	   start_sector =  FCLUSTER + pfcb->pfs->id * PART_SIZE 	/* partition start cluster 		*/
@@ -1415,6 +1496,18 @@ static int nkcfs_close(struct _file *filp)
 	pfcb = (struct jdfcb*)filp->private;
 
 	fsnkc_dbg("nkcfs_close: file = %s.%s\n",pfcb->filename,pfcb->fileext);
+
+
+    fsnkc_dbg(" nkcfs_close: pos        =%d\n",pfcb->pos);
+    fsnkc_dbg(" nkcfs_close: crcluster  =%d\n",pfcb->crcluster);
+	fsnkc_dbg(" nkcfs_close: crpos      =%d\n",pfcb->crpos);
+	fsnkc_dbg(" nkcfs_close: curtrack   =%d\n",pfcb->curtrack);
+	fsnkc_dbg(" nkcfs_close: curcluster =%d\n",pfcb->curcluster);
+	fsnkc_dbg(" nkcfs_close: endcluster =%d\n",pfcb->endcluster);
+	fsnkc_dbg(" nkcfs_close: lasttrack  =%d\n",pfcb->lasttrack);
+	fsnkc_dbg(" nkcfs_close: length     =%d\n",pfcb->length);
+	fsnkc_dbg(" nkcfs_close: eof        =%d\n",pfcb->eof);
+
 	/* flush current sector, if mode = write and current cluster relative position is > 0*/
 
 	if(pfcb->omode == 0xE5)
@@ -1425,27 +1518,13 @@ static int nkcfs_close(struct _file *filp)
    			fsnkc_dbg(" nkcfs_close: no flush needed (crpos=0) .... \n");			
 		}else{
 
-	  		fsnkc_dbg(" nkcfs_close: flush current cluster .... \n");
-   	  		dresult = nkcfs_write_cluster(pfcb);
-   	  		fsnkc_dbg(" nkcfs_close: update directory .... \n");
-	   	  /* close file on media */
-		    /* ...FIXME... 
-		    	1) file is RO: nothing to do on media, free fcb stuctures
-		    	2) file is RW: mark current cluster as last cluster, delete following clusters
-		    */
-   	  	}
-
-   	  	if(pfcb->crpos == 0){		/* current cluster relative position */
-   			fsnkc_dbg(" nkcfs_close: adjust file length (crpos=0)=> ");
-			if(pfcb->length > 0)		/* if ==0, the file has ZERO length */
-				pfcb->length--;				/* adjust length in clusters */
-		
-			//if(pfcb->endcluster > 0)	/* if ==0, the file has ZERO length */
-			//	pfcb->endcluster--;			/* adjust end cluster */
+	  		fsnkc_dbg(" nkcfs_close: flush current cluster (crpos=%d) .... \n",pfcb->crpos);
+   	  		dresult = nkcfs_write_cluster(pfcb);   	  			   	 
+   	  	}   	  
  			
- 			fsnkc_dbg(" length = %d, endcluster=%d\n",pfcb->length,pfcb->endcluster);
-		}
-
+ 		fsnkc_dbg(" length = %d, endcluster=%d\n",pfcb->length,pfcb->endcluster);
+		
+		fsnkc_dbg(" nkcfs_close: update directory .... \n");
    		dresult = update_dir(pfcb);
 
    	  	/* write back FAT/DIR to media */
@@ -1541,24 +1620,20 @@ static int nkcfs_read(struct _file *filp, char *buffer, int buflen)
 		for(;pfcb->crpos < CLUSTERSIZE && count > 0; pfcb->crpos++,pfcb->pos++,count--,bp++)
 		{
 			((UCHAR*)buffer)[bp] = pbuf[pfcb->crpos];
-
-			//fsnkc_dbg("%02X ",pbuf[pfcb->crpos]);
 		}
-
-		//fsnkc_dbg("\n");
 
 		// read next cluster
 		if(count)
 		{
 			fsnkc_dbg(" read next cluster\n");
-			if (pfcb->crcluster == pfcb->length)
+			if (pfcb->crcluster+1 == pfcb->length)
 			{
 				fsnkc_lldbgwait("...nkcfs_read(EOF)\n");
+				//pfcb->eof = 1; if we set eof here, the buffer will not be copied to upper layers !
 				return EZERO;  // EOF (we just copied the last sector)
 			}
 
-			res = nkcfs_read_cluster(pfcb);			       // read next sector
-
+			res = nkcfs_read_cluster(pfcb);			       // read next cluster
 
 			switch(res)
 			{
@@ -1633,33 +1708,23 @@ static int  nkcfs_write(struct _file *filp, const char *buffer, int buflen)
 
 	bp = NULL;
 
-	res = RES_OK;
+	res = RES_OK;	
 
 	while(count)
 	{
-		// copy bytes to current buffer
-		for(;pfcb->crpos < CLUSTERSIZE && count > 0; pfcb->crpos++,pfcb->pos++,count--,bp++)
-		{
-			pbuf[pfcb->crpos] = ((unsigned char*)buffer)[bp];
-
-			//fsnkc_dbg("%02X ",pbuf[pfcb->crpos]);			
-		}
 		
-		//fsnkc_dbg("\n");
-
-		fsnkc_dbg("nkcfs_write:- copied buffer - (%d bytes)\n",bp);
-
-		// write cluster and proceed to next cluster
-		if(count)
+		// write current cluster to disk if buffer full
+		if(pfcb->crpos == CLUSTERSIZE)
 		{
 			fsnkc_dbg("nkcfs_write: write cluster\n");			
 
-			res = nkcfs_write_cluster(pfcb);	// write current cluster to disk an proceed to next cluster
+			res = nkcfs_write_cluster(pfcb);	// write current cluster to disk an proceed to next cluster			
 
 			switch(res)
 			{
 				case RES_OK:
 					fsnkc_dbg("- sector written -\n");
+					alloc_new_cluster(pfcb);
 				 	break; 	// no error
 				case RES_DISKFULL:
 					fsnkc_lldbgwait("...nkcfs_write(disk full)\n");
@@ -1672,9 +1737,16 @@ static int  nkcfs_write(struct _file *filp, const char *buffer, int buflen)
 					return EZERO;				
 					return EACCES; 	// media access errorhandling
 
-			}
+			}			
+		}
 
+		// copy bytes to current buffer
+		for(;pfcb->crpos < CLUSTERSIZE && count > 0; pfcb->crpos++,pfcb->pos++,count--,bp++)
+		{
+			pbuf[pfcb->crpos] = ((unsigned char*)buffer)[bp];		
 		}		
+
+		fsnkc_dbg("nkcfs_write:- copied buffer - (%d bytes)\n",bp);
 
 	}
 
@@ -1854,7 +1926,7 @@ static int  nkcfs_remove(struct _file *filp)
 	fsnkc_dbg("fs_nkc.c: nkcfs_remove: delete DIR entry, dir_index=%u ...\n", dir_index);
 
 	pdir = pfcb->pfs->pDIR;
-	memset(&pdir[dir_index],0xE5,sizeof(struct jddir));
+	pdir[dir_index].id = 0xFFFF; /* mark entry 'deleted' */
 
 
 	/* write back FAT */
@@ -1993,7 +2065,6 @@ static int  nkcfs_rename(struct _file *filp, const char *oldrelpath, const char 
 	nfilp->f_pos = 0;
 	nfilp->f_oflags = 0;
 	
-	// static  int find_file(struct _file *filp, DIR *pdir,struct jddir *pjddir)
 	if( find_file(nfilp,pdir,pnjddir) != ENOFILE){
 		/* error file already exists or other error */
 	
@@ -2005,9 +2076,6 @@ static int  nkcfs_rename(struct _file *filp, const char *oldrelpath, const char 
 		free(pfcb);
 		return EEXIST;
 	}
-	
-	// new filename: pnjddir->filename
-	// new fileext : pnjddir->fileext
 
 	/* ------------------------------ change entry -------------------------------- */
 	fsnkc_dbg("fs_nkc.c: nkcfs_rename: change DIR entry, dir_index=%u ...\n", dir_index);
@@ -2078,6 +2146,5 @@ void nkcfs_init_fs(void)
 	fsnkc_dbg(" Address of nkc_file_operations: 0x%x\n",(int)&nkc_file_operations);
 	fsnkc_dbg(" Address of ...->open: 0x%x\n",(int)nkc_file_operations.open);
 	fsnkc_lldbgwait("...nkcfs_init_fs\n");
-
 
 }

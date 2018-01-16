@@ -41,7 +41,8 @@ LIBOBJECTS += hd_block_drv.o gideS.o
 endif
 
 ifeq ($(CONFIG_DRV_SD),1)
-LIBOBJECTS += sd_block_drv.o sdS.o
+#LIBOBJECTS += sd_block_drv.o sdS.o
+LIBOBJECTS += sd_block_drv.o sdcard.o sd.o crc.o
 endif
 
 # add libgcc functions from comlib to libobjects:

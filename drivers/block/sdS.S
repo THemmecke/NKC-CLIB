@@ -78,7 +78,7 @@ msg03:	.ascii "send command read..."
 	.global sddisk, sdtest
 
 
-
+#ifdef USE_GP
 /* -------------------------------------------------------------------------
 
 	routines using GP
@@ -149,33 +149,15 @@ sdtest_e:
 	rts							
 
 	
-// /*
-// DRESULT sdtest(BYTE disk,struct _driveinfo** di)
-// 
-// Kurzbeschreibung: Testet, ob ein SD-Laufwerk vorhanden ist.
-// Eingaberegister: d4.b = Auswahl des Laufwerks
-// Ausgaberegister: d0.l = Fehlercode
-// CARRY = 1, wenn kein Laufwerk vorhanden ist
-// a0.l = Adresse der Laufwerksinformationen
-// */
-// sdtest:
-// 	move.l %a7,%a0
-// 	movem.l %d0-%d7,-(%sp)
-// 	clr.l %d4
-// 	move.b (7,%A0),%d4		/* disk -> d4                */
-// 	move.l (8,%a0),%a1		/* struct _driveinfo** -> a1 */
-// 	move.l	#_SDTEST,%d7		/* _SDTEST */
-// 	trap #1
-// 	move %d0,%d6
-//                                      /* a0 points to a struct _driveinfo, d0 has error code */
-// 	tst.l %d0                    /* d0 = 0, if no error */
-// 	beq sdtest_e
-// 	movea.l #0,%a0			/* in case of an error return NULL */
-// sdtest_e:		
-// 	move.l %a0,(%a1)		/* store pointer to driveinfo */
-// 	movem.l (%sp)+,%d0-%d7
-// 	rts		
+#else
 
+sddisk:
+	rts
+
+sdtest:	
+	rts
+
+#endif
 
 ///* -------------------------------------------------------------------------
 //

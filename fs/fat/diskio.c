@@ -3,12 +3,12 @@
 /*-----------------------------------------------------------------------*/
 
 #include <fs.h>			/* Declarations of file system and block device API */
-#include <ff.h>
 #include <ioctl.h>		/* include ioctl definitions */
 #include <errno.h>
 #include <drivers.h>
 #include <debug.h>
 
+#include "ff.h"
 #include "diskio.h"
 
 
@@ -28,7 +28,7 @@ DSTATUS disk_initialize (
 		     struct fstabentry *pfstab
 	       )		    
 {
-        struct blk_driver *blk_drv; /* Pointer to block device driver */
+    struct blk_driver *blk_drv; /* Pointer to block device driver */
 	DRESULT res = RES_PARERR;
 	struct _dev dev;
 	
@@ -38,7 +38,7 @@ DSTATUS disk_initialize (
 	dev.pdrv = pfstab->pdrv;    // physical drive number
 	blk_drv = pfstab->pblkdrv;  // block device driver
 	
-        if(blk_drv) {
+    if(blk_drv) {
 	  if(blk_drv->blk_oper) {
 	    if(blk_drv->blk_oper->ioctl) {
 	        res = blk_drv->blk_oper->open(&dev);
@@ -73,7 +73,7 @@ DSTATUS disk_status (
 	ff_dbg("    pdrv = %d\n",pfstab->pdrv);
 	
 	
-        if(blk_drv) {
+    if(blk_drv) {
 	  if(blk_drv->blk_oper) {
 	    if(blk_drv->blk_oper->ioctl) {
 	        res = blk_drv->blk_oper->ioctl(&dev,GET_DISK_STATUS,&stat);

@@ -114,8 +114,9 @@
 /---------------------------------------------------------------------------*/
 
 #include <fs.h>			/* Declarations of file system and block device API */
-#include <ff.h>			/* Declarations of FatFs API */
 #include <ioctl.h>		/* include ioctl definitions */
+
+#include "ff.h"			/* Declarations of FatFs API */
 #include "diskio.h"		/* Declarations of disk I/O functions */
 
 

@@ -4,9 +4,6 @@
 #include <time.h>
 #include <libp.h>
 
-//#define NKC_DEBUG
-#include "../nkc/llnkc.h"
-
 extern void *_allocbloc;
 extern int _allocflag;
 

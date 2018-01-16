@@ -5,33 +5,6 @@
 #include "../fs/fat/ffconf.h"
 #include <drivers.h>
 
-/* flags from stdio.h should be  used  */
-/* open flag settings for open() (and related APIs) */
-
-//#define O_RDONLY    (1 << 0)        /* Open for read access (only) */
-//#define O_WRONLY    (1 << 1)        /* Open for write access (only) */
-//#define O_RDWR      (O_RDOK|O_WROK) /* Open for both read & write access */
-//#define O_CREAT     (1 << 2)        /* Create file/sem/mq object */
-//#define O_EXCL      (1 << 3)        /* Name must not exist when opened  */
-//#define O_APPEND    (1 << 4)        /* Keep contents, append to end */
-//#define O_TRUNC     (1 << 5)        /* Delete contents */
-//#define O_NONBLOCK  (1 << 6)        /* Don't wait for data */
-//#define O_BINARY    (1 << 8)        /* Open the file in binary (untranslated) mode. */
-//#define O_TEXT      0               /* Open the file in text (translated) mode. */
-
-
-//#define _O_MAXBIT   8
-
-
-/* These are the notifications that can be received from F_NOTIFY (linux) */
-
-//#define DN_ACCESS   0  /* A file was accessed */
-//#define DN_MODIFY   1  /* A file was modified */
-//#define DN_CREATE   2  /* A file was created */
-//#define DN_DELETE   3  /* A file was unlinked */
-//#define DN_RENAME   4  /* A file was renamed */
-//#define DN_ATTRIB   5  /* Attributes of a file were changed */
-
 
 /*
 	This is the _file structure used by the fs subsystem.
@@ -39,14 +12,13 @@
 */
 struct _file
 {
-  int               		f_oflags; 	/* Open mode flags */
-  int             		f_pos;    	/* File position */
-  //struct fs_driver 		*p_fs_drv;  	/* fs driver interface FIXME: kann durch 'p_fstab->pfsdrv' ersetzt werden !!! */ 
-  struct fstabentry		*p_fstab;	/* pointer to related fstab entry */
-  int				fd;		/* file handle */
-  struct _file 			*next;		/* pointer to next file in list */	
-  char				*pname;         /* filename with LW,path,name and extension  (fullpath) */
-  void         			*private;       /* file private data -> for example: pointer to jados fileinfo or fcb (if not using JADOS calls) */
+  int                 f_oflags; 	 /* Open mode flags */
+  int             		f_pos;    	 /* File position */
+  struct fstabentry		*p_fstab;	   /* pointer to related fstab entry */
+  int				          fd;		       /* file handle */
+  struct _file 			  *next;		   /* pointer to next file in list */	
+  char				        *pname;      /* filename with LW,path,name and extension  (fullpath) */
+  void         			  *private;    /* file private data -> for example: pointer to jados fileinfo or fcb (if not using JADOS calls) */
 
 };
 
@@ -82,9 +54,9 @@ struct file_operations
 
 struct fs_driver
 {
-	char 				*pname;		/* name of filesystem (FAT,FAT32,NKC...) */
-	struct file_operations 		*f_oper;	/* file operations */
-	struct fs_driver		*next;		/* pointer to next driver in driverlist */
+	char 				            *pname;		/* name of filesystem (FAT,FAT32,NKC...) */
+	struct file_operations 	*f_oper;	/* file operations */
+	struct fs_driver		    *next;		/* pointer to next driver in driverlist */
 };
 
 struct fs_driver* get_driver(char *name);
@@ -148,21 +120,15 @@ int un_register_fs_driver(char *pdrive);
 /*
  * device naming convention:
  * [DeviceID][DeviceNo][Partition]:
- * Device 	DeviceID
+ * Device 	   DeviceID
  *
- * SD/MMC	sd
- * IDE/GIDE	hd
+ * SD/MMC	      sd
+ * IDE/GIDE	    hd
  *
  *
  * DeviceNo: a,b,c,d....
  *
  * Partition: 0,1,2,3.....
- * 
- * special case for jados drives:
- * 
- * [DriveID]:
- * 
- * DriveID is a one letter ID in the range 1...9,A..Z
  * 
  */
 
@@ -177,10 +143,10 @@ int un_register_fs_driver(char *pdrive);
 // file/path information  
 struct fpinfo		
 {
-  char* psz_driveName;  // drive name (HDA0,SDB1, A, B, 1, 2 ...)
-  char* psz_deviceID;	// physical drive type (HD=GIDE, SD=SDCARD, 1,2,3...A,B,C = JADOS drive (rechable via jados driver/ trap 6) )
-  char  c_deviceNO;	// A,B,C,D.... is the device number ( ex. HDA=first  GIDE device )
-  BYTE  n_partition;	// 0,1,2,3.... is the partition number (ex. HDA0=first partition on first GIDE drive
+  char* psz_driveName;  // drive name (hda0,sdb1  ...)
+  char* psz_deviceID;	// physical drive type (hd=GIDE, sd=SDCARD)
+  char  c_deviceNO;	// a,b,c,d.... is the device number ( ex. hda=first  GIDE device )
+  BYTE  n_partition;	// 0,1,2,3.... is the partition number (ex. hda0=first partition on first GIDE drive)
   
   char* psz_path;	// path to directory where the file resists
   char* psz_filename;	// filename

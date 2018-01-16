@@ -8,7 +8,8 @@ include $(BASEDIR)/Makefile.rules
 # ############### m68k-tools ###################################
 OBJECTS=
 ifeq ($(CONFIG_DRV_SD),1) 
-OBJECTS= sd_block_drv.o sdS.o 
+#OBJECTS= sd_block_drv.o sdS.o 
+OBJECTS= sd_block_drv.o sdcard.o sd.o crc.o 
 endif
 ifeq ($(CONFIG_DRV_GIDE),1)
 OBJECTS+=hd_block_drv.o gideS.o

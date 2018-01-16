@@ -427,7 +427,102 @@
 #define 	idestat	0xffffff17*cpu
 
 
+/* GIDE commands (_IDEDISK) */
 
+#define _IDEDISK_CMD_READ	1
+#define _IDEDISK_CMD_WRITE 	2
+#define _IDEDISK_CMD_TEST_UNIT_READY 8
+#define _IDEDISK_CMD_READ_CAPACITY 22
+#define _IDEDISK_CMD_INQUIRY 24
+
+/* -------------------------------------------------------------------------SPI/SDCARD ------------------------------------------------------------------------------------------------------------- */
+
+/*
+			FPGA(LFXP6C)
+SD0_DI		SD_MOSI_o	21
+SD0_DO		SD_MISO_i	18
+SD0_CS 		SD_nCS_o	22
+SD0_SCLK	SD_SCK_o 	20
+
+constant SPI_BASE_ADDR_c    : std_logic_vector(7 downto 0) := X"00"; -- r/w 
+s_spi_cs <= not nIORQ when wbm_address(7 downto 1) =  SPI_BASE_ADDR_c(7 downto 1) else '0';
+=> SPI == 00..01
+
+$FFFFFF00 - SPI-Control-Register
+Schreiben
+7 6 5 4 3 2 1 0
+| | | | | | | |
+| | | | | ------- Clockdivider
+| | | | | 000 = 40MHz/1  => 40,0MHz
+| | | | | 001 = 40MHz/2  => 20,0MHz
+| | | | | 011 = 40MHz/7  =>  5,7MHz
+| | | | | 111 = 40MHz/16 =>  2,5MHz
+| | | | --------- SCK IDLE Level (1=stop clk at high level)
+| | | ----------- frei
+| --------------- Slave Select
+| 01 = Slave 0, 10 = Slave 1
+----------------- SPI-Controller enable
+Lesen
+7 6 5 4 3 2 1 0
+| | | | | | | |
+| | | | | | | --- IDLE 1 = Controler bereit für Daten
+| | | | | | ----- Write Collision 1 = Datenverlust
+----------------- frei
+
+$FFFFFF01 - SPI-Daten-Register
+
+---------------------------------------------------
+
+SD-Card Specifications:
+
+SD 			 ... 2GB	FAT16
+SDHC    4GB  ... 32GB	FAT32
+SDXC	64GB ... 2TB	exFAT
+
+Information Registers:
+
+Name 	Width 	Description
+CID 	128 	Card identification number; card individual number for identification (See 5.2). Mandatory.
+RCA1 	16 		Relative card address; local system address of a card, dynamically suggested by
+				the card and approved by the host during initialization (See 5.4). Mandatory.
+DSR 	16 		Driver Stage Register; to configure the card’s output drivers (See 5.5). Optional.
+CSD 	128 	Card Specific Data; information about the card operation conditions (See 5.3). Mandatory
+SCR 	64 		SD Configuration Register; information about the SD Memory Card’s Special Features
+				capabilities (See 5.6). Mandatory
+OCR 	32 		Operation conditions register (See 5.1). Mandatory.
+SSR 	512 	SD Status; information about the card proprietary features (See 4.10.2). Mandatory
+CSR 	32 		Card Status; information about the card status (See 4.10.1). Mandatory
+
+
+
+*/
+
+#ifndef spibase
+#define		spibase	0xffffff00*cpu
+#endif
+#ifndef spictrl
+#define		spictrl 0xffffff00*cpu
+#endif
+#ifndef spidata
+#define		spidata 0xffffff01*cpu
+#endif
+
+/*  CS der ersten Hardware SD */
+#define		SPIH0_CS 5
+/*  CS der zweiten Hardware SD */
+#define		SPIH1_CS 6             
+
+/* SD commands */
+
+/* SD commands (TRAP _SDDISK) */
+
+#define _SDDISK_CMD_READ	1
+#define _SDDISK_CMD_WRITE 	2
+#define _SDDISK_CMD_TEST_UNIT_READY 8
+#define _SDDISK_CMD_READ_CAPACITY 22
+#define _SDDISK_CMD_INQUIRY 24
+
+//extern char SDTYPE[];	-> sd_block_drv.c
 
 /* ----------------------------------------------------------------------------- RTC 12887 ------------------------------------------------------------------------------------------------------------- */
 
