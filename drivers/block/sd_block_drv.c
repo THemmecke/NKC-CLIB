@@ -15,16 +15,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-// 
-// Gruppe14: Harddisk
-// TRAP Nr. Befehlsname Eingabe-Register Ausgabe-Register Zerstörte Reg.
-// 141 HARDDISK d1.b/d4.b/(d2/d3/a0.l)d0.l/Carry KEINE
-// 142 HARDTEST d4.b d0.l/Carry KEINE
-// 152 SETS2I d0.b d0 KEINE
-// 153 GETS2I KEINE d0.b KEINE
-// 154 IDETEST d4.b d0.l/a0.l/Carry KEINE
-// 155 IDEDISK d1.b/d4.b/(d2/d3/a0.l) d0.l/Carry KEINE
- 
  
 /****************************************************************************
  * Included Files
@@ -118,8 +108,6 @@ static void init_ff(void)
 }
 
 
-//#define VARIANT01
-
 static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 {
 	DSTATUS stat;
@@ -135,21 +123,14 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 	      stat = STA_OK;
 	}
 	
-		
 	Stat[pdrv].status = stat;	
-
-  #if defined VARIANT01
-  Stat[pdrv].sz_sector = di.bpsec; // obsolte value ? should always be 512 ?
-  #else
-	Stat[pdrv].sz_sector = pdi->bpb; //512; /* information should be read from the device =pdi->bpb ? */
-  #endif
+	Stat[pdrv].sz_sector = pdi->bpb; 
 	
 	if(pdi == NULL) {
 	  drvsd_lldbgwait("error: no device ...\n");
 	  return STA_NODISK;
 	}
 	
-	//Stat[pdrv].n_sectors = di.cylinders * di.heads *di.sptrack; // sectors per card
 	Stat[pdrv].n_sectors = pdi->size;
 	
 	drvgide_dbg("...\n");
@@ -178,14 +159,6 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
  * Description: Open the block device
  *
  ****************************************************************************/
-
-// struct _sddriveinfo			//		(24)
-// {
-// 	ULONG	size;			// +0  	(4)  size in sectors
-// 	USHORT	bpb;			// +4	(2)  bytes per block (512)
-// 	BYTE	type;			// +6	(1)  0=MMC, 1=SD, 2=SDv2, 3=SDHC	
-// 	char    sdname[17];	        // +8	(17) 16 chars zero terminated
-// 	};
 
 static UINT sd_open(struct _dev *devp)
 {
@@ -366,7 +339,6 @@ static DRESULT sd_geometry(struct _dev *devp, struct geometry *geometry)
  * Name: idetifySD
  *
  * Description: Return device information
- * Note: this routine should be redefined in sdS.S 
  *
  ****************************************************************************/
 DRESULT idetifySD(BYTE disk, struct _deviceinfo *p){  // FIXME: need another version
@@ -386,8 +358,7 @@ DRESULT idetifySD(BYTE disk, struct _deviceinfo *p){  // FIXME: need another ver
   
   
   if(g.model) free(g.model);
-  
-  
+ 
 }
 
 /****************************************************************************
