@@ -24,66 +24,23 @@
 #define FS_IOCTL_GETFSTAB	17
 #define FS_IOCTL_GETFSDRIVER	18
 #define FS_IOCTL_GETBLKDEV	19
+#define FS_IOCTL_READ       20
+#define FS_IOCTL_WRITE      21
 
 // low level functions 
-#define FS_IOCTL_DISK_INIT		20
-#define FS_IOCTL_GET_DISK_DRIVE_STATUS  21
-#define FS_IOCTL_DISK_READ		22
-#define FS_IOCTL_DISK_WRITE		23
-#define FS_IOCTL_MKPTABLE		24
-#define FS_IOCTL_DISK_GET_SECTOR_COUNT	25
-#define FS_IOCTL_DISK_GET_SECTOR_SIZE	26
+#define FS_IOCTL_DISK_INIT		22
+#define FS_IOCTL_GET_DISK_DRIVE_STATUS  23
+#define FS_IOCTL_DISK_READ		24
+#define FS_IOCTL_DISK_WRITE		25
+#define FS_IOCTL_MKPTABLE		26
+#define FS_IOCTL_DISK_GET_SECTOR_COUNT	27
+#define FS_IOCTL_DISK_GET_SECTOR_SIZE	28
 
-// FAT filesystem functions 100+ ==================================
-#define FAT_IOCTL				100
-// change directory
-#define FAT_IOCTL_CD 				101
-#define FAT_IOCTL_CHMOD 			102
-// low level disk read
-#define FAT_IOCTL_READ 				103
-// low level disk write
-#define FAT_IOCTL_WRITE 			104
-// mount file system
-#define FAT_IOCTL_MOUNT 			105
-// un-mount file system
-#define FAT_IOCTL_UMOUNT 			106
-// set volume label
-#define FAT_IOCTL_SET_VLABEL 			107
-// get volume label
-#define FAT_IOCTL_GET_VLABEL 			108
-// open directory
-#define FAT_IOCTL_OPEN_DIR 			109
-// read directory
-#define FAT_IOCTL_READ_DIR 			110
-// close directory
-#define FAT_IOCTL_CLOSE_DIR 			111
-// make directory
-#define FAT_IOCTL_MKDIR 			112
-// unlink/delete a file/dir
-#define FAT_IOCTL_UNLINK 			113
-// Get Number of Free Clusters
-#define FAT_IOCTL_GET_FREE 			114
-// create FAT file system
-#define FAT_IOCTL_MKFS 				115
-// siehe auch FS_IOCTL_GETCWD.....fix !
-#define FAT_IOCTL_GETCWD 			116
-// rename a file/directory
-#define FAT_IOCTL_RENAME			117
-// change physical drive
-#define FAT_IOCTL_CHDRIVE			118
-// print info about FAT file system		
-#define FAT_IOCTL_INFO				119
-// Low Level FileSystem Services 200+ ==============================
-#define FS_LL_IOCTL				200
-// initialize disc drive
-#define FAT_IOCTL_DISK_INIT 			201
-#define FAT_IOCTL_GET_DISK_DRIVE_STATUS 	202
-// low level disk read (sector based)
-#define FAT_IOCTL_DISK_READ 			203
-// create partition table
-#define FAT_IOCTL_MKPTABLE 			204
-#define FAT_IOCTL_DISK_GET_SECTOR_SIZE 		205
-#define FAT_IOCTL_DISK_GET_SECTOR_COUNT 	206
+// should be removed and solved on higher levels using direct access using block drivers
+#define FS_IOCTL_SET_VLABEL 29
+#define FS_IOCTL_GET_VLABEL 30
+#define FS_IOCTL_MKFS 31
+#define FS_IOCTL_INFO 32
 
 // Low Level diskio commands 300+ ===================================
 // inported from 
@@ -114,22 +71,6 @@
 
 #define GET_DISK_STATUS				323
 #define CTRL_DISK_INIT				324
-// JADOS/NKC related calls 1000+ ===================================
-#define NKC_IOCTL				10000
-#define NKC_IOCTL_DIR				10001
-#define NKC_IOCTL_READ_REC			10002
-#define NKC_IOCTL_WRITE_REC			10003
-#define NKC_IOCTL_FILLFCB			10004
-#define NKC_IOCTL_ERASE				10005
-#define NKC_IOCTL_CREATE			10006
-#define NKC_IOCTL_OPEN				10007
-#define NKC_IOCTL_CLOSE				10008
-#define NKC_IOCTL_SETREC			10009
-#define NKC_IOCTL_REMOVE			10010
-#define NKC_IOCTL_RENAME			10011
-
-
-#define NKC_IOCTL_SETCLOCK    10012
 
 
 //static 

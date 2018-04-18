@@ -160,7 +160,7 @@ idetest_e:
    
 
 /*
-int idetifyIDE(BYTE disk, struct _deviceinfo *p)
+int idetifyIDE(BYTE disk, struct hd_driveid *p)
 
 return values:
   0 - no error

@@ -5,18 +5,6 @@
 #include <drivers.h>
 
 
-
-
-struct _driveinfo			//		(32)
-{
-	USHORT	numcyl;			// +0  	(2)
-	BYTE	numhead;		// +2	(1)
-	BYTE	numsec;			// +3	(1)
-	ULONG	nkcmode;		// +4	(4)
-	char    idename[24];	// +8	(24)
-	};
-//}__attribute__ ((packed));
-
 int sd_initialize(void);
 
 

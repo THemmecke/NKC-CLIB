@@ -12,7 +12,7 @@ strcat:
 lp1:
 	tst.b	(%a0)+
 	bne	lp1
-	subq	#1,%a0
+	subq.l	#1,%a0
 lp2:
 	move.b	(%a1)+,(%a0)+
 	bne	lp2

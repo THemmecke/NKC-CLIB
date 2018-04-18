@@ -2228,17 +2228,17 @@ BYTE check_fs (	/* 0:FAT boot sector, 1:Valid boot sector but not FAT, 2:Not a b
 	}
 				
 	if (LD_WORD(&fs->win[BS_55AA]) != 0xAA55) {	/* Check boot record signature (always placed at offset 510/0x1FE even if the sector size is >512) */
-		ff_dbg(" check_fs:  Not a boot sector\n");
+		ff_dbg(" check_fs:  Not a boot sector  - is 0x%04x\n",LD_WORD(&fs->win[BS_55AA]));
 		return 2;
 	}
 		
 	if ((LD_DWORD(&fs->win[BS_FilSysType]) & 0xFFFFFF) == 0x544146)	{	/* Check "FAT" string (offset 54/0x36)*/
-		ff_dbg(" check_fs:  FAT boot sector (1)\n");
+		ff_dbg(" check_fs:  FAT boot sector (1) - is 0x%08x\n", LD_DWORD(&fs->win[BS_FilSysType]) & 0xFFFFFF);
 		return 0;
 	}
 		
 	if ((LD_DWORD(&fs->win[BS_FilSysType32]) & 0xFFFFFF) == 0x544146) {	/* Check "FAT" string (offset 82/0x52)*/
-		ff_dbg(" check_fs:  FAT boot sector (2)\n");
+		ff_dbg(" check_fs:  FAT boot sector (2) - is 0x%08x\n", LD_DWORD(&fs->win[BS_FilSysType32]) & 0xFFFFFF);
 		return 0;
 	}
 
@@ -2266,7 +2266,7 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 	BYTE fmt;
 	struct fstabentry *pfstabentry;
 	DSTATUS stat;
-	DWORD bsect, fasize, tsect, sysect, nclst, szbfat;
+	DWORD bsect, fasize, tsect, sysect, nclst, szbfat, RootDirSectors;
 	WORD nrsv;
 	FATFS *fs;
 	FRESULT res;
@@ -2411,17 +2411,22 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 		return FR_NO_FILESYSTEM;
 	}
 
-	fasize = LD_WORD(fs->win+BPB_FATSz16);				/* Number of sectors per FAT */
+	fasize = LD_WORD(fs->win+BPB_FATSz16);				/* Number of sectors per FAT */	
 	if (!fasize) fasize = LD_DWORD(fs->win+BPB_FATSz32);
 	fs->fsize = fasize;
 
+	ff_dbg(" ff.c|find_volume: Number of sectors per FAT = %d\n",fasize);
+
 	fs->n_fats = fs->win[BPB_NumFATs];					/* Number of FAT copies */
+	ff_dbg(" ff.c|find_volume: Number of FAT copies = %d\n",fs->n_fats);
 	if (fs->n_fats != 1 && fs->n_fats != 2){				/* (Must be 1 or 2) */
 		ff_dbg(" ff.c|find_volume: Number of FAT copies = %d",fs->n_fats);
 		ff_lldbgwait(" (KEY)...\n");
 		return FR_NO_FILESYSTEM;
 	}	
 	fasize *= fs->n_fats;								/* Number of sectors for FAT area */
+
+
 
 	fs->csize = fs->win[BPB_SecPerClus];				/* Number of sectors per cluster */
 	if (!fs->csize || (fs->csize & (fs->csize - 1))){	/* (Must be power of 2) */
@@ -2442,25 +2447,33 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 
 	nrsv = LD_WORD(fs->win+BPB_RsvdSecCnt);				/* Number of reserved sectors */
 	if (!nrsv){
-	 ff_dbg(" ff.c|find_volume: nrsv = %d\n",nrsv);
+	 ff_dbg(" ff.c|find_volume: nrsv = %d",nrsv);
 	 ff_lldbgwait(" (KEY)...\n");
 	 return FR_NO_FILESYSTEM;					/* (Must not be 0) */
 	} 
 
 	/* Determine the FAT sub type */
 	sysect = nrsv + fasize + fs->n_rootdir / (SS(fs) / SZ_DIR);	/* RSV+FAT+DIR */
+
 	if (tsect < sysect){
 	 ff_dbg(" ff.c|find_volume: sysect = %d\n",sysect);
-	 ff_dbg(" ff.c|find_volume: tsect =  %d",tsect);
+	 ff_dbg(" ff.c|find_volume: tsect =  %d\n",tsect); /* partiion size in sectors 15522816 ok */
+	 ff_dbg(" ff.c|find_volume: nrsv =  %d\n",nrsv);
+	 ff_dbg(" ff.c|find_volume: fasize =  %d\n",fasize); /* number of sectors per FAT * number of FATs(2) */
+	 ff_dbg(" ff.c|find_volume: fs->n_rootdir =  %d\n",fs->n_rootdir);
+	 ff_dbg(" ff.c|find_volume: SS(fs) =  %d\n",SS(fs));
+	 ff_dbg(" ff.c|find_volume: SZ_DIR =  %d\n",SZ_DIR);
 	 ff_lldbgwait(" (KEY)...\n");
 	 return FR_NO_FILESYSTEM;		/* (Invalid volume size) */
 	} 
-	nclst = (tsect - sysect) / fs->csize;				/* Number of clusters */
+	nclst = (tsect - sysect) / fs->csize;				/* Number of clusters: (tsect - sysect)/ cluster size (in sectors) */
 	if (!nclst){
 	 ff_dbg(" ff.c|find_volume: nclst = %d",nclst);
 	 ff_lldbgwait(" (KEY)...\n");
 	 return FR_NO_FILESYSTEM;				/* (Invalid volume size) */
 	}
+	 
+	ff_dbg(" ff.c|find_volume: nclst = %d\n",nclst);
 	 
 	fmt = FS_FAT12;
 	if (nclst >= MIN_FAT16) fmt = FS_FAT16;
@@ -2473,28 +2486,40 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 	fs->database = bsect + sysect;						/* Data start sector */
 	if (fmt == FS_FAT32) {
 		if (fs->n_rootdir){
-		 ff_dbg(" ff.c|find_volume: fs->n_rootdir(FAT12-1) = %d",fs->n_rootdir);
+		 ff_dbg(" ff.c|find_volume: fs->n_rootdir(FAT32) = %d",fs->n_rootdir);
 		 ff_lldbgwait(" (KEY)...\n");
 		 return FR_NO_FILESYSTEM;		/* (BPB_RootEntCnt must be 0) */
 		} 
 		fs->dirbase = LD_DWORD(fs->win+BPB_RootClus);	/* Root directory start cluster */
-		szbfat = fs->n_fatent * 4;						/* (Needed FAT size) */
+		//TH: szbfat = fs->n_fatent * 4;						/* (Needed FAT size) */
 	} else {
 		if (!fs->n_rootdir){
-		    ff_dbg(" ff.c|find_volume: fs->n_rootdir(FAT12-2) = %d",fs->n_rootdir);
+		    ff_dbg(" ff.c|find_volume: fs->n_rootdir(FAT16) = %d",fs->n_rootdir);
 		    ff_lldbgwait(" (KEY)...\n");
 			return FR_NO_FILESYSTEM;	/* (BPB_RootEntCnt must not be 0) */
 		}	
 		fs->dirbase = fs->fatbase + fasize;				/* Root directory start sector */
-		szbfat = (fmt == FS_FAT16) ?					/* (Needed FAT size) */
-			fs->n_fatent * 2 : fs->n_fatent * 3 / 2 + (fs->n_fatent & 1);
+		//TH: szbfat = (fmt == FS_FAT16) ?					/* (Needed FAT size) */
+		//	fs->n_fatent * 2 : fs->n_fatent * 3 / 2 + (fs->n_fatent & 1);
+			/* FAT16:  FAT entries * 2   = (umber of clusters + 2)*2
+			   FAT12:  FAT entries * 3/2 + (FAT entries & 1)
+			*/ 
+
+		ff_dbg(" ff.c|find_volume: fmt = %d\n",fmt);
+		ff_dbg(" ff.c|find_volume: fs->n_fatent = %d\n",fs->n_fatent);	
 	}
+
+	RootDirSectors = ((32 * fs->n_rootdir) + (SS(fs)-1))/SS(fs);
+	szbfat = tsect - (nrsv + (fasize) + RootDirSectors);
+	//   sec per FAT (FATSz) < 
+	//    200        (204367 + (512 - 1)) / 512
+	//    200            400
 	if (fs->fsize < (szbfat + (SS(fs) - 1)) / SS(fs)){	/* (BPB_FATSz must not be less than needed) */
 		ff_dbg(" ff.c|find_volume: fs->fsize = %d\n",fs->fsize);
 		ff_dbg(" ff.c|find_volume: szbfat = %d\n",szbfat);
 		ff_dbg(" ff.c|find_volume: SS(fs) = %d",SS(fs));
 		ff_lldbgwait(" (KEY)...\n");
-		return FR_NO_FILESYSTEM;
+		// !! return FR_NO_FILESYSTEM; // FIXME: can we ignore this error ? Linux/Windows is obviously doing so 
 	}	
 
 #if !_FS_READONLY
@@ -4318,10 +4343,10 @@ FRESULT f_forward (
 #define N_ROOTDIR	512		/* Number of root directory entries for FAT12/16 */
 #define N_FATS		1		/* Number of FAT copies (1 or 2) */
 
-const char progress[] = { '|','/','-','\\' };
+static const char progress[] = { '|','/','-','\\' };
 
 FRESULT f_mkfs (	
-        const TCHAR* path,		/* Logical drive number */
+    const TCHAR* path,		/* Logical drive number */
 	BYTE sfd,			/* Partitioning rule 0:FDISK, 1:SFD */
 	UINT au				/* Allocation unit [bytes] */
 )
@@ -4349,6 +4374,18 @@ FRESULT f_mkfs (
 	}else{
 	  return FR_INVALID_DRIVE;
 	}
+	/* this only works, if we are able to mount the partition which implies an already created VBR... */
+	/* instead we can create a temporary fstabentry ... */
+
+	//FRESULT f_mount (
+	//FATFS* fs,			/* Pointer to the file system object (NULL:unmount)*/
+	//const TCHAR* path,		/* Logical drive number to be mounted/unmounted */
+	//BYTE opt			/* 0:Do not mount (delayed mount), 1:Mount immediately */
+
+	//fs = malloc(sizeof(FATFS)); /* allocate memory for FATFS object */
+	//f_mount(fs,path,1);			/* mount the drive and initialize the fs object */
+	
+
 	get_ldnumber(&path);			/* adjust path information (remove drive info) */
 		
 	if (sfd > 1) return FR_INVALID_PARAMETER;
@@ -4359,9 +4396,11 @@ FRESULT f_mkfs (
 	fs->fs_type = 0;
 	
 	pdrv = pfstabentry->pdrv;	/* Physical drive */
-	part = pfstabentry->partition;	/* Partition (0:auto detect, 1-4:get from partition table)*/
+	part = pfstabentry->partition+1;	/* Partition 1-indexed here !*/
 
-	/* Get disk statics */
+	ff_dbg("f_mkfs: pdrv = %d, part = %d\n",pdrv,part);
+
+	/* Get disk status */
 	stat = disk_initialize(fs->pfstab);
 	
 	ff_dbg(" disk status = %d\n",stat);
@@ -4383,8 +4422,7 @@ FRESULT f_mkfs (
 		tbl = &fs->win[MBR_Table + (part - 1) * SZ_PTE];
 		if (!tbl[4]) return FR_MKFS_ABORTED;	/* No partition? */
 		b_vol = LD_DWORD(tbl+8);	/* Volume start sector */
-		n_vol = LD_DWORD(tbl+12);	/* Volume size */
-		ff_dbg(" ok.\n");
+		n_vol = LD_DWORD(tbl+12);	/* Volume size */		
 	} else {
 		/* Create a partition in this function */
 		ff_dbg(" Create a partition in this function...\n");
@@ -4396,8 +4434,8 @@ FRESULT f_mkfs (
 		
 		b_vol = (sfd) ? 0 : 63;		/* Volume start sector */
 		n_vol -= b_vol;				/* Volume size */
-		ff_dbg(" ok.\n");
 	}
+	ff_dbg("f_mkfs: start sector = %d, size = %d\n",b_vol,n_vol);
 
 	if (!au) {				/* AU auto selection */
 		vs = n_vol / (2000 / (SS(fs) / 512));
@@ -4468,7 +4506,7 @@ FRESULT f_mkfs (
 		ff_dbg(" Update system ID in the partition table...\n");
 		tbl = &fs->win[MBR_Table + (part - 1) * SZ_PTE];
 		tbl[4] = sys;
-		if (disk_write(fs->pfstab, fs->win, 0, 1))	/* Write it to teh MBR */ 
+		if (disk_write(fs->pfstab, fs->win, 0, 1))	/* Write it to the MBR */ 
 			return FR_DISK_ERR;
 		md = 0xF8;
 	} else {
@@ -4544,7 +4582,7 @@ FRESULT f_mkfs (
 
 	ff_dbg(" ok.\n");
 	
-	/* Initialize FAT area */
+	/* -----------------------------  Initialize FAT area --------------------------------------- */
 	ff_dbg(" Initialize FAT area...\n");
 	wsect = b_fat;
 	for (i = 0; i < N_FATS; i++) {		/* Initialize each FAT copy */
@@ -4577,9 +4615,10 @@ FRESULT f_mkfs (
 				return FR_DISK_ERR;
 		}		
 	}
-	ff_dbg("\n ok.\n");
+	printf("\n");
+	ff_dbg("ok.\n");
 	
-	/* Initialize root directory */
+	/* -------------------------- Initialize root directory ---------------------------------- */
 	ff_dbg(" Initialize root directory...\n");
 	i = (fmt == FS_FAT32) ? au : (UINT)n_dir;
 	do {
@@ -4991,7 +5030,6 @@ int f_printf (
 
 #endif /* !_FS_READONLY */
 #endif /* _USE_STRFUNC */
-
 
 unsigned long endian(unsigned long val){
 

@@ -4,6 +4,8 @@
 
 
 
+
+
 	.text
 	.global _start,__rexit,__main,__getErrno
 	

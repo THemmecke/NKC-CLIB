@@ -38,9 +38,9 @@ posout:
 	tst.b	(%a0)		/* check s1[n], if it is zero	*/
 	beq	zerout			/* both strings match -> zerout */
 lp1:    clr.l	%d0
-	addq	#1,%d0      /* return 1 */
+	addq.l	#1,%d0      /* return 1 */
 	rts
 negout:
 	clr.l	%d0
-	subq	#1,%d0          /* return -1 */
+	subq.l	#1,%d0          /* return -1 */
 	rts

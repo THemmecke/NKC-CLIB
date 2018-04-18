@@ -128,7 +128,7 @@ _ll_read_L1:
 
 	/*bsr.l keyci Problem mit 68000 (illegal instruction) => dem Compiler überlassen */
 #ifdef M68000
-	jsr keyci
+	jsr keyci				/* -> llmisc.S */
 #else
 	bsr keyci
 #endif
@@ -147,7 +147,7 @@ _ll_read_file:				/* Lesen aus Datei Datei (Handle in %d2) */
 	move.l %d0,-(%sp)		/* *buf */
 	move.l %d2,-(%sp)		/* fd */
 	//jsr jfread(%pc)
-	jsr __ll_read(%pc)
+	jsr __ll_read(%pc)		/* -> fs.c __ll_read */
 	add.l #12,%sp
 	bra _ll_read_end	
 	

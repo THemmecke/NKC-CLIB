@@ -12,7 +12,7 @@ memcpy:
 	move.l	%a0,%d0			/* save dest	*/
 lp:
 	move.b	(%a1)+,(%a0)+
-	subq	#1,%d1
+	subq.l	#1,%d1
 	bne	lp
 	move.l	%d0,%a0          /* pointer must be returned in %a0 in gcc */
 	rts

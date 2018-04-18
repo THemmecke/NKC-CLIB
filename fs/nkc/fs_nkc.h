@@ -12,19 +12,21 @@
  
  1 cluster = 1024 bytes, clusters per sector = 2 with a 512 bytes per sector device
  1 track = 10 clusters/blocks = 10240 bytes
- 1 partition = 256 track =  256 x 10 x 1024 bytes = 2621440 bytes = 2560KB ~2.5MB 
+ 1 partition = 256 track =  256 x 10 x 1024 bytes = 2560 cluster x 1024 bytes = 2621440 bytes = 2560KB ~2.5MB 
+
+ 1 disk = Bootblock + 26 partitions = (100 + 26 x 256 x 10) clusters = (100 + 26 x 256 x 10) x 2 512byte-sectors = 665800 512byte-Sectors (z.B. 1024 - 666824)
 
  
  Harddisk:
    cluster 0 - 99: bootloader and extensions
                     4E 71  NOP
                     60 08  BRA *+8
-                    4B 4A  
-                    38 36  
-                    33 2E
-                    35 30 'KJ863.50'		<-- = label JADOS 3.50
-                    60 00 
-                    01 5E BRA...
+                    4B 4A  KJ		<-- = label JADOS
+                    38 36  86
+                    33 2E  3.		<-- = Version 3.50
+                    35 30  50		
+                    60 00  BRA ...
+                    01 5E 
     cluster 100 - 2659: 1st Partition
     cluster 2660 - 5219: 2nd Partition
 	:
@@ -50,7 +52,7 @@
            0xFFFF no successor
            0x0...0x255 successor track 
            
-  index of first FAT entry: 4 (HardDisk) => first entry is at offset 4, entry at offset 0 is the FAT itself	
+  index of first FAT entry: 4 (HardDisk) => first entry is at offset 4 (FAT index 1), entry at offset 0 is FAT/DIR	
 
   directory:
   
@@ -63,7 +65,7 @@
    12-14		filetype		filename extension
    15			reserved		= 0x00
    16-17		start track		1st track of file = index into FAT to find following tracks
-   18-19		last cluster	last cluster of last track
+   18-19		last cluster	last cluster of last track (1-indexed)
    20-21		last byte		number of last byte in last sector (0, not used)
    22-25		date			0x00 + YMD in BCD
    26-27		filesize		length in clusters
@@ -123,7 +125,7 @@
 /* FAT size in clusters */
 #define FAT_SIZE     	1
 /* 1st FAT index */
-#define FAT_BASE     	4
+#define FAT_BASE     	1
 /* DIR size in clusters */
 #define DIR_SIZE		9
 /* size of boot record */
@@ -147,6 +149,9 @@ struct jdhd {
 	UINT    nsectors;		/* number of (native) sectors on the device (usualy number of 512(ssize) byte sectors) */
 	BYTE 	pvalid[26];		/* valid partitions (0...25) */
 	BYTE    bootflag;		/* 1=harddisk has valid booloader */	
+	BYTE 	xfs;			/* 1= is JADOSXFS, 0= JADOSFS */
+	WORD	xoffset;		/* offset of first cluster if JADOSXFS */
+	WORD	xsize;			/* size of jados hard disk in JADOSXFS */
 	struct jdhd *pnext;		/* pointer to next harddisk descriptor */
 };
 
@@ -234,8 +239,6 @@ struct pathinfo {
 	char 	fileext[4];
 	char	drive[2];	
 };
-
-
 
 #ifdef CONFIG_FS_NKC
 extern unsigned char _DRIVE; // drive where this program was started (startup/startXX.S)

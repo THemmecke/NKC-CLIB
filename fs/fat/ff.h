@@ -61,7 +61,7 @@ typedef char TCHAR;
 /* File system object structure (FATFS) */
 
 typedef struct {
-        FSTYPE	fs_id;			/* id to identify filesystem type in void pointers, defined in fs.h */
+    FSTYPE	fs_id;			/* id to identify filesystem type in void pointers, defined in fs.h */
 	BYTE	fs_type;		/* FAT sub-type (0:Not mounted) */
 	BYTE	drv;			/* Physical drive number */
 
@@ -71,7 +71,7 @@ typedef struct {
 	BYTE	n_fats;			/* Number of FAT copies (1 or 2) */
 	BYTE	wflag;			/* win[] flag (b0:dirty) */
 	BYTE	fsi_flag;		/* FSINFO flags (b7:disabled, b0:dirty) */
-	WORD	id;			/* File system mount ID */
+	WORD	id;				/* File system mount ID */
 	WORD	n_rootdir;		/* Number of root directory entries (FAT12/16) */
 #if _MAX_SS != _MIN_SS
 	WORD	ssize;			/* Bytes per sector (512, 1024, 2048 or 4096) */
@@ -93,7 +93,7 @@ typedef struct {
 	DWORD	dirbase;		/* Root directory start sector (FAT32:Cluster#) */
 	DWORD	database;		/* Data start sector */
 	DWORD	winsect;		/* Current sector appearing in the win[] */
-	BYTE	win[_MAX_SS];		/* Disk access window for Directory, FAT (and file data at tiny cfg) */
+	BYTE	win[_MAX_SS];	/* Disk access window for Directory, FAT (and file data at tiny cfg) */
 } FATFS;
 
 

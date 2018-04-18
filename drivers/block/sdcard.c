@@ -386,16 +386,17 @@ LABEL01:
 			drive[disk].bpb = 2 << (csd.v10.READ_BL_LEN -1);
 			drive[disk].size = (2 << (csd.v10.C_SIZE_MULT+1)) * (csd.v10.C_SIZE +1) * (2 << (csd.v10.READ_BL_LEN -1)); /* size in bytes */
 			pstr = malloc(20);
-			sprintf(pstr,"%d MB",drive[disk].size/(1024*1024));
+			sprintf(pstr,"%u MB",drive[disk].size/(1024*1024));
 			drive[disk].size = drive[disk].size >> SD_BLOCKSIZE_NBITS; /* size in sectors/blocks */			
 			strcat(drive[disk].sdname,pstr);		
 			free(pstr);	
 			break;
 		case 1: // SDHC-Card: CSD Version 2.0: Version 2.00-High Capacity
 			drive[disk].bpb = 2 << (csd.v20.READ_BL_LEN -1);
-			drive[disk].size = (csd.v20.C_SIZE + 1); 
-			pstr = malloc(20);
-			sprintf(pstr,"%d GB",(drive[disk].size << SD_BLOCKSIZE_NBITS)/(1024*1024));
+			drive[disk].size = ((csd.v20.C_SIZE + 1) << (SD_BLOCKSIZE_NBITS+1)); /* size in sectors/blocks */ 
+			drvsd_dbg(" csd.v20.C_SIZE = %u ==> size = %u blocks\n", csd.v20.C_SIZE, drive[disk].size);
+			pstr = malloc(20);			
+			sprintf(pstr,"%.2f GB",(drive[disk].size >> 1)/(1024.0*1024.0) );		/* size in GB */
 			strcat(drive[disk].sdname,pstr);		
 			free(pstr);	
 			break;		
@@ -403,12 +404,12 @@ LABEL01:
 			drvsd_dbg("  sd_init0: error, CSD > 1 ....\n");
 			return STA_COM_ERROR;
 
-	}
+	}  // Disk /dev/sdc: 7.4 GiB, 7948206080 bytes, 15523840 sectors
 
 	drvsd_dbg(" SD-NAME = %s\n", drive[disk].sdname);
 	drvsd_dbg(" SD-Type = %d\n", drive[disk].type);
 	drvsd_dbg(" BPB     = %d\n", drive[disk].bpb);
-	drvsd_dbg(" Size (sectors/bytes)  = %d/%d\n", drive[disk].size, drive[disk].size << SD_BLOCKSIZE_NBITS);
+	drvsd_dbg(" Size (sectors/bytes)  = %u/%u\n", drive[disk].size, drive[disk].size << SD_BLOCKSIZE_NBITS);
 
 
 return STA_OK;
@@ -516,6 +517,7 @@ DSTATUS sd_read_nblock (BYTE disk, DWORD blockaddr, DWORD numblocks, unsigned ch
   }
   return STA_OK;
 }
+
 /* This function writes a single block to the SD card at block
 blockaddr. Returns 1 if the command was successful, zero
 otherwise.
@@ -529,7 +531,8 @@ DSTATUS sd_write_block (BYTE disk, DWORD blockaddr, unsigned char *data)
 	union crc_16 crc;
 	DWORD block;
 
-	drvsd_dbg("  sd_write_block: disk %d, block %d, lastblock %d, buf 0x%08x (type: %d)\n", disk, blockaddr, drive[disk].size-1, data,drive[disk].type);
+	drvsd_dbg("  sd_write_block: disk %d, block %d, lastblock %d, buf 0x%08x (type: %d) (data = 0x%02x 0x%02x ...)\n", 
+		disk, blockaddr, drive[disk].size-1, data,drive[disk].type, data[0], data[1]);
 
 	if(blockaddr > (drive[disk].size-1)){
 		drvsd_dbg("  sd_write_block: blockaddr out of range\n");

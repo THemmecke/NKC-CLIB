@@ -105,7 +105,7 @@ DRESULT disk_read (
 	UINT count		/* Number of sectors to read (1..128) */
 )
 {
-        struct blk_driver *blk_drv;	/* Pointer to block device driver */
+    struct blk_driver *blk_drv;	/* Pointer to block device driver */
 	DRESULT res = RES_PARERR;
 	struct _dev dev;
 	

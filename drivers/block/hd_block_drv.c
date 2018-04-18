@@ -187,7 +187,7 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 {
 	DSTATUS stat = STA_OK;
 	UINT result;
-	struct _deviceinfo di;
+	struct hd_driveid di;
 	
 	drvgide_dbg("hd_block_drv: disk_initialize (%d)...\n",pdrv);
 	
@@ -258,26 +258,22 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 	Stat[pdrv].sz_sector = 512;
 	
 	
-	Stat[pdrv].n_sectors = di.cylinders * di.heads *di.sptrack; // sectors per card
+	Stat[pdrv].n_sectors = di.lba_capacity; // sectors per card
 	
 	drvgide_dbg("...\n");
 	
 	if(!Stat[pdrv].status)
 	{
-		drvgide_dbg(" Model: %s\n",di.modelnum);
-		drvgide_dbg("   Cylinders      : %u\n",di.cylinders);
-		drvgide_dbg("   Cylinders (CL) : %u\n",di.ccylinder);
+		drvgide_dbg(" Model: %s\n",di.model);
+		drvgide_dbg("   Cylinders      : %u\n",di.cyls);
+		drvgide_dbg("   Cylinders (CL) : %u\n",di.cur_cyls);
 		drvgide_dbg("   Heads          : %u\n",di.heads);
-		drvgide_dbg("   Heads (CL)     : %u\n",di.cheads);
-		drvgide_dbg("   Sectors/Card   : %lu\n",di.spcard);
-		drvgide_dbg("   Sectors (CL)   : %lu\n",di.ccinsect);
-		drvgide_dbg("   LBA-Sectors    : %lu\n",di.lbasec);
-		drvgide_dbg("   Tracks         : %u\n",di.csptrack);
-		drvgide_dbg("   Sec/Track      : %u\n",di.sptrack);
-		drvgide_dbg("   Sec/Track (CL) : %u\n",di.csptrack);
-		drvgide_dbg("   Bytes/Track    : %u\n",di.bptrack);
-		drvgide_dbg("   Bytes/Sector   : %u\n",di.bpsec);
-		drvgide_dbg("   Capabilities   : 0x%0X\n",di.cap);
+		drvgide_dbg("   Heads (CL)     : %u\n",di.cur_heads);
+		drvgide_dbg("   Sectors (LBA)   : %lu\n",di.lba_capacity);
+		drvgide_dbg("   Sec/Track      : %u\n",di.sectors);
+		drvgide_dbg("   Bytes/Track    : %u\n",di.track_bytes);
+		drvgide_dbg("   Bytes/Sector   : %u\n",di.sector_bytes);
+		drvgide_dbg("   Capabilities   : 0x%0X\n",di.capability);
 
 		drvgide_lldbgwait("KEY...\n");	
 		
@@ -465,7 +461,7 @@ static DRESULT hd_write(struct _dev *devp, char *buffer, DWORD start_sector, DWO
 static DRESULT hd_geometry(struct _dev *devp, struct geometry *geometry)
 {
   UINT result;
-  struct _deviceinfo di;
+  struct hd_driveid di;
   BYTE disk;  
   
   drvgide_lldbg("hd_block_drv.c|hd_geometry ...\n");
@@ -476,21 +472,30 @@ static DRESULT hd_geometry(struct _dev *devp, struct geometry *geometry)
   
   result = idetifyIDE(disk, &di); // direct call, no GP
  
+  drvgide_dbg("multsect: %02x\n",di.multsect);
+  drvgide_dbg("multsect_valid: %02x\n",di.multsect_valid);
+  drvgide_dbg("vendor0: %02x\n",di.vendor0);
+  drvgide_dbg("vendor1: %02x\n",di.vendor1);
+  drvgide_dbg("cur_capacity0/1: %04x/%04x\n",di.cur_capacity0,di.cur_capacity1);
+
+
   if(result){
     geometry->available = FALSE;
   } else {
     geometry->available = TRUE;
     geometry->mediachanged = FALSE;
     geometry->writeenabled = TRUE;
-    geometry->cylinders = di.cylinders;
+    geometry->cylinders = di.cyls;
     geometry->heads = di.heads;
-    geometry->sptrack = di.sptrack;
-    geometry->nsectors = di.cylinders * di.heads *di.sptrack; // sectors per card
-    geometry->sectorsize = di.bpsec; // usually 512 Bytes per Sector  
+    geometry->sptrack = di.sectors;
+    geometry->lba_sectors = WORDSWAP(di.lba_capacity); // lba sectors per card
+    geometry->nsectors = (di.cur_capacity1 << 16) + di.cur_capacity0;//di.cyls*di.heads*di.sectors; 
+    geometry->sectorsize = 512; // di.sector_bytes; // usually 512 Bytes per Sector
+    geometry->raw_sectorsize = di.sector_bytes; // unformatted bytes per sector
     
-    geometry->model = malloc(strlen(&di.modelnum)+1);
+    geometry->model = malloc(strlen(&di.model)+1);
     if(geometry->model){
-      strcpy(geometry->model,&di.modelnum);
+      strcpy(geometry->model,&di.model);
     } else {
     }
   }
@@ -518,6 +523,9 @@ static DRESULT hd_ioctl(struct _dev *devp, int cmd, unsigned long arg)
   DSTATUS stat;
   DRESULT res = RES_PARERR;
   UINT result;
+  struct hd_driveid di;
+  struct geometry g;
+  struct _dev d;
   
   drvgide_dbg("hd_block_drv.c|hd_ioctl (cmd=%d)\n",cmd);
   
@@ -603,11 +611,20 @@ static DRESULT hd_ioctl(struct _dev *devp, int cmd, unsigned long arg)
 	
     case FS_IOCTL_GET_DISK_DRIVE_STATUS:  
       drvgide_lldbg(" ->FS_IOCTL_GET_DISK_DRIVE_STATUS\n");
-      // args: struct _dev *devp<=phydrv, int cmd<=FS_IOCTL_GET_DISK_DRIVE_STATUS, unsigned long arg <=pointer to struct _deviceinfo            
+      // args: struct _dev *devp<=phydrv, int cmd<=FS_IOCTL_GET_DISK_DRIVE_STATUS, unsigned long arg <=pointer to struct _driveinfo (this struct emerged from GP)            
       
-      memset((struct _deviceinfo *)arg,0, sizeof(struct _deviceinfo));
+      memset((struct _driveinfo *)arg,0, sizeof(struct _driveinfo));
+
+      d.pdrv = devp->pdrv-1; // weil identifyIDE mit disk+1 aufgerifen wird, aber in hd_geometry schon +1 umgerechnet wird  
+      result = hd_geometry(&d, &g);  
+   
+      if( strlen(g.model) < 40 ) strcpy(((struct _driveinfo *)arg)->idename,g.model);
+    
+      ((struct _driveinfo *)arg)->numcyl   = g.cylinders;
+      ((struct _driveinfo *)arg)->numhead  = g.heads;
+      ((struct _driveinfo *)arg)->numsec = g.nsectors;
   
-      result = idetifyIDE(devp->pdrv+1, (struct _deviceinfo *)arg );
+      if(g.model) free(g.model);
       
       switch(result){ // FIXME
         default:

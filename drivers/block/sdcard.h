@@ -58,11 +58,25 @@
 
 struct _sddriveinfo			//		  (24) (structure in GP)
 {
-	ULONG	  size;			    // +0  (4)  size in sectors
+	ULONG	  size;			    // +0  (4)  size in sectors LBAs
 	USHORT	bpb;			    // +4	 (2)  bytes per block/sector (512/1024)
 	USHORT	type;			    // +6	 (2)  0=SD, 1=SDHC, 2=MMC	
 	char    sdname[17];	  // +8	(17) 16 chars zero terminated ('SD-CARD', 'MMC-Card' or 'SDHC-Card')
-	};
+  //----- extensions to GP
+  // adds from struct geometry:
+  BOOL   available;    /* true: The device is vailable */
+  BOOL   mediachanged; /* true: The media has changed since last query */
+  BOOL   writeenabled; /* true: It is okay to write to this device */
+  UINT   cylinders;
+  UINT   heads;
+  UINT   sptrack;
+  //UINT   nsectors;     /* Number of sectors on the device -> size */
+  //UINT   sectorsize;   /* Size of one sector -> bpb */
+  //USHORT type;         /* device type -> type */
+  char  model[8];        /* model name -> cid_reg::OID + cid_reg::PNM*/
+  // misc information ...
+  DWORD serial;     //  -> cid_reg::PSN
+};
 //}__attribute__ ((packed));
 
 
@@ -181,10 +195,10 @@ struct csd_reg_v1_0
 
 struct csd_reg_v2_0
 {
-  BYTE   CSD_STRUCTURE:2;		/* 0 = SD-Card  : CSD Version 1.0: Version 1.01-1.10/Version 2.00/Standard Capacity 	*/
-								            /* 1 = SDHC-Card: CSD Version 2.0: Version 2.00-High Capacity							*/
-								            /* 2 = MMC-Card : ? */
-								            /* 2-3 reserved */
+  BYTE   CSD_STRUCTURE:2;		    /* 0 = SD-Card  : CSD Version 1.0: Version 1.01-1.10/Version 2.00/Standard Capacity 	*/
+								                /* 1 = SDHC-Card: CSD Version 2.0: Version 2.00-High Capacity							*/
+								                /* 2 = MMC-Card : ? */
+								                /* 2-3 reserved */
   BYTE   RESERVED1:6;    
   BYTE   TAAC; 
   BYTE   NSAC; 
@@ -196,28 +210,28 @@ struct csd_reg_v2_0
   BYTE   READ_BLK_MISALIGN:1;	  /* fixed: 0 ==> read access crossing physical block boundaries is always disabled in High Capacity SD Memory Card 				*/
   BYTE   DSR_IMP:1;
   BYTE 	 RESERVED2:6;
-  DWORD  C_SIZE:22;				/* This field is expanded to 22 bits and can indicate up to 2 TBytes						             */
-  								        /* This parameter is used to calculate the user data area capacity in the SD memory Card  	 */
-  								        /* memory capacity = (C_SIZE+1) * 512KByte												                           */
-  								        /* As the maximum capacity of the Physical Layer Specification Version 2.00 is 32 GB, 		   */
-  								        /* the upper 6 bits of this field shall be set to 0.										                     */
+  DWORD  C_SIZE:22;				      /* This field is expanded to 22 bits and can indicate up to 2 TBytes						             */
+  								              /* This parameter is used to calculate the user data area capacity in the SD memory Card  	 */
+  								              /* memory capacity = (C_SIZE+1) * 512KByte												                           */
+  								              /* As the maximum capacity of the Physical Layer Specification Version 2.00 is 32 GB, 		   */
+  								              /* the upper 6 bits of this field shall be set to 0.										                     */
   BYTE 	 RESERVED3:1;
-  BYTE   ERASE_BLK_EN:1;  /* fixed:   1 ==> the host can erase one or multiple units of 512 bytes */
-  BYTE   SECTOR_SIZE:7;   /* fixed: 7Fh ==> 64 KBytes. This value does not relate to erase operation. */
-                          /* Version 2.00 cards indicates memory boundary by AU size and this field should not be used. */
-  BYTE   WP_GRP_SIZE:7;   /* fixed: 0, not used */
-  BYTE   WP_GRP_ENABLE:1; /* fixed: 0, not used */
+  BYTE   ERASE_BLK_EN:1;        /* fixed:   1 ==> the host can erase one or multiple units of 512 bytes */
+  BYTE   SECTOR_SIZE:7;         /* fixed: 7Fh ==> 64 KBytes. This value does not relate to erase operation. */
+                                /* Version 2.00 cards indicates memory boundary by AU size and this field should not be used. */
+  BYTE   WP_GRP_SIZE:7;         /* fixed: 0, not used */
+  BYTE   WP_GRP_ENABLE:1;       /* fixed: 0, not used */
   BYTE   RESERVED4:2;
-  BYTE   R2W_FACTOR:3;    /* fixed : 2h ==> 4 multiples. Write timeout can be calculated by multiplying the read access time */
-                          /* and R2W_FACTOR. However, the host should not use this factor and should use 250 ms for write timeout */
-  BYTE   WRITE_BL_LEN:4;		/* fixed: 9 ==> 512 bytes 	*/
-  BYTE   WRITE_BL_PARTIAL:1; /* fixed: 0 ==> partial block read is inhibited and only unit of block access is allowed */
+  BYTE   R2W_FACTOR:3;          /* fixed : 2h ==> 4 multiples. Write timeout can be calculated by multiplying the read access time */
+                                /* and R2W_FACTOR. However, the host should not use this factor and should use 250 ms for write timeout */
+  BYTE   WRITE_BL_LEN:4;		    /* fixed: 9 ==> 512 bytes 	*/
+  BYTE   WRITE_BL_PARTIAL:1;    /* fixed: 0 ==> partial block read is inhibited and only unit of block access is allowed */
   BYTE   RESERVED5:5;
-  BYTE   FILE_FORMAT_GRP:1; /* fixed: 0, not used */
+  BYTE   FILE_FORMAT_GRP:1;     /* fixed: 0, not used */
   BYTE   COPY:1;
   BYTE   PERM_WRITE_PROTECT:1;
   BYTE   TEMP_WRITE_PROTECT:1;
-  BYTE   FILE_FORMAT:2; /* fixed: 0, not used */
+  BYTE   FILE_FORMAT:2;         /* fixed: 0, not used */
   BYTE   RESERVED6:2;
   BYTE   CRC:7;
   BYTE   RESERVED7:1;  	       

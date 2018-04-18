@@ -112,7 +112,6 @@ static DSTATUS disk_initialize (BYTE pdrv)				/* Physical drive number (0..) */
 {
 	DSTATUS stat;
 	UINT result = RES_OK;
-	//struct _deviceinfo di;
 	struct _sddriveinfo *pdi;
 	
 	drvsd_dbg("sd disk_initialize (%d)...\n",pdrv);
@@ -315,15 +314,17 @@ static DRESULT sd_geometry(struct _dev *devp, struct geometry *geometry)
     drvsd_lldbg(" error: device not available\n");
     return EINVDRV;
   }
- 
+
   geometry->available = TRUE;
   geometry->mediachanged = FALSE;
   geometry->writeenabled = TRUE;
-  geometry->cylinders = 0;
-  geometry->heads = 0;
-  geometry->sptrack = 0;
+  geometry->cylinders = pdi->cylinders;
+  geometry->heads = pdi->heads;
+  geometry->sptrack = pdi->sptrack;
   geometry->nsectors = pdi->size; // sectors per card
+  geometry->lba_sectors = pdi->size;
   geometry->sectorsize = pdi->bpb; // usually 512 Bytes per Sector
+  geometry->raw_sectorsize = pdi->bpb; // usually 512 Bytes per Sector
   geometry->type = pdi->type;
   geometry->model = malloc(strlen(pdi->sdname)+1);
   if(geometry->model){
@@ -341,20 +342,18 @@ static DRESULT sd_geometry(struct _dev *devp, struct geometry *geometry)
  * Description: Return device information
  *
  ****************************************************************************/
-DRESULT idetifySD(BYTE disk, struct _deviceinfo *p){  // FIXME: need another version
+DRESULT idetifySD(BYTE disk, struct _driveinfo *p){  // FIXME: need another version
   struct geometry g;
   struct _dev d;
   
   d.pdrv = disk-1; // weil identifySD mit disk+1 aufgerifen wird, aber in sd_geometry schon +1 umgerechnet wird  
   sd_geometry(&d, &g);  
    
-  if( strlen(g.model) < 40 ) strcpy(p->modelnum,g.model);
+  if( strlen(g.model) < 40 ) strcpy(p->idename,g.model);
     
-  p->cylinders 	= g.cylinders;
-  p->heads	= g.heads;
-  p->sptrack	= g.sptrack;
-  p->spcard	= g.nsectors;
-  p->bpsec      = g.sectorsize;
+  p->numcyl 	= g.cylinders;
+  p->numhead	= g.heads;
+  p->numsec	= g.nsectors;
   
   
   if(g.model) free(g.model);
@@ -451,11 +450,11 @@ static DRESULT sd_ioctl(struct _dev *devp, UINT cmd, unsigned long arg)
 	
     case FS_IOCTL_GET_DISK_DRIVE_STATUS:  
       drvsd_lldbg(" ->FS_IOCTL_GET_DISK_DRIVE_STATUS\n");
-      // args: struct _dev *devp<=phydrv, int cmd<=FS_IOCTL_GET_DISK_DRIVE_STATUS, unsigned long arg <=pointer to struct _deviceinfo            
+      // args: struct _dev *devp<=phydrv, int cmd<=FS_IOCTL_GET_DISK_DRIVE_STATUS, unsigned long arg <=pointer to struct _driveinfo (this struct emerged from GP)            
   
-      memset((struct _deviceinfo *)arg,0, sizeof(struct _deviceinfo));
+      memset((struct _driveinfo *)arg,0, sizeof(struct _driveinfo));
       
-      result = idetifySD(devp->pdrv+1, (struct _deviceinfo *)arg );
+      result = idetifySD(devp->pdrv+1, (struct _driveinfo *)arg );
       //result = Stat[devp->pdrv+1].status;
       
       switch(result){ 
