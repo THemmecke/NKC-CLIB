@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>       /* time_t, struct tm, difftime, time, mktime */
 #include <errno.h>
 #include <fs.h>
@@ -194,8 +195,8 @@ static int update_dir(struct jdfcb *pfcb){
 
 	fsnkc_dbg("update_dir: dir-index=%d\n", dir_index);
 
-	fsnkc_dbg("             filename   : %s\n",pfcb->filename );
-	fsnkc_dbg("             fileext    : %s\n",pfcb->fileext );
+	fsnkc_dbg("             filename   : '%s'\n",pfcb->filename );
+	fsnkc_dbg("             fileext    : '%s'\n",pfcb->fileext );
 	fsnkc_dbg("             starttrack : %d\n",index );
 	fsnkc_dbg("             endcluster : %d\n",pfcb->endcluster );
 	fsnkc_dbg("             endbyte    : %d\n",pfcb->endbyte );
@@ -255,7 +256,7 @@ static  int alloc_new_file(struct jdfcb *pfcb){
 		pfcb->dirsec = 0;
 		pfcb->dirbyte = 0;
 
-			fil.p_fstab = pfstab;
+		fil.p_fstab = pfstab;
 		res = nkcfs_opendir(&fil, NULL, &dir);
 		pdir = dir.dir;
 		while(!pdir[dir.index].id && dir.index < NUM_JD_DIR_ENTRIES) dir.index++; /* DIR_ENTRIES_PC (32) per cluster */
@@ -1039,7 +1040,7 @@ static int     nkcfs_opendir(struct _file *filp, const char *relpath, DIR *dir) 
 /* return FR_OK or FR_EOF if DIR at EOF */
 static int     nkcfs_readdir(struct _file *filp, DIR *dir,FILINFO* finfo) {
   struct jddir *pdir;
-
+  char *pch;
   int y,m,d;
 
   fsnkc_dbg("fs_nkc.c: [ nkcfs_readdir ...\n");
@@ -1065,7 +1066,7 @@ static int     nkcfs_readdir(struct _file *filp, DIR *dir,FILINFO* finfo) {
   	y = ((pdir[dir->index].date & 0x000F0000) >> 16) + (((pdir[dir->index].date & 0x00F00000) >> 20) *10); /* year */
     /* */
   	fsnkc_dbg("  index:  %d ...\n", dir->index);
-    fsnkc_dbg("  filename:  %s.%s ...\n", pdir[dir->index].filename,pdir[dir->index].fileext);
+    fsnkc_dbg("  filename:  '%s.%s' ...\n", pdir[dir->index].filename,pdir[dir->index].fileext);
     fsnkc_dbg("  length:    %d ...\n", pdir[dir->index].length*1024);
     fsnkc_dbg("  date:      %02d.%02d.%02d ...\n", d, m, y);  	/* day, month, year */
 
@@ -1074,20 +1075,31 @@ static int     nkcfs_readdir(struct _file *filp, DIR *dir,FILINFO* finfo) {
 	//	8-5 	Month (1–12)
 	//	4-0 	Day (1–31)
     finfo->fsize = pdir[dir->index].length*1024;
-    // FIXME: we should not add 2000 if RTC supports y2k, but hey ... Y2K is so long ago ... :-(    
+    // FIXME: we should not add 2000 if RTC supports y2k, but hey ... 
     finfo->fdate  = ((y + 2000) - 1980) << 9; 	/* year */
     finfo->fdate += m << 5; 					/* month */
     finfo->fdate +=  d;  						/* day */
 
     finfo->ftime = 0;							/* we have no time information in JADOS */
 
-    if( strlen(pdir[dir->index].filename) <= 8)
+    /* filename */
+    if( strlen(pdir[dir->index].filename) <= 8){
       strcpy(finfo->fname,pdir[dir->index].filename);
+      if(pch = strchr(finfo->fname,0x20) ) *pch = 0; /* remove trailing spaces */ 
+    }
     else strncpy(finfo->fname,pdir[dir->index].filename,8);
+
+    /* delimiter */
     strcat(finfo->fname,".");
-    if( strlen(pdir[dir->index].fileext <=3) )
+    
+    /* file extension */
+    if( strlen(pdir[dir->index].fileext <=3) ){
       strcat(finfo->fname,pdir[dir->index].fileext);
+      if(pch = strchr(finfo->fname,0x20) ) *pch = 0; /* remove trailing spaces */
+    }
     else strncat(finfo->fname,pdir[dir->index].fileext,3);
+
+
     switch(pdir[dir->index].mode){
       case 0xE4: finfo->fattrib = AM_RDO; break;
       case 0xE5: finfo->fattrib = 0; break;
@@ -1109,7 +1121,7 @@ static int     nkcfs_closedir(struct _file *filp, DIR *dir) {
   if(dir == NULL) return FR_INVALID_PARAMETER;
   fsnkc_dbg("fs_nkc.c: free DIR structure ...\n");
 #if 0  
-  free(dir->dir); /* free allocated memory for directory structure */
+  free(dir->dir); /* FIXME: ??? free allocated memory for directory structure */
 #endif
   fsnkc_dbg("fs_nkc.c: nkcfs_closedir ...]\n");
 }
@@ -1291,7 +1303,8 @@ static  int find_file(struct _file *filp, DIR *pdir,struct jddir *pjddir)
  	}
 
  	// build filename ...
- 	sprintf(tmp,"%-8s%c%-3s",FPInfo.psz_filename, FPInfo.c_separator, FPInfo.psz_fileext);
+ 	//sprintf(tmp,"%-8s%c%-3s",FPInfo.psz_filename, FPInfo.c_separator, FPInfo.psz_fileext);
+ 	sprintf(tmp,"%s%c%s",FPInfo.psz_filename, FPInfo.c_separator, FPInfo.psz_fileext);
 
  	sprintf(pjddir->filename,"%-8s",FPInfo.psz_filename); /* if the file is not found the caller can create a new fcb */
  	sprintf(pjddir->fileext,"%-3s",FPInfo.psz_fileext);
@@ -1316,7 +1329,7 @@ static  int find_file(struct _file *filp, DIR *pdir,struct jddir *pjddir)
 
      	    	fsnkc_dbg("fs_nkc.c|find_file: not found: %s.%s\n",FPInfo.psz_filename,FPInfo.psz_fileext);
 
-     	    	return ENOFILE;
+     	    	return ENOFILE;     	    	
      	 }
 
  	    fsnkc_dbg("fs_nkc.c|find_file: entry: %s\n",Finfo.fname);
@@ -1362,7 +1375,7 @@ static int nkcfs_open(struct _file *filp)
 
    fsnkc_dbg("fs_nkc.c: [ nkcfs_open ....\n");
 
-   fsnkc_dbg("    name = %s, mode=0x%x\n",filp->pname,filp->f_oflags);
+   fsnkc_dbg("    name = '%s', mode=0x%x\n",filp->pname,filp->f_oflags);
 
    if(filp == NULL) {
     fsnkc_dbg("fs_nkc.c: ... nkcfs_open ENOFILE ]\n");
@@ -1377,12 +1390,11 @@ static int nkcfs_open(struct _file *filp)
    if(filp->f_oflags & _F_WRIT) mode |= FA_WRITE; // F_WRIT = 2, FA_WRITE = 2 (i.e = _F_WRIT)
    if(filp->f_oflags & _F_CREATE) mode |= FA_CREATE_NEW; // _F_CREATE = 0x800, FA_CREATE_NEW = 4
 
+   fsnkc_dbg("fs_nkc.c|nkcfs_open: mode = 0x%x\n",mode);
    							// es wird von "oben" immer "create new" uebergeben, wenn eine Datei zum Schreiben geoeffnet werden soll
    							// das fuehrt richtigerweise zu einem Fehler => FIXME: check upper layer !
 
    res = find_file(filp,&dir,&jdir); /* fetch file information */
-
-   fsnkc_dbg("fs_nkc.c|nkcfs_open: mode = 0x%x\n",mode);
 
    switch (res) {
      case EINVAL:
@@ -1395,13 +1407,7 @@ static int nkcfs_open(struct _file *filp)
      	}
      	if((mode & FA_CREATE_NEW) ||(mode & FA_WRITE)) { 						// create new file
      		fsnkc_dbg("fs_nkc.c: ... create new file ...\n");
-     		omode = 0xE5;
-
-     		// FIXME: already done in higher layer !?
-     		//if( checkfp(filp->pname, &FPInfo) != EZERO ) {
- 	  		//	fsnkc_dbg("fs_nkc.c|nkcfs_open: ... EINVAL (2) ]\n");
- 	  		//	return EINVAL;
- 			//}
+     		omode = 0xE5;     	
 
      		/* allocate FCB structure */
 			pfcb = (struct jdfcb *)malloc(sizeof(struct jdfcb));
@@ -1415,12 +1421,13 @@ static int nkcfs_open(struct _file *filp)
      		/*------ standard ----- */
      		pfcb->lw = filp->p_fstab->partition + 5; 		/* = partition number + 5 for harddisk partitions  */
 
-     		strcpy(pfcb->filename,jdir.filename);
-     		strcpy(pfcb->fileext,jdir.fileext);
+     		//strcpy(pfcb->filename,jdir.filename);
+     		//strcpy(pfcb->fileext,jdir.fileext);
+     		sprintf(pfcb->filename,"%-8s",jdir.filename); /* make shure 8 characters are used in FCB for backward compatibility with JADOS 3.5 */
+     		sprintf(pfcb->fileext,"%-3s",jdir.fileext);    /* make shure 3 characters are used in FCB for backward compatibility with JADOS 3.5 */
 
-
-     		fsnkc_dbg("    filename :%s\n",pfcb->filename);
-     		fsnkc_dbg("    fileext  :%s\n",pfcb->fileext);
+     		fsnkc_dbg("    filename : '%s'\n",pfcb->filename);
+     		fsnkc_dbg("    fileext  : '%s'\n",pfcb->fileext);
 
 			pfcb->date = 0; /* FIXME */ 
 
@@ -1505,8 +1512,10 @@ static int nkcfs_open(struct _file *filp)
 
 			/* ---------------------------------------- fill FCB structure (existing file) ----------------------------- */
 			pfcb->lw = filp->p_fstab->partition + 5; 		/* = partition number + 5 for harddisk partitions  */
-			strncpy(pfcb->filename,jdir.filename,8);		/* filename  										*/
-			strncpy(pfcb->fileext,jdir.fileext,3);			/* fileext 											*/
+			//strncpy(pfcb->filename,jdir.filename,8);		/* filename  										*/
+			//strncpy(pfcb->fileext,jdir.fileext,3);			/* fileext 											*/
+			sprintf(pfcb->filename,"%-8s",jdir.filename); /* make shure 8 characters are used in FCB for backward compatibility with JADOS 3.5 */
+     		sprintf(pfcb->fileext,"%-3s",jdir.fileext);    /* make shure 3 characters are used in FCB for backward compatibility with JADOS 3.5 */
 			pfcb->starttrack = jdir.starttrack;
 			pfcb->endcluster = jdir.endcluster - JADOS_CLUSTER_OFFSET;
 			pfcb->endbyte = jdir.endbyte;
@@ -1569,8 +1578,8 @@ static int nkcfs_open(struct _file *filp)
 
 	fsnkc_dbg("fs_nkc.c: JADOS fcb:\n");
 	fsnkc_dbg("             lw          : %d\n",pfcb->lw);
-	fsnkc_dbg("             filename    : %s\n",pfcb->filename);
-	fsnkc_dbg("             fileext     : %s\n",pfcb->fileext);
+	fsnkc_dbg("             filename    : '%s'\n",pfcb->filename);
+	fsnkc_dbg("             fileext     : '%s'\n",pfcb->fileext);
 	fsnkc_dbg("             starttrack  : %d (=FAT index)\n",pfcb->starttrack);
 	fsnkc_dbg("             endcluster  : %d\n",pfcb->endcluster);
 	fsnkc_dbg("             endbyte     : %d\n",pfcb->endbyte);
@@ -2008,7 +2017,9 @@ static int  nkcfs_remove(struct _file *filp)
 
 	fsnkc_dbg("fs_nkc.c: nkcfs_remove...\n");
 
+	filp->f_oflags = _F_READ;
 	res=nkcfs_open(filp);
+	
 	fsnkc_dbg("fs_nkc.c: nkcfs_open return-code: %d\n",res);
 
 	switch(res){	

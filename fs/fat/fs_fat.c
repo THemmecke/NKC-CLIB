@@ -314,7 +314,6 @@ static int     fatfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg
   switch(cmd){
 
     case FS_IOCTL_GETCWD:
-//    case FAT_IOCTL_GETCWD:	
 			      fsfat_dbg(" - FS_IOCTL_GETCWD -\n");
 			
 			      res = f_getcwd(((struct ioctl_get_cwd*)arg)->cpath, 
@@ -323,41 +322,41 @@ static int     fatfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg
 			      fsfat_dbg(" fs_fat.c|ioctl: cpath(1) = %s\n", (char*)((struct ioctl_get_cwd*)arg)->cpath);
 			      
 			      // extract drive information from path ...			      
-			      pcp = ((struct ioctl_get_cwd*)arg)->cpath;
+			      pcp = ((struct ioctl_get_cwd*)arg)->cpath; // cpath/pcp points to drive:path string
 			      pcd = ((struct ioctl_get_cwd*)arg)->cdrive;
 			      n= strchr(pcp,':') - pcp;
-			      if(n>0){
+			      if( n>0 ){
     				  pcd[0] = 0; // clear drive string
-    				  strncat(pcd,pcp,n);
-    				  // terminate string
-    				  pcd[n] = 0;        
-    				  pcp+=n+1;
-    				  // remove drive info from path
-    				  strncpy(((struct ioctl_get_cwd*)arg)->cpath,pcp,strlen(pcp));				  
-    				  ((char*)(((struct ioctl_get_cwd*)arg)->cpath))[strlen(pcp)] = 0;
+    				  strncat(pcd,pcp,n); // copy drive string    				  
+    				  pcd[n] = 0;         // terminate string
+    				  pcp+=n+1;           // advance path pointer to point to path information    				  
+    				  strcpy(((struct ioctl_get_cwd*)arg)->cpath,pcp);	// copy path information    				  
 			      }
 			     
+            pcp = ((struct ioctl_get_cwd*)arg)->cpath;
+            if(pcp[strlen(pcp)-1] != '/'){                       /* termitate path with '/' */
+              pcp[strlen(pcp)+1] = 0;
+              pcp[strlen(pcp)] = '/';
+            }
+
 			      fsfat_dbg(" fs_fat.c|ioctl: cpath(2) = %s\n", (char*)((struct ioctl_get_cwd*)arg)->cpath);
 			      fsfat_dbg(" fs_fat.c|ioctl: drive    = %s", (char*)((struct ioctl_get_cwd*)arg)->cdrive);
 			      fsfat_lldbgwait("   (KEY)...\n");			      
 			      break;   
     // rename a file/direcctory
     case FS_IOCTL_RENAME:
-//    case FAT_IOCTL_RENAME:
 			      res = f_rename(((struct ioctl_rename*)arg)->path_old,
 					     ((struct ioctl_rename*)arg)->path_new); 
 			      break;        
     // change directory
     case FS_IOCTL_CD:  
-//    case FAT_IOCTL_CD:
 			      fsfat_dbg(" FS_IOCTL_CD: %s", (char*)arg);
 			      fsfat_lldbgwait("\n");
     			      res = f_chdir((char*)arg);
 			      //res = f_chdir("0:foo");
     			      break;
     // change physical drive
-    case  FS_IOCTL_CHDRIVE:
-//    case FAT_IOCTL_CHDRIVE:   // *filp=NULL, cmd=FS_IOCTL_CHDRIVE, arg = (struct fstabentry*)pfstab 
+    case  FS_IOCTL_CHDRIVE: // *filp=NULL, cmd=FS_IOCTL_CHDRIVE, arg = (struct fstabentry*)pfstab 
 			      fsfat_dbg(" FS_IOCTL_CHDRIVE: %s", ((struct fstabentry*)arg)->devname);
 			      fsfat_lldbgwait("(KEY)\n");
 			      strcpy(tmp,((struct fstabentry*)arg)->devname); strcat(tmp,":");
@@ -365,8 +364,7 @@ static int     fatfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg
 			      fsfat_dbg("res(f_chdrive) = %d\n",res);			      
 			      break;
     // FAT change file mode
-    case FS_IOCTL_CHMOD:			      
-//    case FAT_IOCTL_CHMOD:
+    case FS_IOCTL_CHMOD:			
       // (NULL,FS_IOCTL_CHMOD,arg* = struct ioctl_chmod)
       
       //struct ioctl_chmod {
@@ -379,8 +377,7 @@ static int     fatfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg
 					    ((struct ioctl_chmod*)arg)->mask);
 			      break;
     // file level disk read
-    case FS_IOCTL_READ:
-    //case FAT_IOCTL_READ:	
+    case FS_IOCTL_READ:	
 			      res = f_read(((struct ioctl_file_rw*)arg)->fp,
 					   ((struct ioctl_file_rw*)arg)->pbuf,
 					   ((struct ioctl_file_rw*)arg)->size,
@@ -388,7 +385,6 @@ static int     fatfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg
 			      break;
     // file level disk write
     case FS_IOCTL_WRITE:
-    //case FAT_IOCTL_WRITE:
 			      res = f_write(((struct ioctl_file_rw*)arg)->fp,
 					    ((struct ioctl_file_rw*)arg)->pbuf,
 					    ((struct ioctl_file_rw*)arg)->size,
@@ -396,8 +392,7 @@ static int     fatfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg
 			      break;
 
     // mount file system
-    case FS_IOCTL_MOUNT:		      
-    //case FAT_IOCTL_MOUNT:   
+    case FS_IOCTL_MOUNT:		  
 			      fsfat_dbg("fs_fat|FS_IOCTL_MOUNT\n");
       // args: NULL,FS_IOCTL_MOUNT,struct fstabentry*  
 
@@ -439,8 +434,7 @@ static int     fatfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg
 			      
 			      break;
     // un-mount file system
-    case FS_IOCTL_UMOUNT:
-    //case FAT_IOCTL_UMOUNT:  // args: NULL,FS_IOCTL_UMOUNT,arg = char* drivename 
+    case FS_IOCTL_UMOUNT: // args: NULL,FS_IOCTL_UMOUNT,arg = char* drivename 
 			      			     			      
 			      pFatFs = ((struct fstabentry*)arg)->pfs;
 			      
@@ -459,13 +453,11 @@ static int     fatfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg
 			      break;
     // set volume label
     case FS_IOCTL_SET_VLABEL: 
-    //case FAT_IOCTL_SET_VLABEL: 
 			      fsfat_dbg(" FS_IOCTL_SET_VLABEL: arg = %s\n",arg);
 			      res = f_setlabel((char*)arg);
 			      break;    		
     // get volume label
     case FS_IOCTL_GET_VLABEL:
-    //case FAT_IOCTL_GET_VLABEL:
 			      fsfat_dbg(" FS_IOCTL_GET_VLABEL:\n");
 			      // ((struct ioctl_getlabel)arg)->drv  === not used yet, we have only one physical drive 0
 			      res = f_getlabel( ((struct ioctl_getlabel*)arg)->volume,
@@ -473,42 +465,36 @@ static int     fatfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg
 						((struct ioctl_getlabel*)arg)->psn);
 			      break;
     // open directory
-    case FS_IOCTL_OPEN_DIR:			     
-    //case FAT_IOCTL_OPEN_DIR:
+    case FS_IOCTL_OPEN_DIR:			
 			      fsfat_dbg(" FS_IOCTL_OPEN_DIR(1):   path = 0x%0x\n",((struct ioctl_opendir*)arg)->path);
 			      res = f_opendir(((struct ioctl_opendir*)arg)->dp, 
 					      ((struct ioctl_opendir*)arg)->path);
 			      fsfat_dbg(" FS_IOCTL_OPEN_DIR(2):   path = 0x%0x\n",((struct ioctl_opendir*)arg)->path);
 			      break;
     // read directory
-    case FS_IOCTL_READ_DIR:			      		      
-    //case FAT_IOCTL_READ_DIR:
+    case FS_IOCTL_READ_DIR:			
 			      fsfat_dbg(" fs_fat.c| FS_IOCTL_READ_DIR: (%s)\n",(char*)arg);
 			      res = f_readdir(((struct ioctl_readdir*)arg)->dp,   
 					      ((struct ioctl_readdir*)arg)->fno);
 			      break;
     // close directory
-    case FS_IOCTL_CLOSE_DIR:			      		      
-    //case FAT_IOCTL_CLOSE_DIR:
+    case FS_IOCTL_CLOSE_DIR:		
 			      fsfat_dbg(" fs_fat.c| FS_IOCTL_CLOSE_DIR: (%s)\n",(char*)arg);
 			      res = f_closedir((DIR*)arg);			      
 			      break;
     // make directory
     case FS_IOCTL_MKDIR:
-    //case FAT_IOCTL_MKDIR:
 			      fsfat_dbg(" fs_fat.c| FS_IOCTL_MKDIR: (%s)\n",(char*)arg);
 			      res = f_mkdir((char*)arg);
 			      break;
     // unlink/delete a file/dir
     case FS_IOCTL_RMDIR:
     case FS_IOCTL_DEL:
-    //case FAT_IOCTL_UNLINK:
 			      fsfat_dbg(" fs_fat.c| FS_IOCTL_RMDIR/DEL/UNLINK: (%s)\n",(char*)arg);
     			      res = f_unlink((char*)arg);
     			      break;
     // Get Number of Free Clusters
-    case FS_IOCTL_GET_FREE:		      
-    //case FAT_IOCTL_GET_FREE:
+    case FS_IOCTL_GET_FREE:		 
 			      fsfat_dbg(" FS_IOCTL_GET_FREE (1): path = %s\n", ((struct ioctl_getfree*)arg)->path);
 			      res = f_getfree(((struct ioctl_getfree*)arg)->path,
 					      ((struct ioctl_getfree*)arg)->nclst,
@@ -516,15 +502,13 @@ static int     fatfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg
 			      fsfat_dbg(" FS_IOCTL_GET_FREE (2): path = %s\n", ((struct ioctl_getfree*)arg)->path);
 			      break;
     // create FAT file system
-    case FS_IOCTL_MKFS:        
-    //case FAT_IOCTL_MKFS:
+    case FS_IOCTL_MKFS:     
 			      fsfat_dbg(" fs_fat.c| FS_IOCTL_MKFS - \n");
 			      res = f_mkfs(((struct ioctl_mkfs*)arg)->part, 
 					   ((struct ioctl_mkfs*)arg)->sfd, 
 					   ((struct ioctl_mkfs*)arg)->au);			      
 			      break;    
-    case FS_IOCTL_INFO:     
-    //case FAT_IOCTL_INFO:	
+    case FS_IOCTL_INFO:   	
 			      printf("FatFs module (%s, CP:%u/%s) version %s , revision %d\n\n",
 					_USE_LFN ? "LFN" : "SFN",
 					_CODE_PAGE,
@@ -538,7 +522,6 @@ static int     fatfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg
    
         
     case FS_IOCTL_MKPTABLE:		      // this should be handled in the block driver itself for it is a filesystem independent function ... see hd_block_drv -> ioctl function
-    //case FAT_IOCTL_MKPTABLE:
       // write disk partition table (this function is FAT FileSystem independent and should be moved...)
       // args: char *name<=NULL, int cmd<=FS_IOCTL_MKPTABLE, unsigned long arg <=pointer to struct ioctl_mkptable
       printf(" Uuups: FS_IOCTL_MKPTABLE should not be called in fs_fat.c but in a lower level driver ... !\n");

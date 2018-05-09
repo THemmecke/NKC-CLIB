@@ -14,7 +14,7 @@ include $(BASEDIR)/Makefile.rules
 BUILD_NUMBER_FILE=build-number.txt
 
 
-OBJECTS=cmd.o shell.o fdisk.o
+OBJECTS=cmd.o shell.o fdisk.o wildcmp.o
 #sd.o sdcard.o crc.o
 
 OUTFILE=test

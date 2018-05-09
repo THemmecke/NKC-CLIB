@@ -1817,7 +1817,7 @@ FRESULT create_name (
 )
 {
   
-    ff_dbg(" ff.c|create_name: path = %s\n",*path);
+    ff_dbg(" ff.c|create_name: path = '%s'\n",*path);
     
 #if _USE_LFN	/* LFN configuration */
 	BYTE b, cf;
@@ -2027,7 +2027,8 @@ FRESULT create_name (
 		}
 	}
 	*path = &p[si];						/* Return pointer to the next segment */
-	c = (c <= ' ') ? NS_LAST : 0;		/* Set last segment flag if end of path */
+	c = (c <= ' ' || **path == 0) ? NS_LAST : 0;		/* Set last segment flag if end of path */	
+														/* **path == 0 if path ends with '/' */
 
 	if (!i){
 	  ff_dbg(" ff.c|create_name => FR_INVALID_NAME (10)\n");

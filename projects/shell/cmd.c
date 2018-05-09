@@ -12,6 +12,7 @@
 #include "shell.h"
 
 #include "fdisk.h"
+#include "wildcmp.h"
 
 #include "../../fs/fat/ff.h"
 #include "../../fs/nkc/fs_nkc.h"
@@ -116,7 +117,7 @@ static struct CMDHLP hlptxt[] =
                         "    set attribute 'HIDDEN':   chmod 32 32 file.ext\n"\
                         "    clear attribute 'HIDDEN': chmod  0 32 file.ext\n"},
 {TEXT_CMDHELP_CD,	
-			"cd: change current directory/drive\n",
+			                  "cd: change current directory/drive\n",
                         "cd <dir>\n"\
                         "  cd         show current directory\n"\
                         "  cd ..      one level up\n"\
@@ -170,13 +171,13 @@ static struct CMDHLP hlptxt[] =
 {TEXT_CMDHELP_MOUNT,
 	    "mount <vol> <fs> : initialize/mount volume \n",
             "mount <vol> <fs>\n"\
-            "   vol = HDA0,HDA1 ...\n"\
+            "   vol = hda0,sda1,hda0x1 ...\n"\
             "   fs = FAT,JDFS ...\n"\
 	    "   mount only shows mounted volumes\n"},
 {TEXT_CMDHELP_UMOUNT,
 	    "umount <vol>: unmount volume\n",
             "umount <vol>  \n"\
-            "   vol = HDA0,HDA1 ...\n"},            
+            "   vol = hda0,sda1,hda0x1 ...\n"},            
 {TEXT_CMDHELP_VSTATUS,
   	    "vstatus <vol>: show info of volumes FATFS structure\n",
             "vstatus <volume>\n"\
@@ -244,11 +245,6 @@ static struct CMDHLP hlptxt[] =
             "  example:\n"\
             "      mkfs HDA0 FAT 0 1024\n"\
             "      mkfs SDA0 FAT 1 1024\n"},
-//{TEXT_CMDHELP_MKPTABLE,
-//	    "mkptable <pd#> <size1> <size2> <size3> <size4> - Create partition table \n",
-//            "mkptable <pd#> <size1> <size2> <size3> <size4>\n"\
-//            "          pd#: HDA = 1st (G)IDE disk \n"\
-//            "               SDA = 1st SD disk\n"},  
 {TEXT_CMDHELP_PTABLE,
 	    "ptable <pd#>  - show partition table of physical drive pd# \n",
             "ptable <pd#>\n"\
@@ -377,7 +373,6 @@ struct block_header{
 /*---------------------------------------------------------*/
 
 LONGLONG AccSize;			/* Work register for scan_fat_files() */
-//char drive[10],path[255],filename[20], ext[10], fname[30], fullname[320], filepath[255], fullpath[255]; /* work register for split_filename() -> fs.c */
 
 struct fpinfo FPInfo; //  working struct for checkfp (check file-path), also stores current drive and path
 
@@ -432,24 +427,54 @@ void put_rc (FRESULT rc)
 }
 
 void init_cmd(void) {
-   FPInfo1.psz_driveName = (char*)malloc(_MAX_DRIVE_NAME);  if(FPInfo1.psz_driveName == 0) exit(1); // exit with fatal error !!
-   FPInfo1.psz_deviceID = (char*)malloc(_MAX_DRIVE_NAME);   if(FPInfo1.psz_deviceID == 0) exit(1);
-   FPInfo1.psz_path = (char*)malloc(_MAX_PATH);       if(FPInfo1.psz_path == 0) exit(1); 
-   FPInfo1.psz_filename = (char*)malloc(_MAX_FILENAME);   if(FPInfo1.psz_filename ==0 ) exit(1);
-   FPInfo1.psz_fileext = (char*)malloc(_MAX_FILEEXT);    if(FPInfo1.psz_fileext == 0 ) exit(1);
-   FPInfo1.psz_cdrive = (char*)malloc(_MAX_DRIVE_NAME);     if(FPInfo1.psz_cdrive == 0 ) exit(1);
-   FPInfo1.psz_cpath = (char*)malloc(_MAX_PATH);      if(FPInfo1.psz_cpath == 0 ) exit(1);
-   
-   FPInfo2.psz_driveName = (char*)malloc(_MAX_DRIVE_NAME);  if(FPInfo2.psz_driveName == 0) exit(1); // exit with fatal error !!
-   FPInfo2.psz_deviceID = (char*)malloc(_MAX_DRIVE_NAME);   if(FPInfo2.psz_deviceID == 0) exit(1);
-   FPInfo2.psz_path = (char*)malloc(_MAX_PATH);       if(FPInfo2.psz_path == 0) exit(1); 
-   FPInfo2.psz_filename = (char*)malloc(_MAX_FILENAME);   if(FPInfo2.psz_filename ==0 ) exit(1);
-   FPInfo2.psz_fileext = (char*)malloc(_MAX_FILEEXT);    if(FPInfo2.psz_fileext == 0 ) exit(1);
-   FPInfo2.psz_cdrive = (char*)malloc(_MAX_DRIVE_NAME);     if(FPInfo2.psz_cdrive == 0 ) exit(1);
-   FPInfo2.psz_cpath = (char*)malloc(_MAX_PATH);      if(FPInfo2.psz_cpath == 0 ) exit(1);
+
+  /* allocate memeory ... */ 
+  FPInfo.psz_driveName  = (char*)malloc(_MAX_DRIVE_NAME);
+  FPInfo.psz_deviceID   = (char*)malloc(_MAX_DEVICE_ID);
+  FPInfo.psz_path     = (char*)malloc(_MAX_PATH);
+  FPInfo.psz_filename   = (char*)malloc(_MAX_FILENAME);
+  FPInfo.psz_fileext    = (char*)malloc(_MAX_FILEEXT);
+  FPInfo.psz_cdrive   = (char*)malloc(_MAX_DRIVE_NAME);
+  FPInfo.psz_cpath    = (char*)malloc(_MAX_PATH);
+  FPInfo.psz_wcard    = (char*)malloc(_MAX_PATH);
+  
+   if( !FPInfo.psz_driveName || !FPInfo.psz_deviceID || !FPInfo.psz_path || !FPInfo.psz_filename ||
+      !FPInfo.psz_fileext || !FPInfo.psz_fileext || !FPInfo.psz_cpath || !FPInfo.psz_wcard)
+  {
+    printf(" error allocating memory for FPInfo....\n");
+    exit(1);
+  }
+
+  FPInfo1.psz_driveName = (char*)malloc(_MAX_DRIVE_NAME);  if(FPInfo1.psz_driveName == 0) exit(1); // exit with fatal error !!
+  FPInfo1.psz_deviceID = (char*)malloc(_MAX_DRIVE_NAME);   if(FPInfo1.psz_deviceID == 0) exit(1);
+  FPInfo1.psz_path = (char*)malloc(_MAX_PATH);       if(FPInfo1.psz_path == 0) exit(1); 
+  FPInfo1.psz_filename = (char*)malloc(_MAX_FILENAME);   if(FPInfo1.psz_filename ==0 ) exit(1);
+  FPInfo1.psz_fileext = (char*)malloc(_MAX_FILEEXT);    if(FPInfo1.psz_fileext == 0 ) exit(1);
+  FPInfo1.psz_cdrive = (char*)malloc(_MAX_DRIVE_NAME);     if(FPInfo1.psz_cdrive == 0 ) exit(1);
+  FPInfo1.psz_cpath = (char*)malloc(_MAX_PATH);      if(FPInfo1.psz_cpath == 0 ) exit(1);
+  FPInfo1.psz_wcard = (char*)malloc(_MAX_PATH);      if(FPInfo1.psz_wcard == 0 ) exit(1);
+  
+  FPInfo2.psz_driveName = (char*)malloc(_MAX_DRIVE_NAME);  if(FPInfo2.psz_driveName == 0) exit(1); // exit with fatal error !!
+  FPInfo2.psz_deviceID = (char*)malloc(_MAX_DRIVE_NAME);   if(FPInfo2.psz_deviceID == 0) exit(1);
+  FPInfo2.psz_path = (char*)malloc(_MAX_PATH);       if(FPInfo2.psz_path == 0) exit(1); 
+  FPInfo2.psz_filename = (char*)malloc(_MAX_FILENAME);   if(FPInfo2.psz_filename ==0 ) exit(1);
+  FPInfo2.psz_fileext = (char*)malloc(_MAX_FILEEXT);    if(FPInfo2.psz_fileext == 0 ) exit(1);
+  FPInfo2.psz_cdrive = (char*)malloc(_MAX_DRIVE_NAME);     if(FPInfo2.psz_cdrive == 0 ) exit(1);
+  FPInfo2.psz_cpath = (char*)malloc(_MAX_PATH);      if(FPInfo2.psz_cpath == 0 ) exit(1);
+  FPInfo2.psz_wcard = (char*)malloc(_MAX_PATH);      if(FPInfo2.psz_wcard == 0 ) exit(1);
 }
 
 void exit_cmd(void) {
+
+  free(FPInfo.psz_driveName);
+  free(FPInfo.psz_deviceID );
+  free(FPInfo.psz_path     );
+  free(FPInfo.psz_filename );
+  free(FPInfo.psz_fileext  );
+  free(FPInfo.psz_cdrive   );
+  free(FPInfo.psz_cpath    );
+  free(FPInfo.psz_wcard    );
+
   free( FPInfo1.psz_driveName);
   free( FPInfo1.psz_deviceID);
   free( FPInfo1.psz_path);
@@ -457,6 +482,7 @@ void exit_cmd(void) {
   free( FPInfo1.psz_fileext);
   free( FPInfo1.psz_cdrive);
   free( FPInfo1.psz_cpath);
+  free( FPInfo1.psz_wcard);
   
   free( FPInfo2.psz_driveName);
   free( FPInfo2.psz_deviceID);
@@ -465,6 +491,7 @@ void exit_cmd(void) {
   free( FPInfo2.psz_fileext);
   free( FPInfo2.psz_cdrive);
   free( FPInfo2.psz_cpath);
+  free( FPInfo2.psz_wcard);
 }
 
 
@@ -679,159 +706,184 @@ void put_dump (
 
 int checkargs(char* args, char* fullpath1, char* fullpath2) 
 {
-  FRESULT res;
+  int res;
   
   char *arg1=0;
   char *arg2=0;  
   
   
-   while (*args == ' ') args++;	// skip whitespace
-   arg1 = args;			// pointer to 1st parameter
+  while (*args == ' ') args++; // skip whitespace
+  arg1 = args;     // pointer to 1st parameter
    
-   arg2 = strchr(args, ' ');	// search 2nd parameter
-   if (!arg2)                   // if no 2nd parameter
-     arg2 = arg1;		//   2nd parameter == 1st parameter
-   else *arg2++ = 0;		// terminate 1st par and increment pointer to next char
-   while (*arg2 == ' ') arg2++; // skip whitespace   
+  arg2 = strchr(args, ' ');  // search 2nd parameter
+  if (!arg2)                   // if no 2nd parameter
+     arg2 = arg1;   //   2nd parameter == 1st parameter
+  else *arg2++ = 0;    // terminate 1st par and increment pointer to next char
+  while (*arg2 == ' ') arg2++; // skip whitespace   
    
 
-   dbg("checkargs: arg1 = %s, arg2 = %s\n\n", arg1, arg2);
- 
-   strcpy(FPInfo1.psz_cdrive,FPInfo.psz_cdrive);
-   strcpy(FPInfo1.psz_cpath,FPInfo.psz_cpath);
-    
-     
-   res = checkfp(arg1, &FPInfo1);
+  dbg("checkargs: arg1 = %s, arg2 = %s\n\n", arg1, arg2);
+
+
+  /* initialize default values */
+  strcpy(FPInfo1.psz_cdrive,FPInfo.psz_cdrive);
+  strcpy(FPInfo1.psz_cpath,FPInfo.psz_cpath);
+        
+  res = checkfp(arg1, &FPInfo1);
        
-   dbg("\nFPINFO1:\n");
-   dbg(" psz_driveName:  [%s]\n",FPInfo1.psz_driveName ); // FIXME: wenn leer, dann cdrive !?
-   dbg(" psz_deviceID:   [%s]\n",FPInfo1.psz_deviceID );
-   dbg(" c_deviceNO:     [%c]\n",FPInfo1.c_deviceNO );
-   dbg(" n_partition:    [%d]\n",FPInfo1.n_partition );
-   dbg(" psz_path:       [%s]\n",FPInfo1.psz_path );
-   dbg(" psz_filename:   [%s]\n",FPInfo1.psz_filename );
-   dbg(" c_separator:    [%c]\n",FPInfo1.c_separator );
-   dbg(" psz_fileext:    [%s]\n",FPInfo1.psz_fileext );
-   dbg(" psz_cdrive:     [%s]\n",FPInfo1.psz_cdrive );
-   dbg(" psz_cpath:      [%s]\n",FPInfo1.psz_cpath );
-   dbg("\nres = %d\n",res);
+  dbg("\nFPINFO1:\n");
+  dbg(" psz_driveName:  [%s]\n",FPInfo1.psz_driveName ); // FIXME: wenn leer, dann cdrive !?
+  dbg(" psz_deviceID:   [%s]\n",FPInfo1.psz_deviceID );
+  dbg(" c_deviceNO:     [%c]\n",FPInfo1.c_deviceNO );
+  dbg(" n_partition:    [%d]\n",FPInfo1.n_partition );
+  dbg(" psz_path:       [%s]\n",FPInfo1.psz_path );
+  dbg(" psz_filename:   [%s]\n",FPInfo1.psz_filename );
+  dbg(" c_separator:    [%c]\n",FPInfo1.c_separator );
+  dbg(" psz_fileext:    [%s]\n",FPInfo1.psz_fileext );
+  dbg(" psz_cdrive:     [%s]\n",FPInfo1.psz_cdrive );
+  dbg(" psz_cpath:      [%s]\n",FPInfo1.psz_cpath );
+  dbg(" b_has_wcard:    [%d]\n",FPInfo1.b_has_wcard );
+  dbg(" psz_wcard:      [%s]\n",FPInfo1.psz_wcard );
+  dbg("\nres = %d\n",res);
  
    
-   if(fullpath2) {          
-     strcpy(FPInfo2.psz_cdrive,FPInfo.psz_cdrive);
-     strcpy(FPInfo2.psz_cpath,FPInfo.psz_cpath);
+  if(fullpath2) {
+    /* initialize default values */
+    strcpy(FPInfo2.psz_cdrive,FPInfo.psz_cdrive);
+    strcpy(FPInfo2.psz_cpath,FPInfo.psz_cpath);
+       
+    res = checkfp(arg2, &FPInfo2); 
+
+    if(!FPInfo1.b_has_wcard)     /* if arg1 has no wild cards and arg2 has no filename, copy filename from arg1 to arg2 */
+      if(!FPInfo2.psz_filename[0]) {
+          strcpy(FPInfo2.psz_filename,FPInfo1.psz_filename);
+          FPInfo2.c_separator = FPInfo1.c_separator;
+          strcpy(FPInfo2.psz_fileext,FPInfo1.psz_fileext);       
+      }
+  
      
-     res = checkfp(arg2, &FPInfo2); 
-     
-      if(arg1 == arg2){       // == no 2nd argument
-       FPInfo2.psz_driveName[0] = 0;
-       FPInfo2.psz_deviceID[0] = 0;
-       FPInfo2.c_deviceNO = 0;
-       FPInfo2.n_partition = 0;
-       FPInfo2.psz_path[0] = 0;
-     }
-     
-     if(!FPInfo2.psz_filename[0]) {
-       strcpy(FPInfo2.psz_filename,FPInfo1.psz_filename);
-       FPInfo2.c_separator = FPInfo1.c_separator;
-       strcpy(FPInfo2.psz_fileext,FPInfo1.psz_fileext);
-     }
+    if(arg1 == arg2){               /* if no 2nd argument, force to default drive and path */
+      FPInfo2.psz_driveName[0] = 0;
+      FPInfo2.psz_deviceID[0] = 0;
+      FPInfo2.c_deviceNO = 0;
+      FPInfo2.n_partition = 0;
+      FPInfo2.psz_path[0] = 0;
+    } 
      
     
-     dbg("\nFPINFO2:\n");
-     dbg(" psz_driveName:  [%s]\n",FPInfo2.psz_driveName ); // FIXME: wenn leer, dann cdrive !?
-     dbg(" psz_deviceID:   [%s]\n",FPInfo2.psz_deviceID );
-     dbg(" c_deviceNO:     [%c]\n",FPInfo2.c_deviceNO );
-     dbg(" n_partition:    [%d]\n",FPInfo2.n_partition );
-     dbg(" psz_path:       [%s]\n",FPInfo2.psz_path );
-     dbg(" psz_filename:   [%s]\n",FPInfo2.psz_filename );
-     dbg(" c_separator:    [%c]\n",FPInfo2.c_separator );
-     dbg(" psz_fileext:    [%s]\n",FPInfo2.psz_fileext );
-     dbg(" psz_cdrive:     [%s]\n",FPInfo2.psz_cdrive );
-     dbg(" psz_cpath:      [%s]\n",FPInfo2.psz_cpath );
-     dbg("\nres = %d\n",res);
-
-   }
+    dbg("\nFPINFO2:\n");
+    dbg(" psz_driveName:  [%s]\n",FPInfo2.psz_driveName ); // FIXME: wenn leer, dann cdrive !?
+    dbg(" psz_deviceID:   [%s]\n",FPInfo2.psz_deviceID );
+    dbg(" c_deviceNO:     [%c]\n",FPInfo2.c_deviceNO );
+    dbg(" n_partition:    [%d]\n",FPInfo2.n_partition );
+    dbg(" psz_path:       [%s]\n",FPInfo2.psz_path );
+    dbg(" psz_filename:   [%s]\n",FPInfo2.psz_filename );
+    dbg(" c_separator:    [%c]\n",FPInfo2.c_separator );
+    dbg(" psz_fileext:    [%s]\n",FPInfo2.psz_fileext );
+    dbg(" psz_cdrive:     [%s]\n",FPInfo2.psz_cdrive );
+    dbg(" psz_cpath:      [%s]\n",FPInfo2.psz_cpath );
+    dbg(" b_has_wcard:    [%d]\n",FPInfo2.b_has_wcard );
+    dbg(" psz_wcard:      [%s]\n",FPInfo2.psz_wcard );
+    dbg("\nres = %d\n",res);
+  }
    
-   // build fullpath  (1)
-   fullpath1[0]=0;
-   if( !FPInfo1.psz_driveName[0] ){		// use current drive if no drive given   
-     dbg("no psz_driveName, use psz_cdrive in fullpath1...\n");
-     strcat(fullpath1,FPInfo1.psz_cdrive); 
-   }else{
-     strcat(fullpath1,FPInfo1.psz_driveName);
-     dbg("use psz_driveName in fullpath1...\n");    
-   }
-   strcat(fullpath1,":");
-                                                  
-    if(arg1[0] == '/') { 			// absolute path given as argument -> superseds current path !
-     
-      dbg(" absolute path argument (1) '%s'\n",arg1);
-     
-      strcat(fullpath1,arg1);
-    } else { // relative path, append args to current path...
-    
-     dbg(" relative path argument (1) '%s'\n",arg1); 
-    
-     if(FPInfo1.psz_cpath[0] != '/') strcat(fullpath1,"/");          
-     //strcat(fullpath,FPInfo.psz_cpath);  
-     if(!FPInfo1.psz_driveName[0] || !strcmp(FPInfo1.psz_driveName,FPInfo1.psz_cdrive)) strcat(fullpath1,FPInfo1.psz_cpath);  // append current path only, if no drive given or given drive equal to current drive !
-     
-     if(fullpath1[strlen(fullpath1)-1] == '/') {
-       if(FPInfo1.psz_path[0] == '/') fullpath1[strlen(fullpath1)-1] = 0;       
-     }else{
-       if(FPInfo1.psz_path[0] != '/') strcat(fullpath1,"/");
-     }
-     strcat(fullpath1,FPInfo1.psz_path);
+  /* ------------ build fullpath  (1) ------------ */
 
-     if(fullpath1[strlen(fullpath1)-1] != '/') strcat(fullpath1,"/");
+  /* 1: drive */
+  fullpath1[0]=0;
+  if( !FPInfo1.psz_driveName[0] ){                                   /* use current drive if no drive given */
+    dbg("no psz_driveName, use psz_cdrive in fullpath1...\n");     
+    strcat(fullpath1,FPInfo1.psz_cdrive); 
+  }else{
+    strcat(fullpath1,FPInfo1.psz_driveName);
+    dbg("use psz_driveName in fullpath1...\n");    
+  }
+
+  strcat(fullpath1,":");     
+                
+  /* 2: path */
+  switch (FPInfo1.psz_path[0]) {
+    case 0 :                                                       /* if no path given and .... */ 
+         if( !FPInfo1.psz_driveName[0] ||                          /* no drive given or ... */ 
+             !strcmp(FPInfo1.psz_driveName, FPInfo1.psz_cdrive) )  /* given drive == current drive */
+           strcat(fullpath1,FPInfo1.psz_cpath);                    /* => use current path */
+         break;
+    case '/':                                                      /* absolute path given => use given path */
+         strcat(fullpath1,FPInfo1.psz_path);
+         break;
+   default:                                                        /* relative path given => add given path to current path */
+                                                                   /* but only if given drive == current drive */
+
+         if( !FPInfo1.psz_driveName[0] ||                          /* no drive given or ... */ 
+             !strcmp(FPInfo1.psz_driveName, FPInfo1.psz_cdrive) )  /* given drive == current drive */
+           strcat(fullpath1,FPInfo1.psz_cpath);                    /* => use current path */
+
+         strcat(fullpath1,FPInfo1.psz_path);                       /* add given path */
+  }
+
+  if(fullpath1[strlen(fullpath1)-1] != '/'){                       /* termitate path with '/' */
+    fullpath1[strlen(fullpath1)+1] = 0;
+    fullpath1[strlen(fullpath1)] = '/';
+  }
+
+  /* 3: filename.ext */
+  if(!FPInfo1.b_has_wcard){                                        /* if arg has no wildcard, add filename to fullpath ... */
      strcat(fullpath1,FPInfo1.psz_filename);
      fullpath1[strlen(fullpath1)+1] = 0;       
      fullpath1[strlen(fullpath1)] = FPInfo1.c_separator;       
      strcat(fullpath1,FPInfo1.psz_fileext);
+  }
 
-     if(fullpath1[strlen(fullpath1)-1] == '/') fullpath1[strlen(fullpath1)-1] = 0;      
+  /* ------------ build fullpath  (2) ------------ */
+  if(fullpath2) {
+    /* 1: drive */
+    fullpath2[0]=0;
+    if( !FPInfo2.psz_driveName[0] ){                                   /* use current drive if no drive given */
+       dbg("no psz_driveName, use psz_cdrive in fullpath2...\n");
+       strcat(fullpath2,FPInfo2.psz_cdrive); 
+    }else{
+       strcat(fullpath2,FPInfo2.psz_driveName);
+       dbg("use psz_driveName in fullpath1...\n");    
     }
-    
-    if(fullpath2) {
-    // build fullpath  (2)
-       fullpath2[0]=0;
-       if( !FPInfo2.psz_driveName[0] )		// use current drive if no drive given   
-         strcat(fullpath2,FPInfo2.psz_cdrive); 
-       else 
-         strcat(fullpath2,FPInfo2.psz_driveName);    
-       strcat(fullpath2,":");
-                                                      
-        if(arg2[0] == '/') { 			// absolute path given as argument -> superseds current path !
-  
-          dbg(" absolute path argument (2) '%s'\n",arg2);
-	  
+
+    strcat(fullpath2,":");     
+                  
+    /* 2: path */              
+    switch (FPInfo2.psz_path[0]) {
+        case 0 :                                                       /* if no path given and .... */ 
+          if( !FPInfo2.psz_driveName[0] ||                          /* no drive given or ... */ 
+              !strcmp(FPInfo2.psz_driveName, FPInfo2.psz_cdrive) )  /* given drive == current drive */
+            strcat(fullpath2,FPInfo2.psz_cpath);                    /* => use current path */
+          break;
+        case '/':                                                      /* absolute path given => use given path */
           strcat(fullpath2,FPInfo2.psz_path);
-        } else { // relative path, append args to current path...
-  
-         dbg(" relative path argument (2) '%s'\n",arg2); 
-	 
-         if(FPInfo2.psz_cpath[0] != '/') strcat(fullpath2,"/");          
-         if(!FPInfo2.psz_driveName[0] || !strcmp(FPInfo2.psz_driveName,FPInfo2.psz_cdrive)) strcat(fullpath2,FPInfo2.psz_cpath);  // append current path only, if no drive given or given drive equal to current drive !
-        }
-         if(fullpath2[strlen(fullpath2)-1] == '/') {
-           if(FPInfo2.psz_path[0] == '/') fullpath2[strlen(fullpath2)-1] = 0;       
-         }else{
-           if(FPInfo2.psz_path[0] != '/') strcat(fullpath2,"/");
-         }
-         strcat(fullpath2,FPInfo2.psz_path);
-          
-         if(fullpath2[strlen(fullpath2)-1] != '/') strcat(fullpath2,"/");
-         strcat(fullpath2,FPInfo2.psz_filename);
-         fullpath2[strlen(fullpath2)+1] = 0;       
-         fullpath2[strlen(fullpath2)] = FPInfo2.c_separator;       
-         strcat(fullpath2,FPInfo2.psz_fileext);
-      
-         if(fullpath2[strlen(fullpath2)-1] == '/') fullpath2[strlen(fullpath2)-1] = 0;                      
-          
-   }
-   
-      return 0;
+          break;
+        default:                                                        /* relative path given => add given path to current path */
+                                                                    /* rules from 'case 0' apply !! => if current path is not usable, use given path as
+                                                                       an absolute path .... */
+
+          if( !FPInfo2.psz_driveName[0] ||                          /* no drive given or ... */ 
+              !strcmp(FPInfo2.psz_driveName, FPInfo2.psz_cdrive) )  /* given drive == current drive */
+            strcat(fullpath2,FPInfo2.psz_cpath);                    /* => use current path */
+
+          strcat(fullpath2,FPInfo2.psz_path);                       /* add given path */
+    }
+
+    if(fullpath2[strlen(fullpath2)-1] != '/'){                       /* termitate path with '/' */
+      fullpath2[strlen(fullpath2)+1] = 0;
+      fullpath2[strlen(fullpath2)] = '/';
+    }
+
+  /* 3: filename.ext */
+    if(!FPInfo1.b_has_wcard){ /* if arg1 has no wildcard, add filename to fullpath ... */
+      strcat(fullpath2,FPInfo2.psz_filename);
+      fullpath2[strlen(fullpath2)+1] = 0;       
+      fullpath2[strlen(fullpath2)] = FPInfo2.c_separator;       
+      strcat(fullpath2,FPInfo2.psz_fileext);
+    }
+  }
+
+  return 0;
 }
 
 // ******************  commands.... *************************************
@@ -1029,8 +1081,8 @@ int cmd_dir(char *args) // ...
         !strcmp(pfstab->pfsdrv->pname, "FAT") )  { // FAT drive
 
       if(FPInfo1.psz_driveName[0])
-        res = cmd_dir_fat(fullpath1,FPInfo1.psz_driveName);
-      else res = cmd_dir_fat(fullpath1,FPInfo1.psz_cdrive);
+        res = cmd_dir_fat(fullpath1,FPInfo1.psz_driveName,FPInfo1.b_has_wcard,FPInfo1.psz_wcard);
+      else res = cmd_dir_fat(fullpath1,FPInfo1.psz_cdrive,FPInfo1.b_has_wcard,FPInfo1.psz_wcard);
 
       if(res) printf(" cmd_dir_fat returned '%s'\n",get_rc_string(res));
       return 0;
@@ -1044,8 +1096,10 @@ int cmd_dir(char *args) // ...
 }
 
 
-int cmd_dir_fat(char *args,  // fullpath
-		char* pd)    // drivename
+int cmd_dir_fat(char *args,   // fullpath
+		char* pd,                 // drivename
+    BOOL b_has_wcard,         // use wildcard matching
+    char* wc )                // wildcard string
 {
    
    DIR dir;				/* FAT Directory object */
@@ -1059,7 +1113,7 @@ int cmd_dir_fat(char *args,  // fullpath
    struct ioctl_readdir arg_readdir;
    struct ioctl_getfree arg_getfree;
   
-   dbg(" cmd_dir_fat(%s,%s)\n",args,pd);
+   dbg(" cmd_dir_fat(%s,%s,%d,%s)\n",args,pd,b_has_wcard,wc);
    
    while (*args == ' ') args++;     
    
@@ -1075,34 +1129,49 @@ int cmd_dir_fat(char *args,  // fullpath
    
    for(;;) {
         arg_readdir.dp = &dir;
-	arg_readdir.fno = &Finfo;
-	res = ioctl(pd,FS_IOCTL_READ_DIR,&arg_readdir);
-	
-	if ((res != FR_OK) || !Finfo.fname[0]) break;
-	if (Finfo.fattrib & AM_DIR) {
-	   s2++;
-	} else {
-	   s1++; AccSize += Finfo.fsize;
-	}
-	printf("%c%c%c%c%c %u/%02u/%02u %02u:%02u %9lu  %s",
-		(Finfo.fattrib & AM_DIR) ? 'D' : '-',
-		(Finfo.fattrib & AM_RDO) ? 'R' : '-',
-		(Finfo.fattrib & AM_HID) ? 'H' : '-',
-		(Finfo.fattrib & AM_SYS) ? 'S' : '-',
-		(Finfo.fattrib & AM_ARC) ? 'A' : '-',
-		(Finfo.fdate >> 9) + 1980, (Finfo.fdate >> 5) & 15, Finfo.fdate & 31,
-		(Finfo.ftime >> 11), (Finfo.ftime >> 5) & 63, Finfo.fsize, Finfo.fname);
-#if _USE_LFN
-	for (p2 = strlen(Finfo.fname); p2 < 12; p2++) printf(" ");
-	printf("  "); 
-	put_uni(LFName);
-#endif
-	printf("\n");	
-	if(!(line % LINES_PER_PAGE) && line != 0) {
-   	    printf(" ---- KEY ---- "); getchar(); printf("\n");
-	}
-	line++;
+      	arg_readdir.fno = &Finfo;
+
+      	res = ioctl(pd,FS_IOCTL_READ_DIR,&arg_readdir);
+      	
+      	if ((res != FR_OK) || !Finfo.fname[0]) break;
+
+
+        if(b_has_wcard){
+          if (wildcmp(wc, Finfo.fname)) {
+            dbg(" %s ---> we have a match!\n",Finfo.fname);
+          } else {
+            dbg(" %s ---> no match =(\n",Finfo.fname);
+            continue;
+          }          
+        }
+
+
+      	if (Finfo.fattrib & AM_DIR) {
+      	   s2++;
+      	} else {
+      	   s1++; AccSize += Finfo.fsize;
+      	}
+
+      	printf("%c%c%c%c%c %u/%02u/%02u %02u:%02u %9lu  %s",
+      		(Finfo.fattrib & AM_DIR) ? 'D' : '-',
+      		(Finfo.fattrib & AM_RDO) ? 'R' : '-',
+      		(Finfo.fattrib & AM_HID) ? 'H' : '-',
+      		(Finfo.fattrib & AM_SYS) ? 'S' : '-',
+      		(Finfo.fattrib & AM_ARC) ? 'A' : '-',
+      		(Finfo.fdate >> 9) + 1980, (Finfo.fdate >> 5) & 15, Finfo.fdate & 31,
+      		(Finfo.ftime >> 11), (Finfo.ftime >> 5) & 63, Finfo.fsize, Finfo.fname);
+      #if _USE_LFN
+      	for (p2 = strlen(Finfo.fname); p2 < 12; p2++) printf(" ");
+      	printf("  "); 
+      	put_uni(LFName);
+      #endif
+      	printf("\n");	
+      	if(!(line % LINES_PER_PAGE) && line != 0) {
+         	    printf(" ---- KEY ---- "); getchar(); printf("\n");
+      	}
+	     line++;
    }
+
    res = ioctl(pd,FS_IOCTL_CLOSE_DIR,&dir);
    printf("%4u File(s),%11llu bytes total\n%4u Dir(s)", s1, AccSize, s2);     
    
@@ -1127,7 +1196,6 @@ int cmd_dir_fat(char *args,  // fullpath
 	          dbg("fs_id = %d (unknown)\n",fs->fs_id);
 	  }
 	  
-	  //printf(",%12llu bytes free (nclst=%d, csize=%d)\n", (LONGLONG)p1 * p2  ,p1,p2);
 	   printf(",%12llu bytes free\n", (LONGLONG)p1*p2);
    }
    else printf("\n");
@@ -1210,121 +1278,243 @@ int cmd_rename(char *args)
    return 0;
 }
 
-int cmd_del(char *args) {
-   /* del <name> - delete a file */
-   FRESULT res; 
-   char fullpath1[_MAX_PATH];
+int _del(char *dst) {
+   FRESULT res=RES_OK; 
    
-   while (*args == ' ') args++;
-   
-   checkargs(args, fullpath1, NULL);
- 
-   dbg(" cmd_del( %s )\n",fullpath1);
+   dbg(" _del( %s )\n",dst);
 
-   
-   res = ioctl(NULL,FS_IOCTL_DEL,&fullpath1);
+   printf(" delete %s\n",dst);
+   res = ioctl(NULL,FS_IOCTL_DEL,dst);
+  
    if(res) put_rc(res);
    
    return 0;
 }
+
+int cmd_del(char *args) {
+   /* del <name> - delete a file */
+   DIR dir;       /* FAT Directory object */
+   FILINFO Finfo;     /* File info object */
+   FS *fs;        /* Pointer to file system object */
+   FRESULT res;
+   UINT s1, s2;
+   long p1,p2,line=0;  
+   
+   struct ioctl_opendir arg_opendir;
+   struct ioctl_readdir arg_readdir;
+   struct ioctl_getfree arg_getfree;
+
+   char fullpath1[_MAX_PATH];
+   char src[_MAX_PATH];
+   char dst[_MAX_PATH];
+ 
+   dbg("cmd_del(%s):\n",args);
+
+   checkargs(args, fullpath1, NULL);
+    
+   dbg("cmd_del: delete [%s]\n",fullpath1);
+
+
+   if(FPInfo1.b_has_wcard){ /* wild cards in arg ==> cycle through directory and delete all matching files .... */
+
+      /* open dir and cycle through .... */
+      arg_opendir.dp = &dir;
+      arg_opendir.path = fullpath1;
+
+      if(FPInfo1.psz_driveName[0])
+       res = ioctl(FPInfo1.psz_driveName,FS_IOCTL_OPEN_DIR,&arg_opendir);
+     else res = ioctl(FPInfo1.psz_cdrive,FS_IOCTL_OPEN_DIR,&arg_opendir);
+   
+      if (res) { put_rc(res); return 0; }
+
+      for(;;) {
+        arg_readdir.dp = &dir;
+        arg_readdir.fno = &Finfo;
+
+        if(FPInfo1.psz_driveName[0])
+         res = ioctl(FPInfo1.psz_driveName,FS_IOCTL_READ_DIR,&arg_readdir);
+        else res = ioctl(FPInfo1.psz_cdrive,FS_IOCTL_READ_DIR,&arg_readdir);
+        
+        if ((res != FR_OK) || !Finfo.fname[0]) break;
+
+        if( Finfo.fattrib == AM_VOL ) continue; /* Volume Label */
+        if( Finfo.fattrib == AM_DIR ) continue; /* Directory */
+        if( Finfo.fattrib == AM_LFN ) continue; /* LFN Entry (not supported yet) */
+
+        if (wildcmp(FPInfo1.psz_wcard, Finfo.fname)) {          
+          sprintf(dst,"%s%s",fullpath1,Finfo.fname);          
+          _del(dst);
+        } else {
+          dbg(" %s ---> no match =(\n",Finfo.fname);
+          continue;
+        }                    
+    }
+    
+    if(FPInfo1.psz_driveName[0])
+          res = ioctl(FPInfo1.psz_driveName,FS_IOCTL_CLOSE_DIR,&dir);       
+    else res = ioctl(FPInfo1.psz_cdrive,FS_IOCTL_CLOSE_DIR,&dir); 
+
+   }else{
+    // standard (no wildcard) delete
+    printf("standard del ....\n");
+    //sprintf(dst,"%s/%s",fullpath1,Finfo.fname);          
+    _del(fullpath1);
+   }
+
+   return 0;
+}
+
+
 // calls via ioctl (end) -------
 
 // standard clib calls (start) -----
 
-
-
-int cmd_copy(char *args)
+int _copy(char *src, char *dst)
 {
    FRESULT res;
    char *ptr2;   
    long p1;
    UINT s1,s2;
-   
-    char fullpath1[_MAX_PATH];
-    char fullpath2[_MAX_PATH];
- 
-  
-  
-  
-   dbg("cmd_copy(%s):\n",args);
-
-   
-   checkargs(args, fullpath1, fullpath2);
     
-   dbg("cmd_copy: copy [%s -> %s]\n",fullpath1,fullpath2);
+   dbg("_copy: copy ['%s' -> '%s']\n",src,dst);
+   //printf("_copy: copy [%s -> %s]\n",src,dst); return 0;
 
-
-   dbg("cmd_copy: Opening \"%s\"\n", fullpath1);
+   dbg("_copy: Opening '%s'\n", src);
 
    //                                0x00		0x01
    //res = f_open(&file[0], args, FA_OPEN_EXISTING | FA_READ);
-   file[0] = fopen(fullpath1,"rb");
+   file[0] = fopen(src,"rb");
    
    if (file[0]==NULL) {
-      printf("error opening file !\n");
-
+      printf("error opening source '%s' !\n",src);
       return 0;
    }
 
-   dbg("cmd_copy: Creating \"%s\"\n", fullpath2); 
+   dbg("_copy: Creating '%s'\n", dst); 
 
    //                                  0x08		0x02
    //res = f_open(&file[1], ptr2, FA_CREATE_ALWAYS | FA_WRITE);
-   file[1] = fopen(fullpath2,"wb");
-   printf("\n");
+   file[1] = fopen(dst,"wb");
+
    if (file[1]==NULL) {
      fclose(file[0]);
-     printf("error creating file !\n");
+     printf("error creating destination '%s' !\n",dst);
     
      return 0;
    }
-   printf("Start Copy %s ==> %s ",fullpath1,fullpath2);
-   #ifdef CONFIG_DEBUG 
-     printf("\n");
-   #endif
+   printf("Copy '%s' ==> '%s' ",src,dst);
+   
    p1 = 0;
    for (;;) {
-     //res = f_read(&file[0], Buff, sizeof Buff, &s1);
+     printf(".");
      s1 = fread(Buff, 1, sizeof Buff, file[0]); 
      if (s1 == 0) {
-       printf("src at eof !\n");
+       dbg("_copy: src at eof !\n");
        break;   /* error or eof */
      }
 
-     #ifdef CONFIG_DEBUG 
-     printf("%d bytes read from source\n",s1);
-     #endif
-     //res = f_write(&file[1], Buff, s1, &s2);
-
-     //printf(" %d bytes read from source file [KEY].\n",s1);
-     //getchar();
-
      s2 = fwrite(Buff, 1, s1, file[1]);         
-
-     //printf(" %d bytes written to destination file [KEY].\n",s2);
-     //getchar();
 
      p1 += s2;
 
-     #ifdef CONFIG_DEBUG 
-     printf("%d bytes written to destination (total %d)\n",s2,p1);
-     #endif
+     //printf("%d bytes written to destination (total %d)\n",s2,p1);
 
      if (s2 < s1) {
        printf("error or disk full !\n");
        break;   /* error or disk full */
      }
 
-     printf(".");
    }
-   printf("\nready\n");   
+
    fclose(file[0]);
    fclose(file[1]);
-   printf("%lu bytes copied.\n", p1);
-   
-   
+   printf("%lu bytes\n", p1);
+  
    return 0;
 }
+
+
+int cmd_copy(char *args) /* wildcard copy */
+{
+   
+   DIR dir;       /* FAT Directory object */
+   FILINFO Finfo;     /* File info object */
+   FS *fs;        /* Pointer to file system object */
+   FRESULT res;
+   UINT s1, s2;
+   long p1,p2,line=0;  
+   
+   struct ioctl_opendir arg_opendir;
+   struct ioctl_readdir arg_readdir;
+   struct ioctl_getfree arg_getfree;
+
+   char fullpath1[_MAX_PATH];
+   char fullpath2[_MAX_PATH];
+   char src[_MAX_PATH];
+   char dst[_MAX_PATH];
+ 
+   dbg("cmd_copy(%s):\n",args);
+
+   checkargs(args, fullpath1, fullpath2);
+    
+   dbg("cmd_copy: copy ['%s' -> '%s']\n",fullpath1,fullpath2);
+
+
+   if(FPInfo1.b_has_wcard){ /* wild cards in source ==> cycle through directory and copy all matching files .... */
+
+      if( (strlen(FPInfo2.psz_filename) && FPInfo2.psz_filename[0] != '*') || 
+          (strlen(FPInfo2.psz_fileext)  && FPInfo2.psz_fileext[0] != '*') ){
+        printf("invalid second path argument, trailing '/' missing ? \n");
+        return 0;
+      }
+
+      arg_opendir.dp = &dir;
+      arg_opendir.path = fullpath1;
+
+      if(FPInfo1.psz_driveName[0])
+       res = ioctl(FPInfo1.psz_driveName,FS_IOCTL_OPEN_DIR,&arg_opendir);
+     else res = ioctl(FPInfo1.psz_cdrive,FS_IOCTL_OPEN_DIR,&arg_opendir);
+   
+      if (res) { put_rc(res); return 0; }
+
+      for(;;) {
+        arg_readdir.dp = &dir;
+        arg_readdir.fno = &Finfo;
+
+        if(FPInfo1.psz_driveName[0])
+         res = ioctl(FPInfo1.psz_driveName,FS_IOCTL_READ_DIR,&arg_readdir);
+        else res = ioctl(FPInfo1.psz_cdrive,FS_IOCTL_READ_DIR,&arg_readdir);
+        
+        if ((res != FR_OK) || !Finfo.fname[0]) break;
+
+        if( Finfo.fattrib == AM_VOL ) continue; /* Volume Label */
+        if( Finfo.fattrib == AM_DIR ) continue; /* Directory */
+        if( Finfo.fattrib == AM_LFN ) continue; /* LFN Entry (not supported yet) */
+
+        if (wildcmp(FPInfo1.psz_wcard, Finfo.fname)) {        
+          sprintf(src,"%s%s",fullpath1,Finfo.fname);
+          sprintf(dst,"%s%s",fullpath2,Finfo.fname);          
+          _copy(src, dst);
+        } else {
+          dbg(" %s ---> no match =(\n",Finfo.fname);
+          continue;
+        }                    
+    }
+    
+    if(FPInfo1.psz_driveName[0])
+          res = ioctl(FPInfo1.psz_driveName,FS_IOCTL_CLOSE_DIR,&dir);       
+    else res = ioctl(FPInfo1.psz_cdrive,FS_IOCTL_CLOSE_DIR,&dir); 
+
+   }else{
+    // standard (no wildcard) copy
+    dbg("standard copy ....\n");
+    //printf(" %s ==> %s\n",fullpath1,fullpath2);
+    _copy(fullpath1, fullpath2);
+   }
+
+   return 0;
+}
+
 
 int cmd_fopen  (char * args){
   /* fopen <file> <mode> - Open a file (OK) */
@@ -2785,22 +2975,9 @@ int main (int argc, char *argv[])
 {
   int ii; 
 
-  /* allocate memeory ... */ 
-  FPInfo.psz_driveName  = (char*)malloc(_MAX_DRIVE_NAME);
-  FPInfo.psz_deviceID   = (char*)malloc(_MAX_DEVICE_ID);
-  FPInfo.psz_path     = (char*)malloc(_MAX_PATH);
-  FPInfo.psz_filename   = (char*)malloc(_MAX_FILENAME);
-  FPInfo.psz_fileext    = (char*)malloc(_MAX_FILEEXT);
-  FPInfo.psz_cdrive   = (char*)malloc(_MAX_DRIVE_NAME);
-  FPInfo.psz_cpath    = (char*)malloc(_MAX_PATH);
-  
-   if( !FPInfo.psz_driveName || !FPInfo.psz_deviceID || !FPInfo.psz_path || !FPInfo.psz_filename ||
-      !FPInfo.psz_fileext || !FPInfo.psz_fileext || !FPInfo.psz_cpath )
-  {
-    printf(" error allocating memory for FPInfo....\n");
-    exit(1);
-  }
 
+  init_cmd();
+  
   sprintf(FPInfo.psz_cpath,"/");
   ioctl(NULL,FS_IOCTL_GETDRV,FPInfo.psz_cdrive);
 
@@ -2826,8 +3003,6 @@ int main (int argc, char *argv[])
    (unsigned long) &__BUILD_DATE - (unsigned long) &_start,
    (unsigned long) &__BUILD_NUMBER - (unsigned long) &_start);
 
-
-  init_cmd();
 
   shell(prompt, &cmd_env, internalCommands, hlptxt, 0); // call the shell ....
 

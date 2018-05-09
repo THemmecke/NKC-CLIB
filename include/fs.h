@@ -453,6 +453,9 @@ struct fpinfo
   
   char* psz_cdrive;	// current drive, use if no drive information is given
   char* psz_cpath;	// current path, use if no path information is given
+
+  BOOL  b_has_wcard;   // filename contains wildcard symbols ('*', '?')
+  char* psz_wcard;    // wildcard string
 };
 
 /* check given filepath and fill filepath structure, returns CFP_OK if fp points to a valid (i.e. a complete) filepath 

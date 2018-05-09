@@ -16,7 +16,8 @@ int cmd_cls(void);
 int cmd_chdir(char *);
 int cmd_copy(char *);
 int cmd_dir(char *);
-int cmd_dir_fat(char *,char* pd);
+
+int cmd_dir_fat(char *,char* pd,BOOL b_has_wcard,char* wc );
 int cmd_mkdir(char *);
 int cmd_rmdir(char *);
 int cmd_rename(char *);

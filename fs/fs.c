@@ -320,185 +320,203 @@ int dn2expart(char* devicename){  /* convert devicename to extended partition */
 
 unsigned char checkfp(char* fp, struct fpinfo *pfpinfo)
 {
-    char* p;
-    char* pstr;
-    unsigned int n;
-	char tmp[255];
-	unsigned char res = 0;
-	
-	#ifdef CONFIG_DEBUG_FS
-    strncpy(dbgstr,fp,DBGSTR_LEN); dbgstr[DBGSTR_LEN]=0;
-	fs_dbg(" fs.c|checkfp: (%s) pfpinfo@0x%08x...\n",dbgstr,pfpinfo);
-	#endif
-	
-	// initialize struct
-	//memset(pfpinfo,0,sizeof(struct fpinfo));
-	// initialize struct
-	*pfpinfo->psz_driveName = 0;
-	*pfpinfo->psz_deviceID = 0;
-	pfpinfo->c_deviceNO = 0;
-	pfpinfo->n_partition = 0;
-	*pfpinfo->psz_path = 0;
-	*pfpinfo->psz_filename = 0;
-	pfpinfo->c_separator = 0;
-	*pfpinfo->psz_fileext = 0;
-	pfpinfo->b_extended = 0; 
-    pfpinfo->n_extpart = 0; 
-	
-    pstr = fp;
+  char* p;
+  char* pstr;
+  unsigned int n;
+  char tmp[255];
+  unsigned char res = 0;
+  
+  #ifdef CONFIG_DEBUG_FS
+  strncpy(dbgstr,fp,DBGSTR_LEN); dbgstr[DBGSTR_LEN]=0;
+  fs_dbg(" fs.c|checkfp: (%s) ...\n",dbgstr);
+  #endif
+  
+  *pfpinfo->psz_driveName = 0;
+  *pfpinfo->psz_deviceID = 0;
+  pfpinfo->c_deviceNO = 0;
+  pfpinfo->n_partition = 0;
+  *pfpinfo->psz_path = 0;
+  *pfpinfo->psz_filename = 0;
+  pfpinfo->c_separator = 0;
+  *pfpinfo->psz_fileext = 0;
+  pfpinfo->b_extended = 0; 
+  pfpinfo->n_extpart = 0; 
+  pfpinfo->b_has_wcard = 0;
+  *pfpinfo->psz_wcard = 0;
+  
+  pstr = fp;
 
-	while (*pstr == ' ') pstr++; // skip whitespace
-	
-	// ======================== DRIVE ====================================================================
-	// extract drive information	
-	p = strchr(pstr,':');   
+  while (*pstr == ' ') pstr++; // skip whitespace
+  
+  // ======================== DRIVE ====================================================================
+  // extract drive information  
+  p = strchr(pstr,':');   
 
-    if(p){ // copy drive
-	  
-	  n=(unsigned int)(p-pstr); 	// length of drive name	 
-	  fs_dbg("   ->  n  = %d\n",n);
-	  
-	  if(n==0 || n > _MAX_DRIVE_NAME){
-	    fs_lldbgwait(" fs.c|checkfp: fail(1) (EINDRV)\n");
-	    return EINVDRV; 
-	  }
-	 	else
-	  {
-	    strncpy(pfpinfo->psz_driveName,pstr,n);	// copy drive to psz_driveName	    
-	    (pfpinfo->psz_driveName)[n] = 0;      
-	    fs_dbg("   ->  psz_driveName  = %s\n",pfpinfo->psz_driveName);
+  if(p){ // copy drive
+    
+    n=(unsigned int)(p-pstr);   // length of drive name  
+    fs_dbg("   ->  n  = %d\n",n);
+    
+    if(n==0 || n > _MAX_DRIVE_NAME){
+      fs_dbg(" fs.c|checkfp: fail(n > _MAX_DRIVE_NAME)\n");
+      return EINVDRV; 
+    }
+    else
+    {
+      strncpy(pfpinfo->psz_driveName,pstr,n); // copy drive to psz_driveName      
+      (pfpinfo->psz_driveName)[n] = 0;        // terminate string
+      fs_dbg("   ->  psz_driveName  = %s\n",pfpinfo->psz_driveName);
 
-	    pstr+=n+1;
-	    
-	    switch(n){	   	
-	      case 1: // jados drive name (0,1,2...A,B,C....)
-			fs_lldbgwait(" fs.c|checkfp: got jados/alias drive ...\n");
-			pfpinfo->psz_deviceID = pfpinfo->psz_driveName;	// copy drive to psz_deviceID
-			pfpinfo->n_partition = pfpinfo->c_deviceNO = 0; // or: =  pfpinfo->psz_deviceID - (int)'A';
-			break;
-		  case 3:	
-			// FIXME: handle floppy disks (fd0, fd1 ....)
-		  	fs_lldbgwait(" fs.c|checkfp: got floppy drive ...\n");
-		  	break;
-	      default:  // other drive name (hda0,sdb1,sda0x1 ...)
-			fs_lldbgwait(" fs.c|checkfp: regular drive ...\n");				
-			strncpy(pfpinfo->psz_deviceID, pfpinfo->psz_driveName, 2);	// copy device ID to psz_deviceID (2 letters)
-			(pfpinfo->psz_deviceID)[2] = 0;					// terminating NULL
+      pstr+=n+1; // advance pointer to next char after ':'
+      
 
-			#ifdef CONFIG_DEBUG_FS
-    		strncpy(dbgstr,pfpinfo->psz_deviceID,DBGSTR_LEN); dbgstr[DBGSTR_LEN]=0;		
-			fs_dbg("   ->  psz_deviceID  = %s\n",dbgstr);
-			#endif
-			pfpinfo->c_deviceNO = (pfpinfo->psz_driveName)[2];		// copy device 'number' to c_deviceNO (1 letter) if not floppy
-			fs_dbg("   ->  c_deviceNO  = %c\n",pfpinfo->c_deviceNO);
+      // check length of drive name, maybe we could check fstable here and store pfstab pointer
+      switch(n){      
+        case 1: // jados drive name (0,1,2...A,B,C....)
+          printf(" fs.c|checkfp: got jados/alias drive ...\n");
+          strcpy(pfpinfo->psz_deviceID, pfpinfo->psz_driveName); // copy drive to psz_deviceID
+          pfpinfo->n_partition = pfpinfo->c_deviceNO = 0; // or: =  pfpinfo->psz_deviceID - (int)'A';
+          break;
+        case 3: 
+          // FIXME: handle floppy disks (fd0, fd1 ....)
+          fs_dbg(" fs.c|checkfp: got floppy drive ...\n");
+          break;
 
-			n=0;
-			while( isdigit( (pfpinfo->psz_driveName)[3+n] ) ) {		// n digits
-			  tmp[n] = (pfpinfo->psz_driveName)[3+n];
-			  n++;		  
-			}
-			tmp[n] = 0;			
-			
-			pfpinfo->n_partition = atoi(tmp);	// copy partition number (n digits/numbers)
-			fs_dbg("   ->  partition %d  \n",pfpinfo->n_partition);
+        default:  // other drive name (hda0,sdb1,sda0x1 ...)
+          fs_dbg(" fs.c|checkfp: regular drive ...\n");       
+          strncpy(pfpinfo->psz_deviceID, pfpinfo->psz_driveName, 2);  // copy device ID to psz_deviceID (2 letters)
+          (pfpinfo->psz_deviceID)[2] = 0;         // terminating NULL
 
-			if((pfpinfo->psz_driveName)[3+n] == 'x'){
-				// extended partition				
-				n++;
-				pfpinfo->b_extended = 1;
-				while( isdigit( (pfpinfo->psz_driveName)[3+n] ) ) {		// n digits
-			  		tmp[n] = (pfpinfo->psz_driveName)[3+n];
-			  		n++;		  
-				}
-				tmp[n] = 0;
-				pfpinfo->n_extpart = atoi(tmp);	// copy extended partition number (n digits/numbers)
-				fs_dbg("   ->  extended partition %d  \n",pfpinfo->n_extpart);
-    		}
-		break;
-	      						
-		
-	    }	    	    	  	  
-	   }
-	}else{ // terminate
-	    fs_lldbgwait(" fs.c|checkfp: fail(3) (EINDRV)\n");
-	    res = EINVDRV; 	
-	}		
-	
-	// ======================== PATH ====================================================================	
-	// look for the last occurence of a '/' delimiter
-	p=strrchr(pstr,'/');        
-    if(p){
-	  n=(unsigned int)(p-pstr);
-	  n++;
-	  if(n > _MAX_PATH){
-	    fs_lldbgwait(" fs.c|checkfp: fail(4) (ENOPATH)\n");
-	    return ENOPATH;
-	  }
-	  strncpy(pfpinfo->psz_path,pstr,n);
-	  (pfpinfo->psz_path)[n]=0;       
-	  pstr+=n;	  
-	  
-    }else{ // no path given
-	   (pfpinfo->psz_path)[0] = '/';
-	   (pfpinfo->psz_path)[1] = 0; 
-	}
+          #ifdef CONFIG_DEBUG_FS
+          strncpy(dbgstr,pfpinfo->psz_deviceID,DBGSTR_LEN); dbgstr[DBGSTR_LEN]=0;   
+          fs_dbg("   ->  psz_deviceID  = %s\n",dbgstr);
+          #endif
+          pfpinfo->c_deviceNO = (pfpinfo->psz_driveName)[2];    // copy device 'number' to c_deviceNO (1 letter) if not floppy
+          fs_dbg("   ->  c_deviceNO  = %c\n",pfpinfo->c_deviceNO);
+
+          n=0;
+          while( isdigit( (pfpinfo->psz_driveName)[3+n] ) ) {   // n digits
+            tmp[n] = (pfpinfo->psz_driveName)[3+n];
+            n++;      
+          }
+          tmp[n] = 0;     
           
-    if(*pstr == '.')  { // special file handling ('.' and '..')
-	  if(pfpinfo->psz_path[strlen(pfpinfo->psz_path)-1] != '/')
-	    strcat(pfpinfo->psz_path,"/");
-	  strcat(pfpinfo->psz_path,".");
-	  pstr++;
-	  if(*pstr == '.') {
-	    strcat(pfpinfo->psz_path,"./");
-	    pstr++;
-	  }else{
-	     strcat(pfpinfo->psz_path,"/");
-	  }	  
-	}
-	
-    // ======================== FILENAME.EXT ====================================================================	
+          pfpinfo->n_partition = atoi(tmp); // copy partition number (n digits/numbers)
+          fs_dbg("   ->  partition %d  \n",pfpinfo->n_partition);
+
+          if((pfpinfo->psz_driveName)[3+n] == 'x'){
+            // extended partition       
+            n++;
+            pfpinfo->b_extended = 1;
+            while( isdigit( (pfpinfo->psz_driveName)[3+n] ) ) {   // n digits
+                tmp[n] = (pfpinfo->psz_driveName)[3+n];
+                n++;      
+            }
+            tmp[n] = 0;
+            pfpinfo->n_extpart = atoi(tmp); // copy extended partition number (n digits/numbers)
+            fs_dbg("   ->  extended partition %d  \n",pfpinfo->n_extpart);
+          }
+          break;
+                      
+      
+      } /* switch(n) */
+
+
+     }
+  }else{ // terminate (no drive information)
+      fs_dbg(" fs.c|checkfp: fail(no drive information) (EINDRV)\n");
+      res = EINVDRV;
+  }   
+  
+  /* ======================== PATH ==================================================================== */
+  /* 
+   * FIXME: everthing after the last '/' is considered a filename, but could also be a directory in a FAT file system !!
+   *        ==> this has to be checked in the calling function !
+  */
+
+  p=strrchr(pstr,'/');   /* look for the last occurence of a '/' delimiter */     
+  if(p){
+    n=(unsigned int)(p-pstr);
+     n++;
+    if(n > _MAX_PATH){
+       fs_dbg(" fs.c|checkfp: fail(path too long) (ENOPATH)\n");
+       return ENOPATH;
+    }
+    strncpy(pfpinfo->psz_path,pstr,n); /* copy path */
+    pstr+=n;                           /* advance pointer */
+
+    if((pfpinfo->psz_path)[n-1] != '/'){ /* path should end with '/' */
+      (pfpinfo->psz_path)[n]='/';
+      n++;
+    }
+
+    (pfpinfo->psz_path)[n]=0;          /* and terminate */    
+  }
+          
+  if(*pstr == '.')  { // special "file" handling ('.' and '..' are path information)
+    strcat(pfpinfo->psz_path,".");
+    pstr++;
+    if(*pstr == '.') {
+      strcat(pfpinfo->psz_path,"./");
+      pstr++;
+    }else{
+       strcat(pfpinfo->psz_path,"/");
+    }   
+  }
+  
+  // ======================== FILENAME.EXT ==================================================================== 
         
-    if(_STRLEN(pstr) > _MAX_FILENAME) {
-	  fs_lldbgwait(" fs.c|checkfp: fail(6) (ENOFILE)\n");
-	  return ENOFILE; 
-	}
-	
-    strcpy(pfpinfo->psz_filename,pstr);         	
-		
-    // look for filename delimiter and try to split filename and extension
-	p=strchr(pfpinfo->psz_filename,'.');
-        if(p) { 
-	  n=(unsigned int)(p-pfpinfo->psz_filename);	
-	  (pfpinfo->psz_filename)[n] = 0;
-	  pfpinfo->c_separator = '.';       
-	  pstr+=n+1;		      
-	  // rest has to be fileextension
-	  if(_STRLEN(pstr) > _MAX_FILEEXT) {
-	    fs_lldbgwait(" fs.c|checkfp: fail(7) (ENOFILE)\n");
-	    return ENOFILE;
-	  }
-	  strcpy(pfpinfo->psz_fileext,pstr);  	  			
-	}
+  if(_STRLEN(pstr) > _MAX_FILENAME) {
+    fs_dbg(" fs.c|checkfp: fail(filename too long)\n");
+    return ENOFILE;
+  }
+  
+  strcpy(pfpinfo->psz_filename,pstr); /* copy filename+extension to psz_filename */
+    
+  /* look for filename delimiter and try to split filename and extension */
+  p=strchr(pfpinfo->psz_filename,'.');
+  if(p) { 
+    n=(unsigned int)(p-pfpinfo->psz_filename);  
+    (pfpinfo->psz_filename)[n] = 0;       /* remove extension from psz_filename */
+    pfpinfo->c_separator = '.';           /* store the separator, which is always '.' here */
+    pstr+=n+1;                            /* advance pointer */
+    /* rest has to be fileextension */
+    if(_STRLEN(pstr) > _MAX_FILEEXT) {
+      fs_dbg(" fs.c|checkfp: fail(fileextension too long)\n");
+      return ENOFILE;
+    }
+    strcpy(pfpinfo->psz_fileext,pstr);     /* copy file extension to psz_fileext */       
+  }
 
-	if((pfpinfo->psz_filename)[0] == 0) {
-	  fs_lldbgwait(" fs.c|checkfp: fail(8) (ENOFILE)\n");
-	  return ENOFILE;
-	}				
+  if((pfpinfo->psz_filename)[0] == 0) {
+    fs_dbg(" fs.c|checkfp: fail(no filename given)\n");
+    return ENOFILE;
+  }   
 
-	fs_dbg(" fs.c|checkfp: SUCCESS...\n");
-	fs_dbg("     psz_driveName = %s\n",pfpinfo->psz_driveName);
-	fs_dbg("     psz_deviceID  = %s\n",pfpinfo->psz_deviceID);
-	fs_dbg("     c_deviceNO    = %c\n",pfpinfo->c_deviceNO);
-	fs_dbg("     n_partition   = %d\n",pfpinfo->n_partition);
-	fs_dbg("     psz_path      = %s\n",pfpinfo->psz_path);
-	fs_dbg("     psz_filename  = %s\n",pfpinfo->psz_filename);
-	fs_dbg("     c_separator   = %c\n",pfpinfo->c_separator);
-	fs_dbg("     psz_fileext   = %s\n",pfpinfo->psz_fileext);
-	fs_dbg("     psz_cdrive    = %s\n",pfpinfo->psz_cdrive);
-	fs_dbg("     psz_cpath     = %s\n",pfpinfo->psz_cpath);
-	fs_lldbgwait("... (KEY)\n");
-			
-	return res;
+  // ========================= wildcards ? ===========================================
+
+  if(strchr(pfpinfo->psz_filename,'*') || strchr(pfpinfo->psz_filename,'?') ||
+     strchr(pfpinfo->psz_fileext,'*') || strchr(pfpinfo->psz_fileext,'?')      ){
+    pfpinfo->b_has_wcard = 1;
+    sprintf(pfpinfo->psz_wcard,"%s%c%s",pfpinfo->psz_filename,pfpinfo->c_separator,pfpinfo->psz_fileext);
+  }   
+
+  fs_dbg(" fs.c|checkfp: SUCCESS...\n");
+  fs_dbg("     psz_driveName = '%s'\n",pfpinfo->psz_driveName);
+  fs_dbg("     psz_deviceID  = '%s'\n",pfpinfo->psz_deviceID);
+  fs_dbg("     c_deviceNO    = %c\n",pfpinfo->c_deviceNO);
+  fs_dbg("     n_partition   = %d\n",pfpinfo->n_partition);
+  fs_dbg("     psz_path      = '%s'\n",pfpinfo->psz_path);
+  fs_dbg("     psz_filename  = '%s'\n",pfpinfo->psz_filename);
+  fs_dbg("     c_separator   = %c\n",pfpinfo->c_separator);
+  fs_dbg("     psz_fileext   = '%s'\n",pfpinfo->psz_fileext);
+  fs_dbg("     psz_cdrive    = '%s'\n",pfpinfo->psz_cdrive);
+  fs_dbg("     psz_cpath     = '%s'\n",pfpinfo->psz_cpath); 
+  fs_dbg("     b_has_wcard   = %d\n",pfpinfo->b_has_wcard);
+  fs_dbg("     psz_wcard     = '%s'\n",pfpinfo->psz_wcard);
+  fs_dbg("... (KEY)\n");
+      
+  return res;
 }
 
 
@@ -1681,10 +1699,12 @@ void _ll_init_fs(void)  			// initialize filesystems (nkc/llopenc.c)
 	FPInfo.psz_filename = (char*)malloc(_MAX_FILENAME); if(FPInfo.psz_filename ==0 ) exit(ENOMEM);
 	FPInfo.psz_fileext = (char*)malloc(_MAX_FILEEXT); if(FPInfo.psz_fileext == 0 ) exit(ENOMEM);
 	FPInfo.psz_cdrive = (char*)malloc(_MAX_DRIVE_NAME); if(FPInfo.psz_cdrive == 0 ) exit(ENOMEM);
-	FPInfo.psz_cpath = (char*)malloc(_MAX_PATH); if(FPInfo.psz_cpath == 0 ) exit(ENOMEM); 	
+	FPInfo.psz_cpath = (char*)malloc(_MAX_PATH); if(FPInfo.psz_cpath == 0 ) exit(ENOMEM); 		
     FPInfo.psz_cdrive[0] = '?';					
 	FPInfo.psz_cdrive[1] = 0;	// current drive name, i.e. where the program was started : A,B, HDA1 etc
 	FPInfo.psz_cpath[0] = 0;	// current path name; for jados this is empty or '/'
+	FPInfo.psz_wcard = (char*)malloc(_MAX_PATH); if(FPInfo.psz_wcard == 0 ) exit(ENOMEM);
+	FPInfo.b_has_wcard = 0;
   	
  	fs_dbg("fs.c:  FPInfo.psz_cdrive = %s",FPInfo.psz_cdrive); 
 	fs_lldbgwait("\n");	
@@ -2145,6 +2165,7 @@ int _ll_rename(char *old , char *new)		// (nkc/llstd.S)
     FPInfoOld.psz_fileext = (char*)malloc(_MAX_FILEEXT);    if(FPInfoOld.psz_fileext == 0 ) exit(1);
     FPInfoOld.psz_cdrive = (char*)malloc(_MAX_DRIVE_NAME);     if(FPInfoOld.psz_cdrive == 0 ) exit(1);
     FPInfoOld.psz_cpath = (char*)malloc(_MAX_PATH);      if(FPInfoOld.psz_cpath == 0 ) exit(1);
+    FPInfoOld.psz_wcard = (char*)malloc(_MAX_PATH);      if(FPInfoOld.psz_wcard == 0 ) exit(1);
     strcpy(FPInfoOld.psz_cdrive,FPInfo.psz_cdrive);
     strcpy(FPInfoOld.psz_cpath,FPInfo.psz_cpath);
    
@@ -2266,6 +2287,7 @@ __LL_RENAME_END:
     free( FPInfoOld.psz_fileext);
     free( FPInfoOld.psz_cdrive);
     free( FPInfoOld.psz_cpath);
+    free( FPInfoOld.psz_wcard);
 		
 	return res;	
 }
