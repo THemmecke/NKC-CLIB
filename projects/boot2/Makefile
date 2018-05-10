@@ -22,10 +22,10 @@ LLD = m68k-uclinux-ld -M -T ram.ld -r --cref -o
 LOC = m68k-uclinux-objcopy -O binary
 
 
-OBJECTS=loader.o
+#OBJECTS=stage1.o stage2_S.o stage2_c.o
 #sd.o sdcard.o crc.o
 
-OUTFILE=loader
+OUTFILE=stage2
 LOADADDR=1024
 
 #OC=m68k-elf-objcopy
@@ -34,25 +34,33 @@ OC=m68k-uclinux-objcopy
 OD=m68k-uclinux-objdump 
 	
 
+#all: $(OBJECTS) $(BUILD_NUMBER_FILE)
+#	$(LD) $(BUILD_NUMBER_LDFLAGS)  $(LDFLAGS)  -o $(OUTFILE).elf $(OBJECTS) > $(OUTFILE).map;	
+#	$(BASEDIR)/tools/elf2bin -r -s -l $(LOADADDR) -o $(OUTFILE).68k $(OUTFILE).elf; \
+#	#$(OC) -I elf32-m68k -Sgv --adjust-start $(LOADADDR) $(OUTFILE).elf $(OUTFILE).68k; \
+#	#$(OD) -D -b binary -m m68k $(OUTFILE).68k > $(OUTFILE).dis;\
+#	#cp $(OUTFILE).68k NKC68K.ROM
 
-#all: $(OBJECTS)	
-#	$(LD)  $(OUTFILE).elf $(CLIBPATH)/startup.o $(OBJECTS) -static --whole-archive -l$(CLIB) > $(OUTFILE).map; \
-#	#elf2bin -s -v -l $(LOADADDR) -o $(OUTFILE).68k $(OUTFILE).elf; \
-#	$(OC) -I elf32-m68k -O binary -Sgv --adjust-start $(LOADADDR) $(OUTFILE).elf $(OUTFILE).68k; \
-#	$(OD) -D -b binary -m m68k $(OUTFILE).68k > $(OUTFILE).dis
+all:
+	$(MAKE) stage1
+	$(MAKE) stage2_c
+	$(MAKE) stage2_S
 
-all: $(OBJECTS) $(BUILD_NUMBER_FILE)
-	$(LD) $(BUILD_NUMBER_LDFLAGS)  $(LDFLAGS)  -o $(OUTFILE).elf $(OBJECTS) > $(OUTFILE).map;	
+stage2_c: stage2_c.o $(BUILD_NUMBER_FILE)
+	$(LD) $(BUILD_NUMBER_LDFLAGS)  $(LDFLAGS)  -o $(OUTFILE).elf stage2_c.o > $(OUTFILE).map;	
 	$(BASEDIR)/tools/elf2bin -r -s -l $(LOADADDR) -o $(OUTFILE).68k $(OUTFILE).elf; \
-	#$(OC) -I elf32-m68k -Sgv --adjust-start $(LOADADDR) $(OUTFILE).elf $(OUTFILE).68k; \
-	#$(OD) -D -b binary -m m68k $(OUTFILE).68k > $(OUTFILE).dis;\
-	#cp $(OUTFILE).68k NKC68K.ROM
+
+stage2_S: stage2_S.o
+	$(LLD) stage2_S.elf stage2_S.o > stage2_S.map; \
+	$(BASEDIR)/tools/elf2bin -s -l $(LOADADDR) -o stage2_S.68k stage2_S.elf; \
+	$(OD) -D -b binary -m m68k stage2_S.68k > stage2_S.dis
+
+stage1: stage1.o
+	$(LLD) stage1.elf stage1.o > stage1.map; \
+	$(BASEDIR)/tools/elf2bin -s -l $(LOADADDR) -o stage1.68k stage1.elf; \
+	$(OD) -D -b binary -m m68k stage1.68k > stage1.dis
 
 
-mbr: mbr.o
-	$(LLD) mbr.elf mbr.o > mbr.map; \
-	$(BASEDIR)/tools/elf2bin -s -l $(LOADADDR) -o mbr.68k mbr.elf; \
-	$(OD) -D -b binary -m m68k mbr.68k > mbr.dis
 
 # Include build number rules.
 include buildnumber.mak	
@@ -78,4 +86,5 @@ clean:
 	rm -f *.map; \
 	rm -f *.elf; \
 	rm -f *.flt; \
+	rm -f *.dis; \
 	rm -f *.ROM

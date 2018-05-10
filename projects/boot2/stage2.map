@@ -220,5 +220,5 @@ attempt to open /home/myCLib/CLIBS/projects/boot2/../../lib/libCC.a succeeded
 (/home/myCLib/CLIBS/projects/boot2/../../lib/libCC.a)sqrt.o
 (/home/myCLib/CLIBS/projects/boot2/../../lib/libCC.a)tan.o
 (/home/myCLib/CLIBS/projects/boot2/../../lib/libCC.a)tanh.o
-attempt to open loader.o succeeded
-loader.o
+attempt to open stage2_c.o succeeded
+stage2_c.o

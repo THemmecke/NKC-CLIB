@@ -1,0 +1,1377 @@
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+ram              0x00000000         0x001fffff
+ram_rs           0x00000000         0x001fffff
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.text           0x00000000     0x67ba
+                0x00000000                _stext = .
+ *(.text)
+ .text          0x00000000     0x67ba stage2_S.o
+                0x00000000                start
+                0x00000004                m001
+                0x0000000e                m002
+                0x00000026                mainend
+                0x00000028                mtools
+                0x00000054                lp00
+                0x0000005a                lp01
+                0x0000007e                lp02
+                0x00000090                lp03
+                0x000000aa                lp04
+                0x000000c6                lp05
+                0x000000d2                Exit
+                0x000000d8                ClrVars
+                0x000000e2                cb01
+                0x000000ea                SetLW
+                0x00000106                GetDrive
+                0x0000020e                GDerr2
+                0x00000212                GDerr
+                0x00000214                GDex
+                0x0000021a                Ident
+                0x00000236                idlp01
+                0x00000244                idlp02
+                0x00000256                idlp10
+                0x00000264                idlp20
+                0x00000266                idex
+                0x0000026c                ReadSec
+                0x00000296                RdSlp01
+                0x000002a6                RdSerr
+                0x000002b2                RdSerr1
+                0x000002b6                RdSlp20
+                0x000002be                RdSex
+                0x000002c4                WriteSec
+                0x000002ee                WrSlp01
+                0x000002fe                WrSerr
+                0x0000030a                WrSerr1
+                0x0000030e                WrSlp20
+                0x00000316                WrSex
+                0x0000031c                LBHLW
+                0x00000320                LowBHigh
+                0x00000324                FSChk
+                0x0000034e                FSC01
+                0x0000035c                FSC02
+                0x0000036a                FSC03
+                0x00000378                FSC10
+                0x00000386                ALW
+                0x000003a4                ALW01
+                0x000003ae                ALW10
+                0x000003b8                ALW11
+                0x000003be                LoadLW
+                0x000003f8                LLW00
+                0x00000408                LLW01
+                0x00000418                LLW02
+                0x0000042c                LLW20
+                0x00000446                LLWOK
+                0x0000044a                LLWErr
+                0x0000044c                LLWExit
+                0x00000452                LoadBPB
+                0x0000056a                LBPB01
+                0x00000578                LBPB02
+                0x0000061c                LdBPBerr
+                0x0000061e                LdBPBex
+                0x00000624                UpFATBu
+                0x00000636                UFB01
+                0x00000656                UFB02
+                0x00000678                UFBerr
+                0x0000067a                UFBex
+                0x00000680                FFAT
+                0x000006a4                FFATerr
+                0x000006a6                FFATex
+                0x000006ac                GNCN
+                0x000006f2                GNCNerr1
+                0x000006fe                GNCNerr
+                0x00000700                GNCNex
+                0x00000706                GFSOC
+                0x00000728                AllClus
+                0x00000748                AClp01
+                0x0000075a                ACerr
+                0x0000075c                ACex
+                0x00000762                FFC
+                0x0000076a                FFClp01
+                0x0000078a                FFClp03
+                0x00000790                FFClp02
+                0x00000792                FFClp04
+                0x000007ac                FFClp05
+                0x000007b2                FFCerr1
+                0x000007be                FFCerr
+                0x000007c0                FFCex
+                0x000007c6                WCN
+                0x000007e2                WCN01
+                0x0000081a                WCNerr
+                0x0000081c                WCNex
+                0x00000822                FFFD
+                0x00000830                FFFD01
+                0x00000856                FFFD10
+                0x000008b0                FFFDExit
+                0x000008b6                FindName
+                0x000008da                FN01
+                0x000008e8                FNerr
+                0x000008ee                FNex
+                0x000008f4                fload
+                0x00000918                fld01
+                0x00000930                fld02
+                0x00000940                fld03
+                0x00000960                fld04
+                0x00000984                fld10
+                0x00000988                flderr
+                0x0000098a                fldex
+                0x00000990                fsave
+                0x000009b4                fsv01
+                0x000009dc                fsv02
+                0x000009f2                fsv03
+                0x00000a24                fsv10
+                0x00000a36                fsv20
+                0x00000a42                fsverr
+                0x00000a44                fsvex
+                0x00000a4a                remove
+                0x00000a88                rmv01
+                0x00000ac8                rmv02
+                0x00000ae6                rmv03
+                0x00000b10                rmv04
+                0x00000b3c                rmv05
+                0x00000b58                rmv06
+                0x00000b5c                rmverr1
+                0x00000b60                rmverr
+                0x00000b62                rmvex
+                0x00000b6a                rmvex1
+                0x00000b70                rem
+                0x00000b98                rem02
+                0x00000ba0                rem03
+                0x00000bc6                rem04
+                0x00000bce                rem05
+                0x00000bd2                remerr
+                0x00000bd4                remex
+                0x00000bda                QForm
+                0x00000bea                QF01
+                0x00000c04                QF02
+                0x00000c20                QF03
+                0x00000c3a                QF04
+                0x00000c60                QF05
+                0x00000cc2                QFerr
+                0x00000cc4                QFex
+                0x00000cca                ScRD
+                0x00000ce8                ScRD01
+                0x00000cfa                ScRDerr
+                0x00000cfc                ScRDex
+                0x00000d02                ScSD
+                0x00000d10                ScSD01
+                0x00000d2e                ScSD02
+                0x00000d54                ScSDerr
+                0x00000d56                ScSDex
+                0x00000d5c                ScODS
+                0x00000d7c                ScODS01
+                0x00000d96                ScODS10
+                0x00000dd2                ScODS21
+                0x00000df2                ScODS20
+                0x00000e32                ScODS30
+                0x00000e94                ScODS90
+                0x00000eae                ScODSerr
+                0x00000eb4                ScODSex
+                0x00000ebc                FileDsct
+                0x00000ed2                FNE
+                0x00000ee4                FNE01
+                0x00000ef8                FNE02
+                0x00000f06                FNEerr
+                0x00000f08                FNEex
+                0x00000f0e                MFN
+                0x00000f32                MFN01
+                0x00000f56                MFN03
+                0x00000f5a                MFN04
+                0x00000f66                MFN11
+                0x00000f66                MFN10
+                0x00000f72                MFN12
+                0x00000f7e                MFNex
+                0x00000f84                FFD
+                0x00000fb2                FFD01
+                0x00000fdc                FFD03
+                0x00000fe0                FFD04
+                0x00000fec                FFD11
+                0x00000fec                FFD10
+                0x00001000                FFD12
+                0x0000100c                FFD13
+                0x00001070                FFDerr
+                0x00001072                FFDex
+                0x00001078                chdir
+                0x000010b0                cd01
+                0x000010e8                cd02
+                0x000010f8                cd03
+                0x000010fa                cdok
+                0x00001114                cd04
+                0x00001118                cd05
+                0x00001132                cderr1
+                0x0000113e                cderr
+                0x0000114a                cdex
+                0x00001150                UFE
+                0x0000128e                UFEerr
+                0x00001290                UFEex
+                0x00001296                mkdir
+                0x000012c6                mkdir00
+                0x0000130c                mkdir03
+                0x0000132a                mkdir01
+                0x0000133c                mkdir02
+                0x000013c2                mkdirer1
+                0x000013c6                mkdirerr
+                0x000013c8                mkdirex
+                0x000013d0                mkdirex1
+                0x000013d6                SRD
+                0x000013ee                SRD01
+                0x000013fc                SRDerr
+                0x000013fe                SRDex
+                0x00001404                SSD
+                0x0000140c                SSD01
+                0x0000142a                SSD02
+                0x0000144c                SSDerr
+                0x0000144e                SSDex
+                0x00001454                SODS
+                0x00001472                SODS01
+                0x00001490                SODS02
+                0x000014a6                SODSerr
+                0x000014a8                SODSex
+                0x000014ae                MNFE
+                0x000014d2                MNFE01
+                0x000014d8                MNFE02
+                0x000014f6                MNFE02a
+                0x000014f8                MNFE03
+                0x00001530                MNFE04
+                0x0000154a                MNFE05
+                0x00001574                MNFE10
+                0x000015a6                MNFEerr
+                0x000015a8                MNFEex
+                0x000015ae                FindFrst
+                0x000015f8                FF01
+                0x0000160c                FF02
+                0x00001622                FFerr
+                0x00001624                FFex
+                0x0000162a                FindNext
+                0x0000163e                FNX01
+                0x00001656                FNX02
+                0x00001686                FNX03
+                0x000016ca                FNX10
+                0x000016ea                FNX11
+                0x00001722                FNX14
+                0x00001730                FNX15
+                0x00001776                FNXnf
+                0x00001786                FNXerr
+                0x00001794                FNXex
+                0x0000179a                dircmp
+                0x000017bc                dircmp01
+                0x000017d0                dircmp02
+                0x000017d4                dircmp03
+                0x000017da                dircmp05
+                0x000017e6                dircmp10
+                0x00001804                dircmp11
+                0x00001818                dircmp12
+                0x0000181c                dircmp13
+                0x00001822                dircmp15
+                0x0000182c                dircmp20
+                0x00001830                dircmp30
+                0x00001832                dircmpex
+                0x00001838                csts
+                0x00001844                key
+                0x00001848                key01
+                0x0000185e                ci
+                0x0000186e                cls
+                0x0000187e                co2
+                0x0000188e                idetest
+                0x0000189e                idedisk
+                0x000018ae                sdtest
+                0x000018be                sddisk
+                0x000018ce                writetxt
+                0x000018d2                wrtxt01
+                0x000018de                wrtxtex
+                0x000018e4                tron
+                0x000018f2                troff
+                0x000018fc                trout
+                0x0000190c                troex
+                0x0000190e                regout
+                0x00001a08                printl
+                0x00001a24                print8d
+                0x00001a48                prt8d01
+                0x00001a62                prt8d02
+                0x00001a78                print4d
+                0x00001aa2                print2d
+                0x00001ac8                prt2d02
+                0x00001ad6                print2d0
+                0x00001afc                prt2d002
+                0x00001b0a                wert
+                0x00001b20                werterr
+                0x00001b2a                getuhr
+                0x00001b3a                delay500
+                0x00001b4e                strgcopy
+                0x00001b54                sc00
+                0x00001b60                strgcmp
+                0x00001b66                scmp01
+                0x00001b72                scmperr
+                0x00001b74                scmpex
+                0x00001b7a                toupper
+                0x00001b8a                tupex
+                0x00001b8c                bcdtobin
+                0x00001ba6                JNA
+                0x00001bcc                JNA00
+                0x00001be0                JNA01
+                0x00001bf0                JNAex
+                0x00001bf6                JNAex1
+                0x00001bfc                JN
+                0x00001c20                JN01
+                0x00001c34                JNex
+                0x00001c3a                JNex1
+                0x00001c3e                NameOut
+                0x00001c56                NO01
+                0x00001c64                NO02
+                0x00001c72                NO03
+                0x00001c80                NO04
+                0x00001c94                trap10
+                0x00001cc2                trap10ex
+                0x00001cc8                jclrfcb
+                0x00001cd2                jcf01
+                0x00001cde                jfinfo
+                0x00001cf2                jfillfcb
+                0x00001d06                jfload
+                0x00001d34                jfld01
+                0x00001d48                jfld02
+                0x00001d56                jfldex
+                0x00001d5c                jfsave
+                0x00001d96                jfsv01
+                0x00001dac                jfsv02
+                0x00001dba                jfsvex
+                0x00001dc0                jmotoff
+                0x00001dd0                jusradr
+                0x00001de0                jconvlw
+                0x00001df8                jclw01
+                0x00001e0a                jclwerr
+                0x00001e18                jclwex
+                0x00001e1a                JMDL
+                0x00001e40                JMDL01
+                0x00001e52                JMDL02
+                0x00001e60                JMDL03
+                0x00001e72                JMDL04
+                0x00001e94                JMDL05
+                0x00001ea8                JMDL06
+                0x00001eac                JMDLerr
+                0x00001eba                JMDLex
+                0x00001ec0                JMFN
+                0x00001edc                JMFN01
+                0x00001f00                JMFN03
+                0x00001f04                JMFN04
+                0x00001f12                JMFN10
+                0x00001f1a                JMFN12
+                0x00001f20                JMFNex
+                0x00001f26                jtom
+                0x00001f52                jtom01
+                0x00001fd8                jtom01a
+                0x0000201e                jtom02
+                0x00002042                jtomerr3
+                0x0000204e                jtomerr2
+                0x0000205a                jtomerr1
+                0x00002062                jtomerr
+                0x00002064                jtomex
+                0x0000206a                mtoj
+                0x0000208e                mtoj01
+                0x000020cc                mtoj02
+                0x000020da                parser
+                0x000020f4                pars02
+                0x0000210a                pars02a
+                0x00002140                pars02b
+                0x00002144                pars03
+                0x00002152                pars04
+                0x0000217c                pars04a
+                0x000021da                pars04b
+                0x0000222c                pars04c
+                0x00002280                pars04ex
+                0x00002288                pars06
+                0x00002288                pars05
+                0x000022aa                pars06z
+                0x000022b2                pars06a
+                0x000022d4                pars06b
+                0x000022da                pars07
+                0x000022ea                pars07a
+                0x00002302                pars07ex
+                0x00002310                pars08
+                0x00002334                pars08a
+                0x00002340                pars08ex
+                0x0000234e                pars10
+                0x00002378                pars10a
+                0x000023b2                pars10b
+                0x000023f2                pars10c
+                0x00002438                pars10ex
+                0x00002440                pars11
+                0x00002440                pars12
+                0x00002458                pars12a
+                0x00002476                pars12b
+                0x0000247c                pars13
+                0x0000248c                pars13a
+                0x0000249c                pars14
+                0x000024be                pars14a
+                0x000024ca                parsex
+                0x000024da                parserr
+                0x000024e8                parsclr
+                0x000024f4                parsclr1
+                0x00002500                mdiska
+                0x0000251c                mda00a
+                0x00002558                mda00
+                0x00002566                mda01
+                0x0000256c                mda02
+                0x00002584                mdaerr
+                0x0000258c                mdaex
+                0x00002592                mdiskb
+                0x000025a8                komma
+                0x000025ba                komma02
+                0x000025c2                komma01
+                0x000025c4                hdpars
+                0x000025d4                hdp02
+                0x000025da                hdp03
+                0x000025e4                hdp04
+                0x000025f0                hdp05
+                0x00002600                hdperr
+                0x00002602                hdpex
+                0x00002604                mdira
+                0x00002666                mdira00
+                0x00002668                mdira00a
+                0x0000266a                mdira01
+                0x0000269e                mdira05
+                0x000026a0                mdira06
+                0x000026b4                mdira10
+                0x000026bc                mdiraer
+                0x000026c2                mdiraex
+                0x000026c8                mdirausg
+                0x000026d2                mdaus02
+                0x000026e8                mdaus03
+                0x00002718                mdaus04
+                0x0000272e                mdaus04a
+                0x00002740                mdaus04b
+                0x00002752                mdaus04c
+                0x00002764                mdaus04d
+                0x00002770                mdaus05
+                0x0000278c                mdaus06
+                0x0000282c                mdausex
+                0x00002832                dirkopf
+                0x0000287e                dirfuss
+                0x000028de                nextside
+                0x000028fa                nxtsd01
+                0x00002934                nxtsdex
+                0x0000293a                mcda
+                0x00002956                mcda01
+                0x00002972                mcdaerr
+                0x0000297a                mcdaex
+                0x000029a8                mcdaex1
+                0x000029ae                mmda
+                0x000029ca                mmda02
+                0x000029ec                mmda03
+                0x000029f4                mmdaerr
+                0x000029f8                mmdaex
+                0x000029fe                mloada
+                0x00002a1e                mlda00a
+                0x00002a3e                mlda01
+                0x00002a4c                mlda01a
+                0x00002a76                mlda02
+                0x00002aae                mlda10
+                0x00002ab2                mldaerr
+                0x00002aba                mldaerr1
+                0x00002ac2                mldaex
+                0x00002ad4                mldaex1
+                0x00002ada                mcopya
+                0x00002afc                mcpa01
+                0x00002b1e                mcpa01a
+                0x00002b48                mcpa02
+                0x00002bac                mcpa03
+                0x00002bd2                mcpa03a
+                0x00002c12                mcpa04
+                0x00002c1a                mcpa05
+                0x00002c30                mcpa10
+                0x00002c54                mcpa11
+                0x00002c90                mcpa12
+                0x00002d38                mcpa13
+                0x00002d56                mcpa13a
+                0x00002d80                mcpa14
+                0x00002d9a                mcpaerr
+                0x00002da0                mcpaex
+                0x00002db4                mcpaex1
+                0x00002dba                mdela
+                0x00002dd6                mdela02
+                0x00002dde                mdelaer
+                0x00002de2                mdelaex
+                0x00002de8                mforma
+                0x00002e54                mfrma01
+                0x00002e96                mfrmaer
+                0x00002e98                mfrmaex
+                0x00002e9e                hilfe
+                0x00002eba                error
+                0x00002ee4                err01
+                0x00002ef2                errex
+                0x00002ef8                option
+                0x00002f3c                opt00
+                0x00002f62                opt01
+                0x00002f74                opt02
+                0x00002f86                opt03
+                0x00002f98                opt04
+                0x00002faa                opt05
+                0x00002fae                opterr
+                0x00002fc0                optex
+                0x00002fc6                NKCtoIBM
+                0x00002ff6                NtI01
+                0x00002ff8                NtI02
+                0x00002ffc                NtI03
+                0x00003002                NtI04
+                0x00003008                NtI05
+                0x0000300a                NtI05a
+                0x0000301a                NtI05b
+                0x00003020                NtI05c
+                0x00003024                NtI10
+                0x00003028                NtI20
+                0x00003034                NtIerr
+                0x00003042                NtIex
+                0x00003048                IBMtoNKC
+                0x0000306e                ItN01
+                0x0000307c                ItN02
+                0x00003080                ItN03
+                0x00003090                ItN03a
+                0x00003098                ItN04
+                0x000030b6                ItN04b
+                0x000030c4                ItN04c
+                0x000030c8                ItN04a
+                0x000030ca                ItN05
+                0x000030cc                ItN05a
+                0x000030dc                ItN05b
+                0x000030e2                ItN05c
+                0x000030e6                ItN10
+                0x000030ea                ItN20
+                0x00003112                ItN201
+                0x00003118                ItN20a
+                0x00003124                ItNerr
+                0x00003132                ItNex
+                0x00003138                umbruch
+                0x00003158                TABtoSP
+                0x0000316a                TtS01
+                0x0000317a                TtS02
+                0x0000318a                mover
+                0x00003190                mvrlp01
+                0x000031a0                txtinit
+                0x000031c1                txtcrlf
+                0x000031c4                txtnv
+                0x000031dd                txtcyl
+                0x000031e8                txtsec
+                0x000031f3                txthd
+                0x000031fb                txtpart
+                0x00003208                txtnr
+                0x0000320b                txtstart
+                0x00003212                txt1start
+                0x00003219                txtgroess
+                0x00003220                txt1groess
+                0x00003229                txtMB
+                0x00003233                txt1MB
+                0x00003237                txttyp
+                0x00003245                txtkomma
+                0x00003247                txtstern
+                0x0000324a                txtaktlw
+                0x0000325f                txtweit
+                0x00003281                txtforts
+                0x00003292                txtlw
+                0x0000329c                txtverz
+                0x000032a9                txterst
+                0x000032b2                txtdirat
+                0x000032b9                txtdatei
+                0x000032c4                txtdir
+                0x000032d5                txtbyte
+                0x000032db                txt15spc
+                0x000032eb                txtroot
+                0x000032ed                txtjn
+                0x000032f9                txtjna
+                0x0000330a                txtueber
+                0x00003319                txtcopy
+                0x00003321                txtdel
+                0x0000332a                txtloe
+                0x00003333                txtload
+                0x00003343                txtakt
+                0x00003353                txtform
+                0x00003361                txtform1
+                0x00003372                terr1
+                0x0000338a                terr2
+                0x000033aa                terr3
+                0x000033bf                terr4
+                0x000033d7                terr5
+                0x000033f8                terr6
+                0x0000341d                terr7
+                0x0000342b                terr8
+                0x0000343f                terr9
+                0x00003458                terr10
+                0x00003477                terr11
+                0x00003493                terr12
+                0x000034a8                terr13
+                0x000034c4                terr14
+                0x000034db                terr15
+                0x000034f4                terr16
+                0x0000350a                terr17
+                0x00003519                terr18
+                0x00003532                terr19
+                0x00003548                terr20
+                0x00003568                terr21
+                0x00003580                terr22
+                0x0000359b                terr23
+                0x000035b8                terr24
+                0x000035d3                terr25
+                0x000035ec                terr26
+                0x00003605                terr27
+                0x0000361a                terr28
+                0x00003640                terr29
+                0x0000367c                OStype
+                0x0000446c                fd0
+                0x0000446c                hdtab
+                0x00004472                fd1
+                0x00004478                hda1
+                0x0000447e                hda2
+                0x00004484                hda3
+                0x0000448a                hda4
+                0x00004490                hdb1
+                0x00004496                hdb2
+                0x0000449c                hdb3
+                0x000044a2                hdb4
+                0x000044a8                sda1
+                0x000044ae                sda2
+                0x000044b4                sda3
+                0x000044ba                sda4
+                0x000044c0                sdb1
+                0x000044c6                sdb2
+                0x000044cc                sdb3
+                0x000044d2                sdb4
+                0x000044d8                res1
+                0x000044de                res2
+                0x000044e4                res3
+                0x000044ea                res4
+                0x000044f0                res5
+                0x000044f6                res6
+                0x000044fc                res7
+                0x00004502                res8
+                0x00004508                res9
+                0x0000450e                res10
+                0x00004514                res11
+                0x0000451a                res12
+                0x00004520                res13
+                0x00004526                res14
+                0x0000452c                hmdisk
+                0x000045ac                hmdir
+                0x000046d4                hmcd
+                0x000047e8                hmcopy
+                0x000048e4                hmload
+                0x000049d0                hmmd
+                0x00004a38                hmdel
+                0x00004ab4                hmform
+                0x00004af8                traptab
+                0x00004b1c                hilfetab
+                0x00004b1c                trapend
+                0x00004b40                opttab
+                0x00004b40                htabend
+                0x00004b64                errtab
+                0x00004b64                otabend
+                0x00004bdc                errend
+                0x00004bdc                nkctab
+                0x00004be4                ibmtab
+                0x00004bec                allgm
+                0x00004bec                VarStart
+                0x00004c2c                parsdat
+                0x00004c6c                hddat
+                0x0000506c                fatbuff
+                0x0000526c                dirbuff
+                0x0000546c                buffer
+                0x0000566c                jfcb
+                0x0000569c                jdirbuf
+                0x0000669c                filebuff
+                0x0000679c                meldung
+                0x0000679c                VarEnd
+                0x000067af                fname
+                0x000067ba                ende
+                0x000067ba                _etext = ALIGN (0x2)
+
+.data           0x000067bc        0x0
+                0x000067bc                _sdata = .
+ *(.data)
+ .data          0x000067bc        0x0 stage2_S.o
+                0x000067bc                _edata = ALIGN (0x2)
+
+.bss            0x000067bc        0x0
+                0x000067bc                _sbss = .
+ *(.bss)
+ .bss           0x000067bc        0x0 stage2_S.o
+ *(COMMON)
+                0x000067bc                _ebss = ALIGN (0x2)
+LOAD stage2_S.o
+OUTPUT(stage2_S.elf elf32-m68k)
+
+Cross Reference Table
+
+Symbol                                            File
+ACerr                                             stage2_S.o
+ACex                                              stage2_S.o
+AClp01                                            stage2_S.o
+ALW                                               stage2_S.o
+ALW01                                             stage2_S.o
+ALW10                                             stage2_S.o
+ALW11                                             stage2_S.o
+AllClus                                           stage2_S.o
+ClrVars                                           stage2_S.o
+Exit                                              stage2_S.o
+FF01                                              stage2_S.o
+FF02                                              stage2_S.o
+FFAT                                              stage2_S.o
+FFATerr                                           stage2_S.o
+FFATex                                            stage2_S.o
+FFC                                               stage2_S.o
+FFCerr                                            stage2_S.o
+FFCerr1                                           stage2_S.o
+FFCex                                             stage2_S.o
+FFClp01                                           stage2_S.o
+FFClp02                                           stage2_S.o
+FFClp03                                           stage2_S.o
+FFClp04                                           stage2_S.o
+FFClp05                                           stage2_S.o
+FFD                                               stage2_S.o
+FFD01                                             stage2_S.o
+FFD03                                             stage2_S.o
+FFD04                                             stage2_S.o
+FFD10                                             stage2_S.o
+FFD11                                             stage2_S.o
+FFD12                                             stage2_S.o
+FFD13                                             stage2_S.o
+FFDerr                                            stage2_S.o
+FFDex                                             stage2_S.o
+FFFD                                              stage2_S.o
+FFFD01                                            stage2_S.o
+FFFD10                                            stage2_S.o
+FFFDExit                                          stage2_S.o
+FFerr                                             stage2_S.o
+FFex                                              stage2_S.o
+FN01                                              stage2_S.o
+FNE                                               stage2_S.o
+FNE01                                             stage2_S.o
+FNE02                                             stage2_S.o
+FNEerr                                            stage2_S.o
+FNEex                                             stage2_S.o
+FNX01                                             stage2_S.o
+FNX02                                             stage2_S.o
+FNX03                                             stage2_S.o
+FNX10                                             stage2_S.o
+FNX11                                             stage2_S.o
+FNX14                                             stage2_S.o
+FNX15                                             stage2_S.o
+FNXerr                                            stage2_S.o
+FNXex                                             stage2_S.o
+FNXnf                                             stage2_S.o
+FNerr                                             stage2_S.o
+FNex                                              stage2_S.o
+FSC01                                             stage2_S.o
+FSC02                                             stage2_S.o
+FSC03                                             stage2_S.o
+FSC10                                             stage2_S.o
+FSChk                                             stage2_S.o
+FileDsct                                          stage2_S.o
+FindFrst                                          stage2_S.o
+FindName                                          stage2_S.o
+FindNext                                          stage2_S.o
+GDerr                                             stage2_S.o
+GDerr2                                            stage2_S.o
+GDex                                              stage2_S.o
+GFSOC                                             stage2_S.o
+GNCN                                              stage2_S.o
+GNCNerr                                           stage2_S.o
+GNCNerr1                                          stage2_S.o
+GNCNex                                            stage2_S.o
+GetDrive                                          stage2_S.o
+IBMtoNKC                                          stage2_S.o
+Ident                                             stage2_S.o
+ItN01                                             stage2_S.o
+ItN02                                             stage2_S.o
+ItN03                                             stage2_S.o
+ItN03a                                            stage2_S.o
+ItN04                                             stage2_S.o
+ItN04a                                            stage2_S.o
+ItN04b                                            stage2_S.o
+ItN04c                                            stage2_S.o
+ItN05                                             stage2_S.o
+ItN05a                                            stage2_S.o
+ItN05b                                            stage2_S.o
+ItN05c                                            stage2_S.o
+ItN10                                             stage2_S.o
+ItN20                                             stage2_S.o
+ItN201                                            stage2_S.o
+ItN20a                                            stage2_S.o
+ItNerr                                            stage2_S.o
+ItNex                                             stage2_S.o
+JMDL                                              stage2_S.o
+JMDL01                                            stage2_S.o
+JMDL02                                            stage2_S.o
+JMDL03                                            stage2_S.o
+JMDL04                                            stage2_S.o
+JMDL05                                            stage2_S.o
+JMDL06                                            stage2_S.o
+JMDLerr                                           stage2_S.o
+JMDLex                                            stage2_S.o
+JMFN                                              stage2_S.o
+JMFN01                                            stage2_S.o
+JMFN03                                            stage2_S.o
+JMFN04                                            stage2_S.o
+JMFN10                                            stage2_S.o
+JMFN12                                            stage2_S.o
+JMFNex                                            stage2_S.o
+JN                                                stage2_S.o
+JN01                                              stage2_S.o
+JNA                                               stage2_S.o
+JNA00                                             stage2_S.o
+JNA01                                             stage2_S.o
+JNAex                                             stage2_S.o
+JNAex1                                            stage2_S.o
+JNex                                              stage2_S.o
+JNex1                                             stage2_S.o
+LBHLW                                             stage2_S.o
+LBPB01                                            stage2_S.o
+LBPB02                                            stage2_S.o
+LLW00                                             stage2_S.o
+LLW01                                             stage2_S.o
+LLW02                                             stage2_S.o
+LLW20                                             stage2_S.o
+LLWErr                                            stage2_S.o
+LLWExit                                           stage2_S.o
+LLWOK                                             stage2_S.o
+LdBPBerr                                          stage2_S.o
+LdBPBex                                           stage2_S.o
+LoadBPB                                           stage2_S.o
+LoadLW                                            stage2_S.o
+LowBHigh                                          stage2_S.o
+MFN                                               stage2_S.o
+MFN01                                             stage2_S.o
+MFN03                                             stage2_S.o
+MFN04                                             stage2_S.o
+MFN10                                             stage2_S.o
+MFN11                                             stage2_S.o
+MFN12                                             stage2_S.o
+MFNex                                             stage2_S.o
+MNFE                                              stage2_S.o
+MNFE01                                            stage2_S.o
+MNFE02                                            stage2_S.o
+MNFE02a                                           stage2_S.o
+MNFE03                                            stage2_S.o
+MNFE04                                            stage2_S.o
+MNFE05                                            stage2_S.o
+MNFE10                                            stage2_S.o
+MNFEerr                                           stage2_S.o
+MNFEex                                            stage2_S.o
+NKCtoIBM                                          stage2_S.o
+NO01                                              stage2_S.o
+NO02                                              stage2_S.o
+NO03                                              stage2_S.o
+NO04                                              stage2_S.o
+NameOut                                           stage2_S.o
+NtI01                                             stage2_S.o
+NtI02                                             stage2_S.o
+NtI03                                             stage2_S.o
+NtI04                                             stage2_S.o
+NtI05                                             stage2_S.o
+NtI05a                                            stage2_S.o
+NtI05b                                            stage2_S.o
+NtI05c                                            stage2_S.o
+NtI10                                             stage2_S.o
+NtI20                                             stage2_S.o
+NtIerr                                            stage2_S.o
+NtIex                                             stage2_S.o
+OStype                                            stage2_S.o
+QF01                                              stage2_S.o
+QF02                                              stage2_S.o
+QF03                                              stage2_S.o
+QF04                                              stage2_S.o
+QF05                                              stage2_S.o
+QFerr                                             stage2_S.o
+QFex                                              stage2_S.o
+QForm                                             stage2_S.o
+RdSerr                                            stage2_S.o
+RdSerr1                                           stage2_S.o
+RdSex                                             stage2_S.o
+RdSlp01                                           stage2_S.o
+RdSlp20                                           stage2_S.o
+ReadSec                                           stage2_S.o
+SODS                                              stage2_S.o
+SODS01                                            stage2_S.o
+SODS02                                            stage2_S.o
+SODSerr                                           stage2_S.o
+SODSex                                            stage2_S.o
+SRD                                               stage2_S.o
+SRD01                                             stage2_S.o
+SRDerr                                            stage2_S.o
+SRDex                                             stage2_S.o
+SSD                                               stage2_S.o
+SSD01                                             stage2_S.o
+SSD02                                             stage2_S.o
+SSDerr                                            stage2_S.o
+SSDex                                             stage2_S.o
+ScODS                                             stage2_S.o
+ScODS01                                           stage2_S.o
+ScODS10                                           stage2_S.o
+ScODS20                                           stage2_S.o
+ScODS21                                           stage2_S.o
+ScODS30                                           stage2_S.o
+ScODS90                                           stage2_S.o
+ScODSerr                                          stage2_S.o
+ScODSex                                           stage2_S.o
+ScRD                                              stage2_S.o
+ScRD01                                            stage2_S.o
+ScRDerr                                           stage2_S.o
+ScRDex                                            stage2_S.o
+ScSD                                              stage2_S.o
+ScSD01                                            stage2_S.o
+ScSD02                                            stage2_S.o
+ScSDerr                                           stage2_S.o
+ScSDex                                            stage2_S.o
+SetLW                                             stage2_S.o
+TABtoSP                                           stage2_S.o
+TtS01                                             stage2_S.o
+TtS02                                             stage2_S.o
+UFB01                                             stage2_S.o
+UFB02                                             stage2_S.o
+UFBerr                                            stage2_S.o
+UFBex                                             stage2_S.o
+UFE                                               stage2_S.o
+UFEerr                                            stage2_S.o
+UFEex                                             stage2_S.o
+UpFATBu                                           stage2_S.o
+VarEnd                                            stage2_S.o
+VarStart                                          stage2_S.o
+WCN                                               stage2_S.o
+WCN01                                             stage2_S.o
+WCNerr                                            stage2_S.o
+WCNex                                             stage2_S.o
+WrSerr                                            stage2_S.o
+WrSerr1                                           stage2_S.o
+WrSex                                             stage2_S.o
+WrSlp01                                           stage2_S.o
+WrSlp20                                           stage2_S.o
+WriteSec                                          stage2_S.o
+allgm                                             stage2_S.o
+bcdtobin                                          stage2_S.o
+buffer                                            stage2_S.o
+cb01                                              stage2_S.o
+cd01                                              stage2_S.o
+cd02                                              stage2_S.o
+cd03                                              stage2_S.o
+cd04                                              stage2_S.o
+cd05                                              stage2_S.o
+cderr                                             stage2_S.o
+cderr1                                            stage2_S.o
+cdex                                              stage2_S.o
+cdok                                              stage2_S.o
+chdir                                             stage2_S.o
+ci                                                stage2_S.o
+cls                                               stage2_S.o
+co2                                               stage2_S.o
+csts                                              stage2_S.o
+delay500                                          stage2_S.o
+dirbuff                                           stage2_S.o
+dircmp                                            stage2_S.o
+dircmp01                                          stage2_S.o
+dircmp02                                          stage2_S.o
+dircmp03                                          stage2_S.o
+dircmp05                                          stage2_S.o
+dircmp10                                          stage2_S.o
+dircmp11                                          stage2_S.o
+dircmp12                                          stage2_S.o
+dircmp13                                          stage2_S.o
+dircmp15                                          stage2_S.o
+dircmp20                                          stage2_S.o
+dircmp30                                          stage2_S.o
+dircmpex                                          stage2_S.o
+dirfuss                                           stage2_S.o
+dirkopf                                           stage2_S.o
+ende                                              stage2_S.o
+err01                                             stage2_S.o
+errend                                            stage2_S.o
+errex                                             stage2_S.o
+error                                             stage2_S.o
+errtab                                            stage2_S.o
+fatbuff                                           stage2_S.o
+fd0                                               stage2_S.o
+fd1                                               stage2_S.o
+filebuff                                          stage2_S.o
+fld01                                             stage2_S.o
+fld02                                             stage2_S.o
+fld03                                             stage2_S.o
+fld04                                             stage2_S.o
+fld10                                             stage2_S.o
+flderr                                            stage2_S.o
+fldex                                             stage2_S.o
+fload                                             stage2_S.o
+fname                                             stage2_S.o
+fsave                                             stage2_S.o
+fsv01                                             stage2_S.o
+fsv02                                             stage2_S.o
+fsv03                                             stage2_S.o
+fsv10                                             stage2_S.o
+fsv20                                             stage2_S.o
+fsverr                                            stage2_S.o
+fsvex                                             stage2_S.o
+getuhr                                            stage2_S.o
+hda1                                              stage2_S.o
+hda2                                              stage2_S.o
+hda3                                              stage2_S.o
+hda4                                              stage2_S.o
+hdb1                                              stage2_S.o
+hdb2                                              stage2_S.o
+hdb3                                              stage2_S.o
+hdb4                                              stage2_S.o
+hddat                                             stage2_S.o
+hdp02                                             stage2_S.o
+hdp03                                             stage2_S.o
+hdp04                                             stage2_S.o
+hdp05                                             stage2_S.o
+hdpars                                            stage2_S.o
+hdperr                                            stage2_S.o
+hdpex                                             stage2_S.o
+hdtab                                             stage2_S.o
+hilfe                                             stage2_S.o
+hilfetab                                          stage2_S.o
+hmcd                                              stage2_S.o
+hmcopy                                            stage2_S.o
+hmdel                                             stage2_S.o
+hmdir                                             stage2_S.o
+hmdisk                                            stage2_S.o
+hmform                                            stage2_S.o
+hmload                                            stage2_S.o
+hmmd                                              stage2_S.o
+htabend                                           stage2_S.o
+ibmtab                                            stage2_S.o
+idedisk                                           stage2_S.o
+idetest                                           stage2_S.o
+idex                                              stage2_S.o
+idlp01                                            stage2_S.o
+idlp02                                            stage2_S.o
+idlp10                                            stage2_S.o
+idlp20                                            stage2_S.o
+jcf01                                             stage2_S.o
+jclrfcb                                           stage2_S.o
+jclw01                                            stage2_S.o
+jclwerr                                           stage2_S.o
+jclwex                                            stage2_S.o
+jconvlw                                           stage2_S.o
+jdirbuf                                           stage2_S.o
+jfcb                                              stage2_S.o
+jfillfcb                                          stage2_S.o
+jfinfo                                            stage2_S.o
+jfld01                                            stage2_S.o
+jfld02                                            stage2_S.o
+jfldex                                            stage2_S.o
+jfload                                            stage2_S.o
+jfsave                                            stage2_S.o
+jfsv01                                            stage2_S.o
+jfsv02                                            stage2_S.o
+jfsvex                                            stage2_S.o
+jmotoff                                           stage2_S.o
+jtom                                              stage2_S.o
+jtom01                                            stage2_S.o
+jtom01a                                           stage2_S.o
+jtom02                                            stage2_S.o
+jtomerr                                           stage2_S.o
+jtomerr1                                          stage2_S.o
+jtomerr2                                          stage2_S.o
+jtomerr3                                          stage2_S.o
+jtomex                                            stage2_S.o
+jusradr                                           stage2_S.o
+key                                               stage2_S.o
+key01                                             stage2_S.o
+komma                                             stage2_S.o
+komma01                                           stage2_S.o
+komma02                                           stage2_S.o
+lp00                                              stage2_S.o
+lp01                                              stage2_S.o
+lp02                                              stage2_S.o
+lp03                                              stage2_S.o
+lp04                                              stage2_S.o
+lp05                                              stage2_S.o
+m001                                              stage2_S.o
+m002                                              stage2_S.o
+mainend                                           stage2_S.o
+mcda                                              stage2_S.o
+mcda01                                            stage2_S.o
+mcdaerr                                           stage2_S.o
+mcdaex                                            stage2_S.o
+mcdaex1                                           stage2_S.o
+mcopya                                            stage2_S.o
+mcpa01                                            stage2_S.o
+mcpa01a                                           stage2_S.o
+mcpa02                                            stage2_S.o
+mcpa03                                            stage2_S.o
+mcpa03a                                           stage2_S.o
+mcpa04                                            stage2_S.o
+mcpa05                                            stage2_S.o
+mcpa10                                            stage2_S.o
+mcpa11                                            stage2_S.o
+mcpa12                                            stage2_S.o
+mcpa13                                            stage2_S.o
+mcpa13a                                           stage2_S.o
+mcpa14                                            stage2_S.o
+mcpaerr                                           stage2_S.o
+mcpaex                                            stage2_S.o
+mcpaex1                                           stage2_S.o
+mda00                                             stage2_S.o
+mda00a                                            stage2_S.o
+mda01                                             stage2_S.o
+mda02                                             stage2_S.o
+mdaerr                                            stage2_S.o
+mdaex                                             stage2_S.o
+mdaus02                                           stage2_S.o
+mdaus03                                           stage2_S.o
+mdaus04                                           stage2_S.o
+mdaus04a                                          stage2_S.o
+mdaus04b                                          stage2_S.o
+mdaus04c                                          stage2_S.o
+mdaus04d                                          stage2_S.o
+mdaus05                                           stage2_S.o
+mdaus06                                           stage2_S.o
+mdausex                                           stage2_S.o
+mdela                                             stage2_S.o
+mdela02                                           stage2_S.o
+mdelaer                                           stage2_S.o
+mdelaex                                           stage2_S.o
+mdira                                             stage2_S.o
+mdira00                                           stage2_S.o
+mdira00a                                          stage2_S.o
+mdira01                                           stage2_S.o
+mdira05                                           stage2_S.o
+mdira06                                           stage2_S.o
+mdira10                                           stage2_S.o
+mdiraer                                           stage2_S.o
+mdiraex                                           stage2_S.o
+mdirausg                                          stage2_S.o
+mdiska                                            stage2_S.o
+mdiskb                                            stage2_S.o
+meldung                                           stage2_S.o
+mforma                                            stage2_S.o
+mfrma01                                           stage2_S.o
+mfrmaer                                           stage2_S.o
+mfrmaex                                           stage2_S.o
+mkdir                                             stage2_S.o
+mkdir00                                           stage2_S.o
+mkdir01                                           stage2_S.o
+mkdir02                                           stage2_S.o
+mkdir03                                           stage2_S.o
+mkdirer1                                          stage2_S.o
+mkdirerr                                          stage2_S.o
+mkdirex                                           stage2_S.o
+mkdirex1                                          stage2_S.o
+mlda00a                                           stage2_S.o
+mlda01                                            stage2_S.o
+mlda01a                                           stage2_S.o
+mlda02                                            stage2_S.o
+mlda10                                            stage2_S.o
+mldaerr                                           stage2_S.o
+mldaerr1                                          stage2_S.o
+mldaex                                            stage2_S.o
+mldaex1                                           stage2_S.o
+mloada                                            stage2_S.o
+mmda                                              stage2_S.o
+mmda02                                            stage2_S.o
+mmda03                                            stage2_S.o
+mmdaerr                                           stage2_S.o
+mmdaex                                            stage2_S.o
+mover                                             stage2_S.o
+mtoj                                              stage2_S.o
+mtoj01                                            stage2_S.o
+mtoj02                                            stage2_S.o
+mtools                                            stage2_S.o
+mvrlp01                                           stage2_S.o
+nextside                                          stage2_S.o
+nkctab                                            stage2_S.o
+nxtsd01                                           stage2_S.o
+nxtsdex                                           stage2_S.o
+opt00                                             stage2_S.o
+opt01                                             stage2_S.o
+opt02                                             stage2_S.o
+opt03                                             stage2_S.o
+opt04                                             stage2_S.o
+opt05                                             stage2_S.o
+opterr                                            stage2_S.o
+optex                                             stage2_S.o
+option                                            stage2_S.o
+opttab                                            stage2_S.o
+otabend                                           stage2_S.o
+pars02                                            stage2_S.o
+pars02a                                           stage2_S.o
+pars02b                                           stage2_S.o
+pars03                                            stage2_S.o
+pars04                                            stage2_S.o
+pars04a                                           stage2_S.o
+pars04b                                           stage2_S.o
+pars04c                                           stage2_S.o
+pars04ex                                          stage2_S.o
+pars05                                            stage2_S.o
+pars06                                            stage2_S.o
+pars06a                                           stage2_S.o
+pars06b                                           stage2_S.o
+pars06z                                           stage2_S.o
+pars07                                            stage2_S.o
+pars07a                                           stage2_S.o
+pars07ex                                          stage2_S.o
+pars08                                            stage2_S.o
+pars08a                                           stage2_S.o
+pars08ex                                          stage2_S.o
+pars10                                            stage2_S.o
+pars10a                                           stage2_S.o
+pars10b                                           stage2_S.o
+pars10c                                           stage2_S.o
+pars10ex                                          stage2_S.o
+pars11                                            stage2_S.o
+pars12                                            stage2_S.o
+pars12a                                           stage2_S.o
+pars12b                                           stage2_S.o
+pars13                                            stage2_S.o
+pars13a                                           stage2_S.o
+pars14                                            stage2_S.o
+pars14a                                           stage2_S.o
+parsclr                                           stage2_S.o
+parsclr1                                          stage2_S.o
+parsdat                                           stage2_S.o
+parser                                            stage2_S.o
+parserr                                           stage2_S.o
+parsex                                            stage2_S.o
+print2d                                           stage2_S.o
+print2d0                                          stage2_S.o
+print4d                                           stage2_S.o
+print8d                                           stage2_S.o
+printl                                            stage2_S.o
+prt2d002                                          stage2_S.o
+prt2d02                                           stage2_S.o
+prt8d01                                           stage2_S.o
+prt8d02                                           stage2_S.o
+regout                                            stage2_S.o
+rem                                               stage2_S.o
+rem02                                             stage2_S.o
+rem03                                             stage2_S.o
+rem04                                             stage2_S.o
+rem05                                             stage2_S.o
+remerr                                            stage2_S.o
+remex                                             stage2_S.o
+remove                                            stage2_S.o
+res1                                              stage2_S.o
+res10                                             stage2_S.o
+res11                                             stage2_S.o
+res12                                             stage2_S.o
+res13                                             stage2_S.o
+res14                                             stage2_S.o
+res2                                              stage2_S.o
+res3                                              stage2_S.o
+res4                                              stage2_S.o
+res5                                              stage2_S.o
+res6                                              stage2_S.o
+res7                                              stage2_S.o
+res8                                              stage2_S.o
+res9                                              stage2_S.o
+rmv01                                             stage2_S.o
+rmv02                                             stage2_S.o
+rmv03                                             stage2_S.o
+rmv04                                             stage2_S.o
+rmv05                                             stage2_S.o
+rmv06                                             stage2_S.o
+rmverr                                            stage2_S.o
+rmverr1                                           stage2_S.o
+rmvex                                             stage2_S.o
+rmvex1                                            stage2_S.o
+sc00                                              stage2_S.o
+scmp01                                            stage2_S.o
+scmperr                                           stage2_S.o
+scmpex                                            stage2_S.o
+sda1                                              stage2_S.o
+sda2                                              stage2_S.o
+sda3                                              stage2_S.o
+sda4                                              stage2_S.o
+sdb1                                              stage2_S.o
+sdb2                                              stage2_S.o
+sdb3                                              stage2_S.o
+sdb4                                              stage2_S.o
+sddisk                                            stage2_S.o
+sdtest                                            stage2_S.o
+start                                             stage2_S.o
+strgcmp                                           stage2_S.o
+strgcopy                                          stage2_S.o
+terr1                                             stage2_S.o
+terr10                                            stage2_S.o
+terr11                                            stage2_S.o
+terr12                                            stage2_S.o
+terr13                                            stage2_S.o
+terr14                                            stage2_S.o
+terr15                                            stage2_S.o
+terr16                                            stage2_S.o
+terr17                                            stage2_S.o
+terr18                                            stage2_S.o
+terr19                                            stage2_S.o
+terr2                                             stage2_S.o
+terr20                                            stage2_S.o
+terr21                                            stage2_S.o
+terr22                                            stage2_S.o
+terr23                                            stage2_S.o
+terr24                                            stage2_S.o
+terr25                                            stage2_S.o
+terr26                                            stage2_S.o
+terr27                                            stage2_S.o
+terr28                                            stage2_S.o
+terr29                                            stage2_S.o
+terr3                                             stage2_S.o
+terr4                                             stage2_S.o
+terr5                                             stage2_S.o
+terr6                                             stage2_S.o
+terr7                                             stage2_S.o
+terr8                                             stage2_S.o
+terr9                                             stage2_S.o
+toupper                                           stage2_S.o
+trap10                                            stage2_S.o
+trap10ex                                          stage2_S.o
+trapend                                           stage2_S.o
+traptab                                           stage2_S.o
+troex                                             stage2_S.o
+troff                                             stage2_S.o
+tron                                              stage2_S.o
+trout                                             stage2_S.o
+tupex                                             stage2_S.o
+txt15spc                                          stage2_S.o
+txt1MB                                            stage2_S.o
+txt1groess                                        stage2_S.o
+txt1start                                         stage2_S.o
+txtMB                                             stage2_S.o
+txtakt                                            stage2_S.o
+txtaktlw                                          stage2_S.o
+txtbyte                                           stage2_S.o
+txtcopy                                           stage2_S.o
+txtcrlf                                           stage2_S.o
+txtcyl                                            stage2_S.o
+txtdatei                                          stage2_S.o
+txtdel                                            stage2_S.o
+txtdir                                            stage2_S.o
+txtdirat                                          stage2_S.o
+txterst                                           stage2_S.o
+txtform                                           stage2_S.o
+txtform1                                          stage2_S.o
+txtforts                                          stage2_S.o
+txtgroess                                         stage2_S.o
+txthd                                             stage2_S.o
+txtinit                                           stage2_S.o
+txtjn                                             stage2_S.o
+txtjna                                            stage2_S.o
+txtkomma                                          stage2_S.o
+txtload                                           stage2_S.o
+txtloe                                            stage2_S.o
+txtlw                                             stage2_S.o
+txtnr                                             stage2_S.o
+txtnv                                             stage2_S.o
+txtpart                                           stage2_S.o
+txtroot                                           stage2_S.o
+txtsec                                            stage2_S.o
+txtstart                                          stage2_S.o
+txtstern                                          stage2_S.o
+txttyp                                            stage2_S.o
+txtueber                                          stage2_S.o
+txtverz                                           stage2_S.o
+txtweit                                           stage2_S.o
+umbruch                                           stage2_S.o
+wert                                              stage2_S.o
+werterr                                           stage2_S.o
+writetxt                                          stage2_S.o
+wrtxt01                                           stage2_S.o
+wrtxtex                                           stage2_S.o
