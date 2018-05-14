@@ -21,3 +21,4 @@
 /projects/shell/*.bin
 /projects/shell/*.out
 /projects/shell/*.log
+/projects/boot2

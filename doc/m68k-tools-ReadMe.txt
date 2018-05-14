@@ -1,110 +1,102 @@
-base ditribution is /pub/uClinux/m68k-elf-tools/tools-20101118
--> http://www.uclinux.org/pub/uClinux/m68k-elf-tools/tools-20101118/
+The ToolChain runs on a 32 bit Ubuntu 14.04.3 LTS (Trusty Tahr).
+Alternatively it can be set up in a chroot environment, which ist recommended for better portability.
 
 
-Build on Ubuntu 14.04.3 LTS (Trusty Tahr)
-- GCC 4.5.1 
-  with gcc-4.5.1-psignal-const.patch
-- BinUtils 2.24
-- Linux 2.6.35
-
-Step by step build on XUbuntu 14.04.03 LTS:
+This ReadMe describes the chroot installation on a 64-bit XUbuntu 18.04 LTS in /var/chroot.
 
 
-- install Xubuntu in a VM with 'xubuntu-14.04.3-desktop-i386.iso' 
-- install additional packages:
-  sudo apt-get install libgmp-dev
-  sudo apt-get install libmpfr-dev
-  sudo apt-get install libmpc-dev
-  sudo apt-get install zlib1g-dev
-  sudo apt-get build-essential
-  
-- download m68k-elf-tools (http://www.uclinux.org/pub/uClinux/m68k-elf-tools/tools-20101118/):
-- download BinUtils 2.24 (http://ftp.gnu.org/gnu/binutils/binutils-2.24.tar.bz2)
+1) Install XUbuntu 18.04 LTS 64 Bit
 
-- you directory should look like this:
+2) set up chroot :
 
--rw-rw-r-- 1 torsten torsten 17501436 Oct 28 12:51 binutils-2.20.1.tar.bz2
--rwxrw-r-- 1 torsten torsten 22716802 Oct 28 12:57 binutils-2.24.tar.bz2
--rwxrw-r-- 1 torsten torsten    22354 Oct 28 13:02 build-uclinux-tools.sh
--rw-rw-r-- 1 torsten torsten   126099 Oct 28 12:48 elf2flt-20100914.tar.gz
--rw-rw-r-- 1 torsten torsten      338 Oct 28 12:48 gcc-4.5.1-psignal-const.patch
--rw-rw-r-- 1 torsten torsten 66121821 Oct 28 12:57 gcc-4.5.1.tar.bz2
--rw-rw-r-- 1 torsten torsten     1187 Oct 28 12:48 genromfs-0.5.1.tar.gz
--rw-rw-r-- 1 torsten torsten     1187 Oct 28 12:49 linux-2.6.35.tar.gz
--rw-rw-r-- 1 torsten torsten 99644910 Oct 28 12:56 m68k-uclinux-tools-20101118.sh
--rw-rw-r-- 1 torsten torsten     1187 Oct 28 12:49 uClibc-0.9.31-m68k.config
--rw-rw-r-- 1 torsten torsten     1187 Oct 28 12:49 uClibc-0.9.31.tar.bz2
+2.1) install your prefered editor (vim or nano or ...):
+sudo apt-get install vim
 
+2.2) install schroot and debootstrap packages:
+sudo apt-get install schroot
+sudo apt-get install debootstrap
+sudo mkdir /var/chroot
 
-- edit build-uclinux-tools.sh
-  - change: BINUTILSVERS="2.24"
-  
-- build 
+2.3) configure chroot:
+sudo vim /etc/schroot/schroot.conf
 
-  
-  
-  
-*********************************************************************************************************  
-- build in chroot on an arbitrary system (here XUbuntu 16.04-LTS (64Bit))
+add too the end of the file:
+
+[Trusty-Tahr]
+description=Ubuntu Trusty Tahr 32Bit
+location=/var/chroot
+priority=3
+users=user
+groups=sbuild
+root-groups=root
 
 
-setup basic chroot:
-  install chroot Trusty Thar (14.04LTS) 32Bit  in /var/chroot:
+2.4) install Trusty 32-Bit:
+sudo debootstrap --arch i386 trusty /var/chroot http://de.archive.ubuntu.com/ubuntu
 
-  -Install the schroot and debootstrap packages.
-   sudo apt-get install schroot
-   sudo apt-get install debootstrap  
-   
-  - create a directory for the chroot: sudo mkdir /var/chroot
-  
-  - open /etc/schroot/schroot.conf in a text editor: sudo vim /etc/schroot/schroot.conf
-  - add:
-    [Trusty-Tahr]
-    description=Ubuntu Trusty Tahr 32Bit
-    location=/var/chroot
-    priority=3
-    users=user
-    groups=sbuild
-    root-groups=root
-  
-  - install Trusty: debootstrap --arch i386 trusty /var/chroot http://de.archive.ubuntu.com/ubuntu
-  
-  - mount drives:
-    sudo mount -o bind /proc /var/chroot/proc
-    sudo mount -o bind /dev /var/chroot/dev
-    sudo mount -o bind /sys /var/chroot/sys
-  
-  - change to chroot: sudo chroot /var/chroot /bin/bash
+2.5) map chroot drives:
+sudo mount -o bind /proc /var/chroot/proc  
+sudo mount -o bind /dev /var/chroot/dev
+sudo mount -o bind /sys /var/chroot/sys    
 
-  - install:
-    sudo apt-get install patch
-    sudo apt-get install make
-    sudo apt-get install zlib1g-dev
-    sudo apt-get install libgmp-dev
-    sudo apt-get install libmpfr-dev
-    sudo apt-get install libmpc-dev  
-    
-    
-  - download m68k-elf-tools (http://www.uclinux.org/pub/uClinux/m68k-elf-tools/tools-20101118/):
-  - download BinUtils 2.24 (http://ftp.gnu.org/gnu/binutils/binutils-2.24.tar.bz2)
+2.6) enter chroot:
+sudo chroot /var/chroot /bin/bash
 
-  - your directory should look like this:
+2.7) install some stuff in chroot:
+sudo apt-get install vim
+sudo apt-get install patch          
+sudo apt-get install make       
+sudo apt-get install zlib1g-dev 
+sudo apt-get install libgmp-dev cd Download
+sudo apt-get install libmpfr-devsudo cp * /var/chroot/home/m68k-tools
+sudo apt-get install libmpc-dev   
+sudo apt-get install git  
 
-    -rw-rw-r-- 1 torsten torsten 17501436 Oct 28 12:51 binutils-2.20.1.tar.bz2
-    -rwxrw-r-- 1 torsten torsten 22716802 Oct 28 12:57 binutils-2.24.tar.bz2
-    -rwxrw-r-- 1 torsten torsten    22354 Oct 28 13:02 build-uclinux-tools.sh
-    -rw-rw-r-- 1 torsten torsten   126099 Oct 28 12:48 elf2flt-20100914.tar.gz
-    -rw-rw-r-- 1 torsten torsten      338 Oct 28 12:48 gcc-4.5.1-psignal-const.patch
-    -rw-rw-r-- 1 torsten torsten 66121821 Oct 28 12:57 gcc-4.5.1.tar.bz2
-    -rw-rw-r-- 1 torsten torsten     1187 Oct 28 12:48 genromfs-0.5.1.tar.gz
-    -rw-rw-r-- 1 torsten torsten     1187 Oct 28 12:49 linux-2.6.35.tar.gz
-    -rw-rw-r-- 1 torsten torsten 99644910 Oct 28 12:56 m68k-uclinux-tools-20101118.sh
-    -rw-rw-r-- 1 torsten torsten     1187 Oct 28 12:49 uClibc-0.9.31-m68k.config
-    -rw-rw-r-- 1 torsten torsten     1187 Oct 28 12:49 uClibc-0.9.31.tar.bz2 
+3) create directories:
 
-  - edit build-uclinux-tools.sh
-      - change: BINUTILSVERS="2.24"
-      
-  - build 
-    ./build-uclinux-tools.sh build
+cd home
+mkdir m68k-tools
+mkdir myCLIB
+
+3.1) download tool chain packages (not in chroot)
+http://www.uclinux.org/pub/uClinux/m68k-elf-tools/tools-20101118/
+http://ftp.gnu.org/gnu/binutils/binutils-2.24.tar.bz2
+
+3.2) open a terminal an copy files to chroot:
+cd Download
+sudo cp * /var/chroot/home/m68k-tools
+
+3.4) go to chroot (sudo chroot /var/chroot /bin/bash) and build the tools:
+
+3.5) edit 'build-uclinux-tools.sh' to use BinUtils Version 2.24
+change: BINUTILSVERS="2.24"
+
+cd home/m68k-tools
+
+3.6) make 'build-uclinux-tools.sh' executable:
+chmod 744 build-uclinux-tools.sh
+and start (this may take some time)
+./build-uclinux-tools.sh build
+
+
+4) in the meantime, still in chroot, clone CLIB:
+apt-get install git (if not already done)
+cd home/myCLIB
+git clone https://github.com/THemmecke/NKC-CLIB.git
+
+
+
+5) if build (3.6) was successfull the CLIB can be build:
+
+cd NKC-LIB
+make
+
+build test shell
+cd projetcts/shell/
+make
+
+
+--> NKC68K.ROM can be run on NKC.
+
+
+
