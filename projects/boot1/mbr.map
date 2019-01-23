@@ -1,0 +1,36 @@
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+ram              0x00000000         0x001fffff
+ram_rs           0x00000000         0x001fffff
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.text           0x00000000      0x170
+                0x00000000                _stext = .
+ *(.text)
+ .text          0x00000000      0x170 mbr.o
+                0x00000170                _etext = ALIGN (0x2)
+
+.data           0x00000170        0x0
+                0x00000170                _sdata = .
+ *(.data)
+ .data          0x00000170        0x0 mbr.o
+                0x00000170                _edata = ALIGN (0x2)
+
+.bss            0x00000170        0x0
+                0x00000170                _sbss = .
+ *(.bss)
+ .bss           0x00000170        0x0 mbr.o
+ *(COMMON)
+                0x00000170                _ebss = ALIGN (0x2)
+LOAD mbr.o
+OUTPUT(mbr.elf elf32-m68k)
+
+Cross Reference Table
+
+Symbol                                            File
+No symbols
