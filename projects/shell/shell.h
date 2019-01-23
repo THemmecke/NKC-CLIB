@@ -84,4 +84,7 @@ getline(struct LINE_ENV *penv,   /* line editor einvironment */
         union RESULT res,      /* result */
         unsigned char single);   /* only single character input ? (1) */
 
+void start_progress(void);
+void do_progress(void);
+
 #endif

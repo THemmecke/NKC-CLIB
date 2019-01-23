@@ -8,11 +8,14 @@
 
 #include <debug.h>
 
+#include "helper.h"
 #include "cmd.h"
 #include "shell.h"
 
 #include "fdisk.h"
 #include "wildcmp.h"
+
+#include "sys.h"
 
 #include "../../fs/fat/ff.h"
 #include "../../fs/nkc/fs_nkc.h"
@@ -70,16 +73,16 @@ extern int _ll_settime(struct tm *tm2);
 #define TEXT_CMDHELP_MEMINFO			41
 #define TEXT_CMDHELP_HISTORY			42
 #define TEXT_CMDHELP_FDISK        43
+#define TEXT_CMDHELP_SYS        44
+#define TEXT_CMDHELP_CLOCK    			45
 
-#define TEXT_CMDHELP_CLOCK    			44
 
-
-#define TEXT_CMDHELP                    45
+#define TEXT_CMDHELP                    46
 
 // TEST commands ...
-#define	TEXT_CMDHELP_SP					46
-#define	TEXT_CMDHELP_FILL				47
-#define	TEXT_CMDHELP_TEST				48
+#define	TEXT_CMDHELP_SP					47
+#define	TEXT_CMDHELP_FILL				48
+#define	TEXT_CMDHELP_TEST				49
 
 // Help text ... 
 static struct CMDHLP hlptxt[] =
@@ -255,7 +258,10 @@ static struct CMDHLP hlptxt[] =
             "pwd\n"},  
 {TEXT_CMDHELP_FDISK,
       "fdisk <device> - the fdisk utility\n",
-            "fdisk hda\n"},                     
+            "fdisk hda\n"},  
+{TEXT_CMDHELP_SYS,
+      "sys <device> <loader> <os> [test]- install bootloader, test=>testrun\n",
+            "sys hda0 MBR.68k OS.SYS\n"},                                
 	    
 // TEST -----
 {TEXT_CMDHELP_SP,             
@@ -277,10 +283,7 @@ static struct CMDHLP hlptxt[] =
                         "history\n"},	
 {TEXT_CMDHELP_CLOCK,             
                         "clock: show system clock (RTC)\n",
-                        "clock [MMDDhhmm[[CC]YY][.ss]]\n"},                                                  
-{TEXT_CMDHELP_TEST,             
-                        "test: test function\n",
-                        "test\n"},			
+                        "clock [MMDDhhmm[[CC]YY][.ss]]\n"},                                                  			
 {TEXT_CMDHELP,
 			"type cmd /? for more information on cmd\n",""},        
         {0,"",""}
@@ -342,6 +345,7 @@ static struct CMD internalCommands[] =
   {"clock"      , cmd_clock     , TEXT_CMDHELP_CLOCK},
   {"test"       , cmd_test   	  , TEXT_CMDHELP_TEST},
   {"fdisk"      , cmd_fdisk     , TEXT_CMDHELP_FDISK},
+  {"sys"        , cmd_sys       , TEXT_CMDHELP_SYS},  
   {"t"          , cmd_test   	  , TEXT_CMDHELP_TEST},
   {"?"          , cmd_shcmds    , TEXT_CMDHELP_QUESTION},
   
@@ -374,14 +378,9 @@ struct block_header{
 
 LONGLONG AccSize;			/* Work register for scan_fat_files() */
 
-struct fpinfo FPInfo; //  working struct for checkfp (check file-path), also stores current drive and path
-
-// 
-struct fpinfo FPInfo1, FPInfo2; // working buffer(2) for arbitrary use with checkfp and checkargs
-
 WORD AccFiles, AccDirs;
-BYTE Buff[262144];			/* Working buffer FIXME: allocate this buffer dynamic ! */
-
+//BYTE Buff[262144];			/* Working buffer FIXME: allocate this buffer dynamic ! */
+BYTE *Buff;
 // ---
 FILE* file[2];				/* Pointer to File objects file[0] idt used for read and file[1] ist used for write */
 
@@ -425,75 +424,6 @@ void put_rc (FRESULT rc)
 {		
 	printf("rc=%u '%s'\n", (UINT)rc, get_rc_string(rc));
 }
-
-void init_cmd(void) {
-
-  /* allocate memeory ... */ 
-  FPInfo.psz_driveName  = (char*)malloc(_MAX_DRIVE_NAME);
-  FPInfo.psz_deviceID   = (char*)malloc(_MAX_DEVICE_ID);
-  FPInfo.psz_path     = (char*)malloc(_MAX_PATH);
-  FPInfo.psz_filename   = (char*)malloc(_MAX_FILENAME);
-  FPInfo.psz_fileext    = (char*)malloc(_MAX_FILEEXT);
-  FPInfo.psz_cdrive   = (char*)malloc(_MAX_DRIVE_NAME);
-  FPInfo.psz_cpath    = (char*)malloc(_MAX_PATH);
-  FPInfo.psz_wcard    = (char*)malloc(_MAX_PATH);
-  
-   if( !FPInfo.psz_driveName || !FPInfo.psz_deviceID || !FPInfo.psz_path || !FPInfo.psz_filename ||
-      !FPInfo.psz_fileext || !FPInfo.psz_fileext || !FPInfo.psz_cpath || !FPInfo.psz_wcard)
-  {
-    printf(" error allocating memory for FPInfo....\n");
-    exit(1);
-  }
-
-  FPInfo1.psz_driveName = (char*)malloc(_MAX_DRIVE_NAME);  if(FPInfo1.psz_driveName == 0) exit(1); // exit with fatal error !!
-  FPInfo1.psz_deviceID = (char*)malloc(_MAX_DRIVE_NAME);   if(FPInfo1.psz_deviceID == 0) exit(1);
-  FPInfo1.psz_path = (char*)malloc(_MAX_PATH);       if(FPInfo1.psz_path == 0) exit(1); 
-  FPInfo1.psz_filename = (char*)malloc(_MAX_FILENAME);   if(FPInfo1.psz_filename ==0 ) exit(1);
-  FPInfo1.psz_fileext = (char*)malloc(_MAX_FILEEXT);    if(FPInfo1.psz_fileext == 0 ) exit(1);
-  FPInfo1.psz_cdrive = (char*)malloc(_MAX_DRIVE_NAME);     if(FPInfo1.psz_cdrive == 0 ) exit(1);
-  FPInfo1.psz_cpath = (char*)malloc(_MAX_PATH);      if(FPInfo1.psz_cpath == 0 ) exit(1);
-  FPInfo1.psz_wcard = (char*)malloc(_MAX_PATH);      if(FPInfo1.psz_wcard == 0 ) exit(1);
-  
-  FPInfo2.psz_driveName = (char*)malloc(_MAX_DRIVE_NAME);  if(FPInfo2.psz_driveName == 0) exit(1); // exit with fatal error !!
-  FPInfo2.psz_deviceID = (char*)malloc(_MAX_DRIVE_NAME);   if(FPInfo2.psz_deviceID == 0) exit(1);
-  FPInfo2.psz_path = (char*)malloc(_MAX_PATH);       if(FPInfo2.psz_path == 0) exit(1); 
-  FPInfo2.psz_filename = (char*)malloc(_MAX_FILENAME);   if(FPInfo2.psz_filename ==0 ) exit(1);
-  FPInfo2.psz_fileext = (char*)malloc(_MAX_FILEEXT);    if(FPInfo2.psz_fileext == 0 ) exit(1);
-  FPInfo2.psz_cdrive = (char*)malloc(_MAX_DRIVE_NAME);     if(FPInfo2.psz_cdrive == 0 ) exit(1);
-  FPInfo2.psz_cpath = (char*)malloc(_MAX_PATH);      if(FPInfo2.psz_cpath == 0 ) exit(1);
-  FPInfo2.psz_wcard = (char*)malloc(_MAX_PATH);      if(FPInfo2.psz_wcard == 0 ) exit(1);
-}
-
-void exit_cmd(void) {
-
-  free(FPInfo.psz_driveName);
-  free(FPInfo.psz_deviceID );
-  free(FPInfo.psz_path     );
-  free(FPInfo.psz_filename );
-  free(FPInfo.psz_fileext  );
-  free(FPInfo.psz_cdrive   );
-  free(FPInfo.psz_cpath    );
-  free(FPInfo.psz_wcard    );
-
-  free( FPInfo1.psz_driveName);
-  free( FPInfo1.psz_deviceID);
-  free( FPInfo1.psz_path);
-  free( FPInfo1.psz_filename);
-  free( FPInfo1.psz_fileext);
-  free( FPInfo1.psz_cdrive);
-  free( FPInfo1.psz_cpath);
-  free( FPInfo1.psz_wcard);
-  
-  free( FPInfo2.psz_driveName);
-  free( FPInfo2.psz_deviceID);
-  free( FPInfo2.psz_path);
-  free( FPInfo2.psz_filename);
-  free( FPInfo2.psz_fileext);
-  free( FPInfo2.psz_cdrive);
-  free( FPInfo2.psz_cpath);
-  free( FPInfo2.psz_wcard);
-}
-
 
 
 FRESULT scan_fat_files (	/* used in cmd_lstatus */
@@ -570,114 +500,6 @@ FRESULT scan_fat_files (	/* used in cmd_lstatus */
 	return res;
 }
 
-/*--------------------------------------------------------*/
-/* Get a (long / 32Bit) value of the string               */
-/* the variable, where res points to, has to be 32 bits ! */
-/*--------------------------------------------------------*/
-/*	"123 -5   0x3ff 0b1111 0377  w "
-	    ^                           1st call returns 123 and next ptr
-	       ^                        2nd call returns -5 and next ptr
-                   ^                3rd call returns 1023 and next ptr
-                          ^         4th call returns 15 and next ptr
-                               ^    5th call returns 255 and next ptr
-                                  ^ 6th call fails and returns 0
-*/
-
-int xatoi (			/* 0:Failed, 1:Successful */
-	char **str,	/* Pointer to pointer to the string Note: char var[x] => &var cannot be used directly, use pvar = &var instead !*/
-	long *res		/* Pointer to a variable to store the value Note: MUST be 32 bits ! */
-)
-{
-	unsigned long val;
-	unsigned char r, s = 0;
-	char c;
-
-	dbg(" xatoi(0x%08x 0x%08x 0x%08x)\n",**str,*str, str);
-
-	*res = 0;
-	while ((c = **str) == ' ') (*str)++;	/* Skip leading spaces */
-
-	if (c == '-') {		/* negative? */
-		s = 1;
-		c = *(++(*str));
-	}
-
-	if (c == '0') {
-		c = *(++(*str));
-		switch (c) {
-		case 'x':		/* hexdecimal */
-			r = 16; c = *(++(*str));
-			break;
-		case 'b':		/* binary */
-			r = 2; c = *(++(*str));
-			break;
-		default:
-			if (c <= ' ') return 1;	/* single zero */
-			if (c < '0' || c > '9') return 0;	/* invalid char */
-			r = 8;		/* octal */
-		}
-	} else {
-		if (c < '0' || c > '9') return 0;	/* EOL or invalid char */
-		r = 10;			/* decimal */
-	}
-
-	val = 0;
-	while (c > ' ') {
-		if (c >= 'a') c -= 0x20;
-		c -= '0';
-		if (c >= 17) {
-			c -= 7;
-			if (c <= 9) return 0;	/* invalid char */
-		}
-		if (c >= r) return 0;		/* invalid char for current radix */
-		val = val * r + c;
-		c = *(++(*str));
-	}
-	if (s) val = 0 - val;			/* apply sign if needed */
-
-	*res = val;
-	return 1;
-}
-
-/*----------------------------------------------*/
-/* Get a (string)value of the string            */
-/*----------------------------------------------*/
-/*	"HDA0   binary w "
-	    ^                       1st call returns 'HDA0' and next ptr (if len = 4)
-	        ^                   2nd call returns 'binary' and next ptr
-                   ^            3rd call returns 'w' and next ptr                          
-*/
-
-int xatos (			/* 0:Failed, 1:Successful */
-	char **str,		/* Pointer to pointer to the string */
-	char *res,		/* Pointer to a variable to store the sub-string */
-	int len			/* max length of sub-string without terminating NULL */
-)
-{	
-	char *p= res;
-	char c;
-	int n=0;
-
-	//printf(" xatos input = %s\n",*str);
-	
-	*res = 0;
-	while ((c = **str) == ' ') (*str)++;	/* Skip leading spaces */
-
-	
-	while (c > ' ' && n < len) {
-		*p++ = c;
-		c = *(++(*str));
-		n++;
-	}
-	
-	*p = 0; /* terminate string */
-	
-	
-	if(n == 0) return 0;
-	//  else return 1;
-	return 1;
-}
-
 /*----------------------------------------------*/
 /* Dump a block of byte array                   */
 
@@ -702,189 +524,7 @@ void put_dump (
 	putchar('\n');
 }
 
-// implementation of commands ...
 
-int checkargs(char* args, char* fullpath1, char* fullpath2) 
-{
-  int res;
-  
-  char *arg1=0;
-  char *arg2=0;  
-  
-  
-  while (*args == ' ') args++; // skip whitespace
-  arg1 = args;     // pointer to 1st parameter
-   
-  arg2 = strchr(args, ' ');  // search 2nd parameter
-  if (!arg2)                   // if no 2nd parameter
-     arg2 = arg1;   //   2nd parameter == 1st parameter
-  else *arg2++ = 0;    // terminate 1st par and increment pointer to next char
-  while (*arg2 == ' ') arg2++; // skip whitespace   
-   
-
-  dbg("checkargs: arg1 = %s, arg2 = %s\n\n", arg1, arg2);
-
-
-  /* initialize default values */
-  strcpy(FPInfo1.psz_cdrive,FPInfo.psz_cdrive);
-  strcpy(FPInfo1.psz_cpath,FPInfo.psz_cpath);
-        
-  res = checkfp(arg1, &FPInfo1);
-       
-  dbg("\nFPINFO1:\n");
-  dbg(" psz_driveName:  [%s]\n",FPInfo1.psz_driveName ); // FIXME: wenn leer, dann cdrive !?
-  dbg(" psz_deviceID:   [%s]\n",FPInfo1.psz_deviceID );
-  dbg(" c_deviceNO:     [%c]\n",FPInfo1.c_deviceNO );
-  dbg(" n_partition:    [%d]\n",FPInfo1.n_partition );
-  dbg(" psz_path:       [%s]\n",FPInfo1.psz_path );
-  dbg(" psz_filename:   [%s]\n",FPInfo1.psz_filename );
-  dbg(" c_separator:    [%c]\n",FPInfo1.c_separator );
-  dbg(" psz_fileext:    [%s]\n",FPInfo1.psz_fileext );
-  dbg(" psz_cdrive:     [%s]\n",FPInfo1.psz_cdrive );
-  dbg(" psz_cpath:      [%s]\n",FPInfo1.psz_cpath );
-  dbg(" b_has_wcard:    [%d]\n",FPInfo1.b_has_wcard );
-  dbg(" psz_wcard:      [%s]\n",FPInfo1.psz_wcard );
-  dbg("\nres = %d\n",res);
- 
-   
-  if(fullpath2) {
-    /* initialize default values */
-    strcpy(FPInfo2.psz_cdrive,FPInfo.psz_cdrive);
-    strcpy(FPInfo2.psz_cpath,FPInfo.psz_cpath);
-       
-    res = checkfp(arg2, &FPInfo2); 
-
-    if(!FPInfo1.b_has_wcard)     /* if arg1 has no wild cards and arg2 has no filename, copy filename from arg1 to arg2 */
-      if(!FPInfo2.psz_filename[0]) {
-          strcpy(FPInfo2.psz_filename,FPInfo1.psz_filename);
-          FPInfo2.c_separator = FPInfo1.c_separator;
-          strcpy(FPInfo2.psz_fileext,FPInfo1.psz_fileext);       
-      }
-  
-     
-    if(arg1 == arg2){               /* if no 2nd argument, force to default drive and path */
-      FPInfo2.psz_driveName[0] = 0;
-      FPInfo2.psz_deviceID[0] = 0;
-      FPInfo2.c_deviceNO = 0;
-      FPInfo2.n_partition = 0;
-      FPInfo2.psz_path[0] = 0;
-    } 
-     
-    
-    dbg("\nFPINFO2:\n");
-    dbg(" psz_driveName:  [%s]\n",FPInfo2.psz_driveName ); // FIXME: wenn leer, dann cdrive !?
-    dbg(" psz_deviceID:   [%s]\n",FPInfo2.psz_deviceID );
-    dbg(" c_deviceNO:     [%c]\n",FPInfo2.c_deviceNO );
-    dbg(" n_partition:    [%d]\n",FPInfo2.n_partition );
-    dbg(" psz_path:       [%s]\n",FPInfo2.psz_path );
-    dbg(" psz_filename:   [%s]\n",FPInfo2.psz_filename );
-    dbg(" c_separator:    [%c]\n",FPInfo2.c_separator );
-    dbg(" psz_fileext:    [%s]\n",FPInfo2.psz_fileext );
-    dbg(" psz_cdrive:     [%s]\n",FPInfo2.psz_cdrive );
-    dbg(" psz_cpath:      [%s]\n",FPInfo2.psz_cpath );
-    dbg(" b_has_wcard:    [%d]\n",FPInfo2.b_has_wcard );
-    dbg(" psz_wcard:      [%s]\n",FPInfo2.psz_wcard );
-    dbg("\nres = %d\n",res);
-  }
-   
-  /* ------------ build fullpath  (1) ------------ */
-
-  /* 1: drive */
-  fullpath1[0]=0;
-  if( !FPInfo1.psz_driveName[0] ){                                   /* use current drive if no drive given */
-    dbg("no psz_driveName, use psz_cdrive in fullpath1...\n");     
-    strcat(fullpath1,FPInfo1.psz_cdrive); 
-  }else{
-    strcat(fullpath1,FPInfo1.psz_driveName);
-    dbg("use psz_driveName in fullpath1...\n");    
-  }
-
-  strcat(fullpath1,":");     
-                
-  /* 2: path */
-  switch (FPInfo1.psz_path[0]) {
-    case 0 :                                                       /* if no path given and .... */ 
-         if( !FPInfo1.psz_driveName[0] ||                          /* no drive given or ... */ 
-             !strcmp(FPInfo1.psz_driveName, FPInfo1.psz_cdrive) )  /* given drive == current drive */
-           strcat(fullpath1,FPInfo1.psz_cpath);                    /* => use current path */
-         break;
-    case '/':                                                      /* absolute path given => use given path */
-         strcat(fullpath1,FPInfo1.psz_path);
-         break;
-   default:                                                        /* relative path given => add given path to current path */
-                                                                   /* but only if given drive == current drive */
-
-         if( !FPInfo1.psz_driveName[0] ||                          /* no drive given or ... */ 
-             !strcmp(FPInfo1.psz_driveName, FPInfo1.psz_cdrive) )  /* given drive == current drive */
-           strcat(fullpath1,FPInfo1.psz_cpath);                    /* => use current path */
-
-         strcat(fullpath1,FPInfo1.psz_path);                       /* add given path */
-  }
-
-  if(fullpath1[strlen(fullpath1)-1] != '/'){                       /* termitate path with '/' */
-    fullpath1[strlen(fullpath1)+1] = 0;
-    fullpath1[strlen(fullpath1)] = '/';
-  }
-
-  /* 3: filename.ext */
-  if(!FPInfo1.b_has_wcard){                                        /* if arg has no wildcard, add filename to fullpath ... */
-     strcat(fullpath1,FPInfo1.psz_filename);
-     fullpath1[strlen(fullpath1)+1] = 0;       
-     fullpath1[strlen(fullpath1)] = FPInfo1.c_separator;       
-     strcat(fullpath1,FPInfo1.psz_fileext);
-  }
-
-  /* ------------ build fullpath  (2) ------------ */
-  if(fullpath2) {
-    /* 1: drive */
-    fullpath2[0]=0;
-    if( !FPInfo2.psz_driveName[0] ){                                   /* use current drive if no drive given */
-       dbg("no psz_driveName, use psz_cdrive in fullpath2...\n");
-       strcat(fullpath2,FPInfo2.psz_cdrive); 
-    }else{
-       strcat(fullpath2,FPInfo2.psz_driveName);
-       dbg("use psz_driveName in fullpath1...\n");    
-    }
-
-    strcat(fullpath2,":");     
-                  
-    /* 2: path */              
-    switch (FPInfo2.psz_path[0]) {
-        case 0 :                                                       /* if no path given and .... */ 
-          if( !FPInfo2.psz_driveName[0] ||                          /* no drive given or ... */ 
-              !strcmp(FPInfo2.psz_driveName, FPInfo2.psz_cdrive) )  /* given drive == current drive */
-            strcat(fullpath2,FPInfo2.psz_cpath);                    /* => use current path */
-          break;
-        case '/':                                                      /* absolute path given => use given path */
-          strcat(fullpath2,FPInfo2.psz_path);
-          break;
-        default:                                                        /* relative path given => add given path to current path */
-                                                                    /* rules from 'case 0' apply !! => if current path is not usable, use given path as
-                                                                       an absolute path .... */
-
-          if( !FPInfo2.psz_driveName[0] ||                          /* no drive given or ... */ 
-              !strcmp(FPInfo2.psz_driveName, FPInfo2.psz_cdrive) )  /* given drive == current drive */
-            strcat(fullpath2,FPInfo2.psz_cpath);                    /* => use current path */
-
-          strcat(fullpath2,FPInfo2.psz_path);                       /* add given path */
-    }
-
-    if(fullpath2[strlen(fullpath2)-1] != '/'){                       /* termitate path with '/' */
-      fullpath2[strlen(fullpath2)+1] = 0;
-      fullpath2[strlen(fullpath2)] = '/';
-    }
-
-  /* 3: filename.ext */
-    if(!FPInfo1.b_has_wcard){ /* if arg1 has no wildcard, add filename to fullpath ... */
-      strcat(fullpath2,FPInfo2.psz_filename);
-      fullpath2[strlen(fullpath2)+1] = 0;       
-      fullpath2[strlen(fullpath2)] = FPInfo2.c_separator;       
-      strcat(fullpath2,FPInfo2.psz_fileext);
-    }
-  }
-
-  return 0;
-}
 
 // ******************  commands.... *************************************
 int cmd_shcmds(void){
@@ -1107,6 +747,7 @@ int cmd_dir_fat(char *args,   // fullpath
    FS *fs;				/* Pointer to file system object */
    FRESULT res;
    UINT s1, s2;
+   char key=0;
    long p1,p2,line=0;  
    
    struct ioctl_opendir arg_opendir;
@@ -1167,9 +808,10 @@ int cmd_dir_fat(char *args,   // fullpath
       #endif
       	printf("\n");	
       	if(!(line % LINES_PER_PAGE) && line != 0) {
-         	    printf(" ---- KEY ---- "); getchar(); printf("\n");
+         	    printf(" ---- KEY ---- "); key=getchar(); printf("\n");
       	}
 	     line++;
+       if(key=='q' || key=='Q') break;
    }
 
    res = ioctl(pd,FS_IOCTL_CLOSE_DIR,&dir);
@@ -1405,11 +1047,12 @@ int _copy(char *src, char *dst)
    printf("Copy '%s' ==> '%s' ",src,dst);
    
    p1 = 0;
+   start_progress();
    for (;;) {
-     printf(".");
+     do_progress();
      s1 = fread(Buff, 1, sizeof Buff, file[0]); 
      if (s1 == 0) {
-       dbg("_copy: src at eof !\n");
+       dbg("\n_copy: src at eof !\n");
        break;   /* error or eof */
      }
 
@@ -1420,7 +1063,7 @@ int _copy(char *src, char *dst)
      //printf("%d bytes written to destination (total %d)\n",s2,p1);
 
      if (s2 < s1) {
-       printf("error or disk full !\n");
+       printf("\nerror or disk full !\n");
        break;   /* error or disk full */
      }
 
@@ -1428,7 +1071,7 @@ int _copy(char *src, char *dst)
 
    fclose(file[0]);
    fclose(file[1]);
-   printf("%lu bytes\n", p1);
+   printf("\n%lu bytes\n", p1);
   
    return 0;
 }
@@ -1604,6 +1247,7 @@ int cmd_fdump  (char * args){
    UINT cnt;
    DWORD ofs = 0;
    FRESULT res;
+   char key=0;
    
    if (!xatoi(&args, &len)) len = 128;
    //ofs = file[0].curp - file[0].buffer;
@@ -1618,8 +1262,9 @@ int cmd_fdump  (char * args){
      put_dump(Buff, ofs, cnt);
      ofs += 16;
      if(!(ofs % 160) && ofs != 0) {
-	printf(" ---- KEY ---- "); getchar(); printf("\n");
+	     printf(" ---- KEY ---- "); key=getchar(); printf("\n");
      }
+     if(key=='q' || key=='Q') break;
    }
              
    return 0;
@@ -1776,6 +1421,7 @@ int cmd_ddump  (char * args){
    struct ioctl_disk_rw ioctl_args;
    char drive[4];
    DWORD ofs = 0, sect = 0; 
+   char key=0;
    
   
    while (*args == ' ') args++; /* skip whitespace */
@@ -1796,10 +1442,11 @@ int cmd_ddump  (char * args){
    if (ioctl(drive, FS_IOCTL_DISK_GET_SECTOR_SIZE, &w) != RES_OK) return 0;
 
    for (buf = Buff, ofs = 0; ofs < w; buf += 16, ofs += 16) {
-	put_dump(buf, ofs, 16);
-	if(!(ofs % 160) && ofs != 0) {
-   	    printf(" ---- KEY ---- "); getchar(); printf("\n");
-	}
+  	put_dump(buf, ofs, 16);
+  	if(!(ofs % 160) && ofs != 0) {
+     	    printf(" ---- KEY ---- "); key=getchar(); printf("\n");
+  	}
+    if(key=='q' || key=='Q') break;
    }
 
    return 0;
@@ -2335,13 +1982,15 @@ int cmd_bdump  (char * args){
    BYTE *buf;
    UINT cnt;
    DWORD ofs = 0;
+   char key=0;
    
    if (!xatoi(&args, &p1)) return 0;
    for (buf = &Buff[p1], ofs = p1, cnt = 32; cnt; cnt--, buf += 16, ofs += 16) {
-	put_dump(buf, ofs, 16);
-	if(!(ofs % 160) && ofs != 0) {
-		printf(" ---- KEY ---- "); getchar(); printf("\n");
-	}
+  	put_dump(buf, ofs, 16);
+  	if(!(ofs % 160) && ofs != 0) {
+  		printf(" ---- KEY ---- "); key=getchar(); printf("\n");
+  	}
+    if(key=='q' || key=='Q') break;
    }         
    return 0;
 }
@@ -2528,8 +2177,12 @@ int cmd_meminfo(char* args)
   printf(" free memory      :  0x%08x (%.3f KB)\n", free_ram, free_ram/1024.0);
   printf(" blocks           :  %d (%d free, %d allocated)\n", free_blocks + allocated_blocks, free_blocks, allocated_blocks);
   printf(" biggest free junk:  0x%08x\n", biggest_free_junk);
-  if(free_blocks > 0) free_blocks--;
-  printf("    fractionation :  %.2f%%\n", free_blocks * 100.0 / allocated_blocks);
+  /*
+   note: if there is only one free block, all allocated memory is continuous and fragmentation is 0%
+         fragmentation calculation is only a hint of how many discontinuous junks are embedded free fragments between allocated memory blocks
+  */
+  if(free_blocks > 0) free_blocks--; 
+  printf("    fragmentation :  %.2f%%\n", free_blocks * 100.0 / allocated_blocks);
   
   
   
@@ -2728,232 +2381,13 @@ int cmd_clock(char* args)
 /* ####################### TEST REGION ########################################## */
 
 
-extern char   __CLIB_BUILD_DATE;
-extern char   __CLIB_BUILD_NUMBER;
-extern unsigned long   _CLIB_BUILD_DATE;
-extern unsigned long   _CLIB_BUILD_NUMBER;
-
-static BYTE sd_buffer[2*SD_BLOCKSIZE];
-
 int cmd_test(char* args)
 {
-  DRESULT res;
-  DSTATUS sta;
-  union csd_reg csd;
-  struct cid_reg cid;
-  struct _sddriveinfo di;
-  BYTE *bp;
-  unsigned int capacity, nsectors, sector, bpb, BLOCKNR, BLOCK_LEN, MULT;
-  //struct csd_reg_v1_0 csd;
-  unsigned int i,j;
-  DWORD addr;
-  char c;
-  struct _dev dev;
+  UINT i;
+  start_progress();
+  for(i=0; i<0xFFFFFFFF; i++) do_progress();
 
-  printf(" TEST....\n");
-
-  if(sd_init(0) == NULL){
-  	printf(" sd_init failed ...\n");
-  	return 0;
-  }
-
- 
-  sta = sd_rd_csd(0, &csd);
-
-  switch(csd.v10.CSD_STRUCTURE){
-  	case 0:  // CSD Version 1.0: Version 1.01-1.10/Version 2.00/Standard Capacity 
-	  printf(" CSD_STRUCTURE    = %d\n", csd.v10.CSD_STRUCTURE);
-	  printf(" SECTOR_SIZE      = %d\n", csd.v10.SECTOR_SIZE);
-	  printf(" C_SIZE           = %d\n", csd.v10.C_SIZE);
-	  printf(" C_SIZE_MULT      = %d\n", csd.v10.C_SIZE_MULT);
-	  printf(" READ_BL_LEN      = %d\n", csd.v10.READ_BL_LEN);
-	  printf(" READ_BL_PARTIAL  = %d\n", csd.v10.READ_BL_PARTIAL);
-	  printf(" WRITE_BL_LEN     = %d\n", csd.v10.WRITE_BL_LEN);
-	  printf(" WRITE_BL_PARTIAL = %d\n", csd.v10.WRITE_BL_PARTIAL);
-	  printf(" FILE_FORMAT_GRP  = %d\n", csd.v10.FILE_FORMAT_GRP);
-	  printf(" FILE_FORMAT      = %d\n", csd.v10.FILE_FORMAT);
-	  printf(" CRC              = %d\n", csd.v10.CRC);
-	  printf(" ====>\n");
-
-	  bpb = 2 << (csd.v10.READ_BL_LEN -1);
-	  MULT = 2 << (csd.v10.C_SIZE_MULT+1);
-	  BLOCKNR = MULT * (csd.v10.C_SIZE +1);
-	  BLOCK_LEN = 2 << (csd.v10.READ_BL_LEN -1);
-	  capacity = BLOCKNR * BLOCK_LEN ;
-	  nsectors = BLOCKNR;
-	  printf(" nsectors         = %d\n",BLOCKNR);
-	  printf(" Capacity (MB)    = %d\n",capacity/(1024*1024));
-
-
-	  break;   
-	case 1:  // SDHC-Card: CSD Version 2.0: Version 2.00-High Capacity	
-	  printf(" CSD_STRUCTURE    = %d\n", csd.v20.CSD_STRUCTURE);
-	  printf(" SECTOR_SIZE      = %d\n", csd.v20.SECTOR_SIZE);
-	  printf(" C_SIZE           = %d\n", csd.v20.C_SIZE);
-	  printf(" READ_BL_LEN      = %d\n", csd.v20.READ_BL_LEN);
-	  printf(" READ_BL_PARTIAL  = %d\n", csd.v20.READ_BL_PARTIAL);	  
-	  printf(" WRITE_BL_LEN     = %d\n", csd.v20.WRITE_BL_LEN);
-	  printf(" WRITE_BL_PARTIAL = %d\n", csd.v20.WRITE_BL_PARTIAL);
-	  printf(" CRC              = %d\n", csd.v20.CRC);
-	  printf(" ====>\n");
-	  nsectors = (csd.v20.C_SIZE + 1);
-	  capacity = nsectors * 512 ;
-	  printf(" nsectors         = %d\n",nsectors);
-	  printf(" Capacity (GB)    = %d\n",capacity/(1024*1024));
-	  break;
-	case 2: // MMC ?
-	   printf(" this is maybe a MMC card ...");
-	   break;
-	default: // reserved
-	   printf(" this is an unknown sd card, CSD_STRUCTURE = %d\n",csd.v10.CSD_STRUCTURE);   	  
-	}
-
-
-
-
-
-  sta = sd_rd_cid(0, &cid);
-
-  printf(" MID              = %d\n", cid.MID);
-  printf(" OID              = %c%c\n", cid.OID[0],cid.OID[1]);
-  printf(" PNM              = %c%c%c%c%c\n", cid.PNM[0],cid.PNM[1],cid.PNM[2],cid.PNM[3],cid.PNM[4]);
-  printf(" PRV              = %d\n", cid.PRV);
-  printf(" PSN              = %u\n", cid.PSN);
-  printf(" MDT              = %d\n", cid.MDT);
-  printf(" CRC              = %d\n", cid.CRC);
- 
-
-printf(" Random Read/Write to/from SD Card..."); getchar(); printf("\n"); 
-
-i=0;
-dev.pdrv = 0;
-c=0;
-while(c != 'e'){
-	sector = rand() % (nsectors-3);	/* sector = 0...nsectors-3 (we like to read 2 sectors at once)  */
-    if((res=sd_read  ( &dev, sd_buffer, sector, 2 )) != RES_OK)
-    {
-    	printf("error %d reading sector %d-%d (%d)\n",res,sector,sector+1,i);
-    	c=getchar();
-    }
-
-    sector = rand() % (nsectors-3);	/* sector = 0...nsectors-2 */
-    if((res=sd_write  ( &dev, sd_buffer, sector, 2 )) != RES_OK)
-    {
-    	printf("error %d writing sector %d-%d (%d)\n",res,sector,sector+1,i);
-    	c=getchar();
-    }
-    printf("."); i++;
-}
-// for(i=0; i<2*SD_BLOCKSIZE;i++) sd_buffer[i]=i;
-
-
-// dev.pdrv = 0;
-// for(i=0; i<1000; i+=2){
-// 	  sd_read  ( &dev, sd_buffer, i+1000, 2 );
-//     sd_write ( &dev, sd_buffer, i, 2 );
-// }
-  
-
-  memset(sd_buffer,0xaa,2*SD_BLOCKSIZE);
-  
-//  sd_write_nblock (0, 3, 2, sd_buffer);
-//  sd_write_nblock (0, 5, 2, sd_buffer);
-
-
-  printf(" Read SD Card..."); getchar(); printf("\n");
-
-  addr=0x3c00;
-  do{
-
-  	sd_read_nblock (0, addr, 2, sd_buffer);
-
-  	i=0;
-  	while(i<2*SD_BLOCKSIZE)
-  	{
-  		printf("%02X",sd_buffer[i]);
-  		i++;
-  	}
-  	c=getchar();
-  	addr++;
-  	addr++;
-  }while(c != 'e');
-
-  return 0;
-
-
-
-  printf("Build date  : %u\n", (unsigned long) &__BUILD_DATE - (unsigned long) &_start);
-  printf("Build number: %u\n", (unsigned long) &__BUILD_NUMBER - (unsigned long) &_start);
-  
-  printf("CLib build date  : %u\n", (unsigned long) &__CLIB_BUILD_DATE - (unsigned long) &_start);
-  printf("CLib build number: %u\n", (unsigned long) &__CLIB_BUILD_NUMBER - (unsigned long) &_start);
-  
-  printf("CLib build date  : %u\n", (unsigned long) _CLIB_BUILD_DATE);
-  printf("CLib build number: %u\n", (unsigned long) _CLIB_BUILD_NUMBER);
-  
-  printf("FATFS version    : %s\n", FAT_FS_VERSION);
-  /*
-   * 
-   * Note that linker symbols are not variables, they have no memory allocated for maintaining a value, rather their address is their value. 
-   * 
-   */ 
-  
-  return 0;
-  // test function
- void *mem[100],*p; // array of memory
- 
- printf(" strlen(\"%s\") = %d\n",args,strlen(args));
- 
- return 0;
-
-  printf(" Start MALLOC Test: (KEY)"); getchar(); printf("\n\n");
-
-  mem[0] = malloc(10000);  // 0x02710
-  mem[1] = malloc(500);	 // 0x001F4
-  mem[2] = malloc(200000); // 0x30D40
-  mem[3] = malloc(10);	 // 0xA
-  mem[4] = malloc(100);	 // 0x64
-  mem[5] = malloc(500000); // 0x7A120
-  
-  walk_heap(); getchar();
-  
-  free(mem[1]); 
-  free(mem[3]);
-  free(mem[4]);
-  
-  walk_heap(); getchar();
-  
-  mem[1] = malloc(450);
-  
-  walk_heap(); getchar();
-  
-  mem[3] = malloc(105);
-  
-  walk_heap(); getchar();
-  
-  free(mem[2]);
-  
-  walk_heap(); getchar();
-  
-  mem[2] = malloc(200010);
-    
-  walk_heap(); getchar();
-  
-  mem[4] = malloc(200010);
-    
-  walk_heap(); getchar();
-  
-  free(mem[0]);
-  free(mem[1]);
-  free(mem[2]);
-  free(mem[3]);
-  free(mem[4]);
-  free(mem[5]);
-  
-  walk_heap(); getchar();
-  
-  printf("Ready !\n");
-
+  printf("\n test end\n");
   
   return 0;
 }
@@ -2976,7 +2410,14 @@ int main (int argc, char *argv[])
   int ii; 
 
 
-  init_cmd();
+  init_helper();
+
+  Buff = malloc(262144); // allocate bigger working buffer
+
+  if(!Buff){
+    printf("error allocation memory fpr working buffer\n");
+    exit(0);
+  }
   
   sprintf(FPInfo.psz_cpath,"/");
   ioctl(NULL,FS_IOCTL_GETDRV,FPInfo.psz_cdrive);
@@ -3006,8 +2447,9 @@ int main (int argc, char *argv[])
 
   shell(prompt, &cmd_env, internalCommands, hlptxt, 0); // call the shell ....
 
-  exit_cmd();
-        
+  free(Buff);
+  exit_helper();
+    
   return 0;
 }
 

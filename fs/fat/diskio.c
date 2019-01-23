@@ -24,7 +24,7 @@
 /*-----------------------------------------------------------------------*/
 
 
-DSTATUS disk_initialize (		    
+ DSTATUS disk_initialize (		    
 		     struct fstabentry *pfstab
 	       )		    
 {
@@ -55,7 +55,7 @@ DSTATUS disk_initialize (
 /*-----------------------------------------------------------------------*/
 
 
-DSTATUS disk_status (	
+ DSTATUS disk_status (	
 	 struct fstabentry *pfstab
 )
 {
@@ -98,7 +98,7 @@ DSTATUS disk_status (
 /*-----------------------------------------------------------------------*/
 
 
-DRESULT disk_read (
+ DRESULT disk_read (
 	struct fstabentry *pfstab,
 	BYTE *buff,		/* Data buffer to store read data */
 	DWORD sector,	/* Sector address (LBA) */
@@ -139,7 +139,7 @@ DRESULT disk_read (
 /*-----------------------------------------------------------------------*/
 
 
-DRESULT disk_write (
+ DRESULT disk_write (
 	struct fstabentry *pfstab,
 	const BYTE *buff,	/* Data to be written */
 	DWORD sector,		/* Sector address (LBA) */
@@ -182,7 +182,7 @@ DRESULT disk_write (
 /*-----------------------------------------------------------------------*/
 
 
-DRESULT disk_ioctl (
+ DRESULT disk_ioctl (
 	struct fstabentry *pfstab,
 	int ctrl,			/* Control code */
 	void *buff			/* Buffer to send/receive data block */

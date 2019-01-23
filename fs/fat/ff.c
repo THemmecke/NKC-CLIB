@@ -973,6 +973,109 @@ FRESULT put_fat (
 #endif /* !_FS_READONLY */
 
 
+/*-----------------------------------------------------------------------*/
+/* FAT handling - Return a sector chain  (TH)                            */
+/*-----------------------------------------------------------------------*/
+// returns EZERO if successful, ENOMEM otherwise
+static int add_sectors_to_list(struct slist **p, unsigned int start, unsigned int n){
+	struct slist *next, *list;
+	unsigned int sec;
+	unsigned int nn;
+
+	ff_dbg(" add_sectors_to_list: p->0x%08x, slist->0x%08x, start=%d, n=%d\n",p,*p,start,n);
+
+	if(start == 0) return EINVDAT;
+	if(n < 1) return EINVDAT;
+
+	list = *p;
+	sec = start;
+	nn = n;
+
+	if(list==NULL){
+		ff_dbg(" add_sectors_to_list: 1st element -> start list\n");
+		list=malloc(sizeof(struct slist));
+		if(list==NULL) return ENOMEM;
+		ff_dbg(" add_sectors_to_list: memory for struct slist allocated\n");
+		list->s = sec;
+		list->next=NULL;
+		sec++;
+		nn--;
+		*p = list;
+	}else{
+		while(list->next) list=list->next;
+	}
+	/* list now point's to last element of p */
+
+	/* add rest to list */
+	for(; nn>0;nn--,sec++){
+		ff_dbg(" add_sectors_to_list: add %d, remain %d\n",sec,nn);
+		next=malloc(sizeof(struct slist));
+		if(next==NULL) return ENOMEM;
+		next->s = sec;
+		next->next = NULL;
+		list->next = next;
+		list = next;
+	}
+
+	fsnkc_dbg(" add_sectors_to_list: ready !\n");
+
+	return EZERO;
+}
+static
+FRESULT get_chain (
+	struct slist **p,   /* pointer to pointer of list of sectors */
+	FATFS* fs,			/* File system object */
+	DWORD clst			/* Cluster# to remove a chain from */
+)
+{
+	FRESULT res;
+	struct slist *next, *list;
+
+	DWORD nxt;
+
+	ff_dbg(" ff.c: get_chain...\n");
+
+	list = *p;
+
+	res = FR_OK;
+	while (clst < fs->n_fatent) {			/* Not a last link? */
+		nxt = get_fat(fs, clst);			/* Get cluster status */
+		if (nxt == 0) break;				/* Empty cluster? */
+		if (nxt == 1) { res = FR_INT_ERR; break; }	/* Internal error? */
+		if (nxt == 0xFFFFFFFF) { res = FR_DISK_ERR; break; }	/* Disk error? */
+											
+											/* append sectors of cluster to list */
+
+		if(add_sectors_to_list(&list, clust2sect(fs,clst), fs->csize) != EZERO){
+	    	// free aready allocated memory and return error
+	    	}
+
+//		if(list==NULL){
+//			ff_dbg(" ff.c: get_chain: 1st element -> start list\n");
+//			list=malloc(sizeof(struct slist));
+//			if(list==NULL) return ENOMEM;
+//			ff_dbg(" ff.c: get_chain: memory for struct slist allocated\n");
+//			list->s = clust2sect(fs,clst);
+//			ff_dbg(" ff.c: get_chain cluster %d -> sector %d (%d)\n",clst,list->s,fs->csize);
+//			list->next=NULL;
+//			*p = list;
+//		}else{
+//			next=malloc(sizeof(struct slist));
+//			if(next==NULL) return ENOMEM;
+//			next->s = clust2sect(fs,clst);
+//			ff_dbg(" ff.c: get_chain cluster %d -> sector %d (%d)\n",clst,next->s,fs->csize);
+//			next->next = NULL;
+//			list->next = next;
+//			list = next;
+//		}
+
+		clst = nxt;	/* Next cluster */
+	}
+	
+	*p = list;
+	return res;
+}
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -2120,6 +2223,8 @@ FRESULT follow_path (	/* FR_OK(0): successful, !=0: error code */
 			dp->sclust = ld_clust(dp->fs, dir);
 		}
 	}
+
+	 ff_dbg("ff.c|follow_path => %d\n",res);
 
 	return res;
 }
@@ -3805,10 +3910,10 @@ FRESULT f_unlink (
 
 
 	/* Get logical drive number */
-	res = find_volume(&dj.fs, &path, 1);
+	res = find_volume(&dj.fs, &path, 1); /* searches for  path:file given in *path, if successful returns fs (1=check write protection) */
 	if (res == FR_OK) {
-		INIT_BUF(dj);
-		res = follow_path(&dj, path);		/* Follow the file path */
+		INIT_BUF(dj);  					/* initialize dj.fn (buffer for filename) */
+		res = follow_path(&dj, path);		/* Follow the file path and return directory object in dj */
 		if (_FS_RPATH && res == FR_OK && (dj.fn[NS] & NS_DOT))
 			res = FR_INVALID_NAME;			/* Cannot remove dot entry */
 #if _FS_LOCK
@@ -3822,7 +3927,7 @@ FRESULT f_unlink (
 				if (dir[DIR_Attr] & AM_RDO)
 					res = FR_DENIED;		/* Cannot remove R/O object */
 			}
-			dclst = ld_clust(dj.fs, dir);
+			dclst = ld_clust(dj.fs, dir);	/* load 1st cluster of file */
 			if (res == FR_OK && (dir[DIR_Attr] & AM_DIR)) {	/* Is it a sub-dir? */
 				if (dclst < 2) {
 					res = FR_INT_ERR;
@@ -4360,8 +4465,14 @@ FRESULT f_mkfs (
 	BYTE fmt, md, sys, *tbl, pdrv, part, xpos,ypos;
 	DWORD n_clst, vs, n, wsect;
 	UINT i;
-	DWORD b_vol, b_fat, b_dir, b_data;	/* LBA */
-	DWORD n_vol, n_rsv, n_fat, n_dir;	/* Size */
+	DWORD b_vol,    /* volume start sector */ 
+	      b_fat, 
+	      b_dir, 
+	      b_data;	/* LBA */
+	DWORD n_vol,	/* volume size in sectors */ 
+	      n_rsv, 
+	      n_fat, 
+	      n_dir;	/* Size */
 	FATFS *fs;
 	DSTATUS stat;
 
@@ -4427,13 +4538,16 @@ FRESULT f_mkfs (
 	} else {
 		/* Create a partition in this function */
 		ff_dbg(" Create a partition in this function...\n");
+		/* n_vol = partition size = all sectors ... */
 		if (disk_ioctl(fs->pfstab, GET_SECTOR_COUNT, &n_vol) != RES_OK || n_vol < 128) {
 			ff_dbg(" disk_ioctrl(GET_SECTOR_COUNT): n_vol => %d\n",n_vol);
 			return FR_DISK_ERR;
 		}
 		ff_dbg(" disk_ioctrl(GET_SECTOR_COUNT): n_vol => %d\n",n_vol);
 		
+		/* b_vol = volume start sector = 0 if no partition table to use */
 		b_vol = (sfd) ? 0 : 63;		/* Volume start sector */
+		/* size of volme = number of sectors - start of volume */
 		n_vol -= b_vol;				/* Volume size */
 	}
 	ff_dbg("f_mkfs: start sector = %d, size = %d\n",b_vol,n_vol);
@@ -5031,6 +5145,68 @@ int f_printf (
 
 #endif /* !_FS_READONLY */
 #endif /* _USE_STRFUNC */
+
+
+/*-----------------------------------------------------------------------*/
+/* return list of sectors the file occupies on disk                      */
+/*-----------------------------------------------------------------------*/
+
+
+// FRESULT get_chain (
+// 	struct slist **p    /* pointer to pointer of list of sectors */
+// 	FATFS* fs,			/* File system object */
+// 	DWORD clst			/* Cluster# to remove a chain from */
+// )
+
+struct slist*  f_get_slist (
+	const TCHAR* path		/* Pointer to the file or directory path */
+)
+{
+	FRESULT res;
+	DIR dj, sdj;
+	BYTE *dir;
+	DWORD dclst;
+	DEF_NAMEBUF;
+	struct slist *p=NULL;
+
+	ff_dbg(" ff.c: f_get_slist...\n");
+	/* Get logical drive number */
+	res = find_volume(&dj.fs, &path, 0); /* searches for  path:file given in *path, if successful returns fs (0=do not check write protection) */
+	if (res == FR_OK) {
+		INIT_BUF(dj);  					/* initialize dj.fn (buffer for filename) */
+		res = follow_path(&dj, path);		/* Follow the file path and return directory object in dj */
+		if (_FS_RPATH && res == FR_OK && (dj.fn[NS] & NS_DOT))
+			res = FR_INVALID_NAME;			/* dot entry is invalid */
+
+		if (res == FR_OK) {					/* The object is accessible */
+			dir = dj.dir;
+			if (!dir) 
+				res = FR_INVALID_NAME;		/* start directory is invalid */
+			
+			dclst = ld_clust(dj.fs, dir);	/* load 1st cluster of file */
+
+			if (res == FR_OK && (dir[DIR_Attr] & AM_DIR)) 
+				res = FR_INVALID_NAME;		/* sub directory is invalid */
+				
+
+			if (res == FR_OK) {				
+					if (dclst){				/* get the cluster chain if exist */
+						ff_dbg(" ff.c: fs->volbase=%d\n",dj.fs->volbase);
+						ff_dbg(" ff.c: fs->database=%d\n",dj.fs->database);
+						ff_dbg(" ff.c: fs->fatbase=%d\n",dj.fs->fatbase);
+						ff_dbg(" ff.c: fs->dirbase=%d\n",dj.fs->dirbase);
+						ff_dbg(" ff.c: fs->ssize=%d\n",dj.fs->ssize);
+						ff_dbg(" ff.c: fs->csize=%d\n",dj.fs->csize);
+						res = get_chain(&p, dj.fs, dclst);
+					}
+				}
+			}
+
+		FREE_BUF();
+	}
+
+	return p;
+}
 
 unsigned long endian(unsigned long val){
 

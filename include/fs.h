@@ -299,7 +299,7 @@ static const char *const fs_disklabel_types[] = {
 
 /*
 	This is the _file structure used by the fs subsystem.
-	It differs from FILE structure in the CLIB (it is used inside the CLIB itself).
+	It differs from FILE structure in the CLIB (it is used inside the CLIB itself). FIXME
 */
 struct _file
 {
@@ -383,6 +383,7 @@ struct fstabentry
   struct  fs_driver	*pfsdrv;	/* pointer to file system driver */
   struct  blk_driver 	*pblkdrv;	/* pointer to block device driver */ 
   int 		partition;	/* (MBR) partition number (0...3) */
+  DWORD   start_sector; /* first sector of partition (vbr start) on physical drive */
   BYTE    extended; /* 1=extended partition, 0=normal partition */
   BYTE    extpart; /* extended partition number 0,1,2,3.... */
   void		*pfs;		/* pointer to the file system FATFS for example, type can be retreived from pfsdrv->pname */

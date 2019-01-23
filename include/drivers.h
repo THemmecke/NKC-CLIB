@@ -55,6 +55,7 @@ struct c_operations
 struct blk_driver
 {
 	char	                       *pdrive;	  /* name of drive, i.e. A, B... ,HD, SD... */
+  char                          type;     /* 0=SCSI, 1=IDE, 2=SD */
 	struct block_operations 		 *blk_oper;	/* block operations */
 	struct blk_driver			       *next;		  /* pointer to next driver in driverlist */
 };
@@ -84,7 +85,7 @@ struct char_driver* get_char_driver(char *name);
 
 int xx_initialize(void);
 
-int register_blk_driver(char *pdrive, const struct block_operations  *blk_oper);
+int register_blk_driver(char *pdrive, char type, const struct block_operations  *blk_oper);
 int un_register_blk_driver(char *pdrive);
 
 int register_char_driver(char *pdrive, const struct c_operations  *c_oper);

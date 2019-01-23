@@ -13,6 +13,8 @@
 
 /* TRAP-NUMMERN DES GP TRAP #1 (V7.0) */
 
+#define _GP_TRAP	 1
+
 #define _SCHREITE    1   
 #define _DREHE       2   
 #define _HEBE        3   
@@ -184,8 +186,50 @@
 #define _GETTRANS    167
 
 
+/* HARDDISK-COMMANDS */
+#define _HD_CMD_REZERO_UNIT	0
+#define _HD_CMD_READ		1
+#define _HD_CMD_WRITE		2
+#define _HD_CMD_READ_LONG	3
+#define _HD_CMD_WRITE_LONG	4
+#define _HD_CMD_MODE_SELECT	5
+#define _HD_CMD_MODE_SENSE	6
+#define _HD_CMD_SEEK		7
+#define _HD_CMD_TEST_UNIT	8
+#define _HD_CMD_STOP		9
+#define _HD_CMD_START		10
+#define _HD_CMD_EXT_READ	11
+#define _HD_CMD_EXT_WRITE	12
+#define _HD_CMD_READ_BUFF	13
+#define _HD_CMD_WRITE_BUFF	14
+#define _HD_CMD_RESERVE		15
+#define _HD_CMD_RELEASE		16
+#define _HD_CMD_WR_VERIFY	17
+#define _HD_CMD_VERIFY		18
+#define _HD_CMD_SEND_DIAG	19
+#define _HD_CMD_EXT_SEEK	20
+#define _HD_CMD_RD_USAGE_CT	21
+#define _HD_CMD_RD_CAPACITY	22
+#define _HD_CMD_RD_DIAG_RES	23
+#define _HD_CMD_INQUIRY		24
+#define _HD_CMD_RD_DEF_DATA	25
+#define _HD_CMD_REASS_BLKS	26
+#define _HD_CMD_REQ_SENSE	27
+#define _HD_CMD_FORMAT_UNIT	28
+#define _HD_CMD_CUSTOM_CMD	29
+
+/* DISKNUMBER */
+#define _HD_0	1
+#define _HD_1	2
+#define _HD_MASTER	1
+#define _HD_SLAVE	2
+
+
+
+
 #ifdef USE_JADOS
 /* JADOS 3.4 TRAPS (TRAP #6) */
+#define __JD_TRAP	6
 
 #define __getleng 	0
 #define __getname 	1

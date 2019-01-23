@@ -1180,6 +1180,8 @@ static int nkcfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg){
   FRESULT res;
   struct _file File;
 
+  struct slist *pslist;
+
   fsnkc_dbg("fs_nkc.c: [ nkcfs_ioctl (cmd = %d)...\n",cmd);
 
   switch(cmd){
@@ -1251,7 +1253,7 @@ static int nkcfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg){
 
       break;
 
-      // ****************************** un-mount ******************************
+    // ****************************** un-mount ******************************
     case FS_IOCTL_UMOUNT:
       //name = NULL, cmd = FS_IOCTL_MOUNT, arg = pfstab
       // this is called after an entry was inserted into fstab in fs.c. We have to translate volume name to physical drive number here,
@@ -1265,10 +1267,25 @@ static int nkcfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg){
 		break;
       }
 
-
       res = nkcfs_mount(0, ((struct fstabentry*)arg));
 
       break;
+
+    // ****************************** get list of sectors the file occupies on disk ******************************
+    case FS_IOCTL_GET_SLIST:
+        fsnkc_dbg("fs_nkc.c: - FS_IOCTL_GET_SLIST -\n");
+        File.p_fstab = pfstab;
+        File.pname = ((struct ioctl_get_slist*)arg)->filename;
+
+        pslist = nkcfs_get_slist(&File);
+        fsnkc_dbg("fs_nkc.c: nkcfs_get_slist returned 0x%08x\n", pslist);
+
+        ((struct ioctl_get_slist*)arg)->list = pslist;
+
+        res = EZERO;
+
+    	break;
+
 
 
     default: res = FR_OK;
@@ -1671,8 +1688,8 @@ static int nkcfs_close(struct _file *filp)
    	  	/* write back FAT/DIR to media */
    	  	pfstab  = pfcb->pfs->pfstab;		/* pointer to file related fstab entry */
 	  	dev.pdrv = pfstab->pdrv; 			/* physical drive number 				*/
-   	  	pFAT = pfcb->pfs->pFAT;			/* pointer to volumes FAT */
-   	  	pdir = pfcb->pfs->pDIR;			/* pointer to volumes DIR */
+   	  	pFAT = pfcb->pfs->pFAT;				/* pointer to volumes FAT */
+   	  	pdir = pfcb->pfs->pDIR;				/* pointer to volumes DIR */
    	  	pJDFs = (JDFS *)pfstab->pfs;		/* pointer to JADOS file system object  */
    	  	pJDHd = pJDFs->pjdhd;				/* pointer to JADOS disc descriptor */
 
@@ -2295,4 +2312,109 @@ void nkcfs_init_fs(void)
 	fsnkc_dbg(" Address of ...->open: 0x%x\n",(int)nkc_file_operations.open);
 	fsnkc_lldbgwait("...nkcfs_init_fs\n");
 
+}
+
+
+// returns EZERO if successful, ENOMEM otherwise
+static int add_sectors_to_list(struct slist **p, unsigned int start, unsigned int n){
+	struct slist *next, *list;
+	unsigned int sec;
+	unsigned int nn;
+
+	fsnkc_dbg(" add_sectors_to_list: p->0x%08x, slist->0x%08x, start=%d, n=%d\n",p,*p,start,n);
+
+	if(start == 0) return EINVDAT;
+	if(n < 1) return EINVDAT;
+
+	list = *p;
+	sec = start;
+	nn = n;
+
+	if(list==NULL){
+		fsnkc_dbg(" add_sectors_to_list: 1st element -> start list\n");
+		list=malloc(sizeof(struct slist));
+		if(list==NULL) return ENOMEM;
+		fsnkc_dbg(" add_sectors_to_list: memory for struct slist allocated\n");
+		list->s = sec;
+		list->next=NULL;
+		sec++;
+		nn--;
+		*p = list;
+	}else{
+		while(list->next) list=list->next;
+	}
+	/* list now point's to last element of p */
+
+	/* add rest to list */
+	for(; nn>0;nn--,sec++){
+		fsnkc_dbg(" add_sectors_to_list: add %d, remain %d\n",sec,nn);
+		next=malloc(sizeof(struct slist));
+		if(next==NULL) return ENOMEM;
+		next->s = sec;
+		next->next = NULL;
+		list->next = next;
+		list = next;
+	}
+
+	fsnkc_dbg(" add_sectors_to_list: ready !\n");
+
+	return EZERO;
+}
+
+static struct slist* nkcfs_get_slist(struct _file *filp) {
+	FRESULT res;
+	unsigned short track,length;
+	FATentry *FAT;
+	DIR dir;					/* Directory object 		*/
+	struct jddir jdir;			/* JADOS Directory entry 	*/
+	struct slist *pslist=NULL; 	/* sector list */
+	
+	fsnkc_dbg(" nkcfs_get_slist: (%s) (0x%08x)\n",filp->pname,filp->p_fstab);
+
+	res = find_file(filp,&dir,&jdir); /* fetch file information */
+
+	if(res != EZERO){ // file not found on disk
+	 fsnkc_dbg(" nkcfs_get_slist:  file not found\n");
+	 return NULL;
+	}	  
+
+	fsnkc_dbg(" nkcfs_get_slist: ok, file found - now analyzing\n");
+	// file starts at jdir.starttrack  10 culsters per track, 1 cluster = 1024 Bytes = 2 sectors => 1 track = 20 sectors
+	// last cluster in last track (-> FAT) ist jddir.endcluster
+	// file length is jddir.length in clusters
+
+	fsnkc_dbg(" nkcfs_get_slist: starttrack = %d, endcluster = %d, length = %d\n",jdir.starttrack,jdir.endcluster,jdir.length);
+
+	// follow FAT entries
+	FAT = ((JDFS*)filp->p_fstab->pfs)->pFAT;
+	length = jdir.length; 
+	track = jdir.starttrack;  
+
+	while(track != 0xFFFF && track != 0xE5E5){
+	    // => append 10 clusters = 20 sectors to sector list
+	    fsnkc_dbg(" nkcfs_get_slist: current track = %d\n",track);
+
+	    if(length >= TRACK_SIZE){
+	    	// add full track
+	    	fsnkc_dbg(" nkcfs_get_slist: add full track (length = %d) ...\n",length);
+	    	if(add_sectors_to_list(&pslist, track * TRACK_SIZE * CLUSTERSIZE/512, TRACK_SIZE * CLUSTERSIZE/512) != EZERO){
+	    	// free aready allocated memory and return error
+	    	}
+	    	length -= TRACK_SIZE;
+	    }else{
+	    	// this is probably the last track
+	    	fsnkc_dbg(" nkcfs_get_slist: add last tracks (length = %d) ...\n",length);
+	    	// we could doublecheck this: FAT[track].successor should be 0xFFFF od 0xE5E5
+		    if(add_sectors_to_list(&pslist, track * TRACK_SIZE * CLUSTERSIZE/512, length * CLUSTERSIZE/512) != EZERO){
+		    	// free aready allocated memory and return error
+		    }
+		    length = 0;
+		}
+	    	
+		track = FAT[track].successor;		
+	}
+
+
+	fsnkc_dbg(" nkcfs_get_slist: ok, returning list at 0x%08x\n",pslist);
+	return pslist;
 }

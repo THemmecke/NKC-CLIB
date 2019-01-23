@@ -666,10 +666,10 @@ int vsprintf(char *buffer, const char *format, void *arglist)
         *pbuffer=buffer_start;
         _dynamic_buffer = 1;
         return res;
-        #else
+  #else
         _max_output_len = 512 ;
         return _print (&buffer, format, arglist);
-        #endif
+  #endif
 
 	
 
@@ -677,11 +677,11 @@ int vsprintf(char *buffer, const char *format, void *arglist)
 
 int sprintf(char *buffer, const char *format, ...)
 {
-        #ifdef USE_DYNAMIC_VSPRINTF_BUFFER        
+  #ifdef USE_DYNAMIC_VSPRINTF_BUFFER        
         _dynamic_buffer = 0; // disable use of dynamic buffer for sprintf (see definition of sprintf)
-	return vsprintf(&buffer,format,(((char *)&format) + sizeof(char *)));
+	       return vsprintf(&buffer,format,(((char *)&format) + sizeof(char *)));
 	#else
-	return vsprintf(buffer,format,(((char *)&format) + sizeof(char *)));
+	       return vsprintf(buffer,format,(((char *)&format) + sizeof(char *)));
 	#endif
 }
 

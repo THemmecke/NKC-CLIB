@@ -35,21 +35,32 @@ m001:
  		trap #1
  		jra m001        	 /*  Wiederholen */
 m002:  
+
 		jbsr mtools			 /*  load mtools */
 
 		lea fname(%pc),%a0	 /*  Dateiname nach %a0 */
 		movea.l #target,%a1	 /*  Zieladresse nach %a1 */
 		move #5,%d7			 /*  function mload */
-
 		jbsr trap10			 /*  let mtools do the work */
 
-		jmp target			 /*  jmp !! */
+		cmp #-1,%d0 			/*  */
+		beq mainerr0 			/* if (d0 == -1) ==> error */
+
+		jmp target			/*  else jmp !! */
 
 
 
 mainend:  
         rts					 /*  Ende des Bootloadercodes */
 
+mainerr0: 	move #2,%d7			 /*  function mdir */
+			jbsr trap10			 /*  call mtools */
+			lea txtcrlf(%pc),%a0 /*  CRLF */
+ 			jbsr writetxt
+			move #1,%d7			 /*  function mdisk */
+			jbsr trap10			 /*  call mtools */
+
+mainerr:  bra mainerr 			/* infinite loop */
 
  /* *************** Unterprogramme aus MTOOLS ********************** */
 
@@ -3190,7 +3201,7 @@ mdiska:                           /*  Zeigt die vorhandenen FS-Typ Laufwerke */
  tst.l hdbtfild(%a4)                     /*  ein Laufwerk vorhanden? */
  jeq mdaex                              /*  nü */
  clr %d1
- jbsr parser
+ /* jbsr parser */
  move.l #1,%d0
  jbsr option
  jne mdaex
@@ -3291,7 +3302,7 @@ mdira:                            /*  gibt das akt. DIR von aktlw aus */
  movem.l %d0-%d7/%a1-%a2,-(%sp)
  tst.l hdbtfild(%a4)                     /*  ein LW vorhanden? */
  jeq mdiraer                            /*  nü */
- jbsr parser                             /*  Parameter holen (JADOS) */
+ /*jbsr parser*/                             /*  Parameter holen (JADOS) */
  move.l #2,%d0
  jbsr option
  tst.l %d0

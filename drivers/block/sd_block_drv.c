@@ -511,6 +511,6 @@ int sd_initialize()
   //disk_initialize (0); (disk should be inizialized while mounting in open() )
   //disk_initialize (1);
   
-  register_blk_driver("sd",  &sd_bops);
+  register_blk_driver("sd", 2,  &sd_bops);
 }
   

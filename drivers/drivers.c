@@ -68,13 +68,14 @@ struct blk_driver* get_blk_driver(char *name)
  *
  * Parameters:
  *   	pdrive		- name of device (HD, SD ....)
- *	f_open		- pointer to device operations
+ *		type		- 0=SCSI, 1=IDE, 2=SD ...
+ *	    f_open		- pointer to device operations
  *
  * Return:
  *		EZERO - success   
  *
  ****************************************************************************/
-int register_blk_driver(char *pdrive, const struct block_operations  *blk_oper)
+int register_blk_driver(char *pdrive, char type, const struct block_operations  *blk_oper)
 {
 	struct blk_driver *pdriver, *ptail;
 	
@@ -92,6 +93,7 @@ int register_blk_driver(char *pdrive, const struct block_operations  *blk_oper)
 	
 	strcpy(pdriver->pdrive, pdrive);
 	pdriver->blk_oper = blk_oper;
+	pdriver->type = type;
 	pdriver->next = NULL;
 			
 		

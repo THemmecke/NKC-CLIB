@@ -2,8 +2,6 @@
 
 rs.<size>			entspricht ds mit eigenem Zähler	.space <Bytes> im Segment bss
 
-rs 0				Align 16-Bit			.align 2 or .even
-
 rsset                           rs Zähler setzen                ?
 rsreset				rs Zähler zurücksetzen		?
 
