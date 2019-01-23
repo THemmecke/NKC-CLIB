@@ -18,10 +18,10 @@
 
  
  Harddisk:
-   cluster 0 - 99: bootloader and extensions
-                    4E 71  NOP
+   cluster 0 - 99: bootloader and extensions (100KB)
+                    4E 71  NOP 		<-- = this NOP means 'JADOS'=>1024 BPS
                     60 08  BRA *+8
-                    4B 4A  KJ		<-- = label JADOS
+                    4B 4A  KJ		<-- = label JADOS, if this is a NOP and the 'JADOS NOP' above is not present, the GP loader assumes 512BPS Booloader
                     38 36  86
                     33 2E  3.		<-- = Version 3.50
                     35 30  50		
@@ -282,6 +282,6 @@ static int     nkcfs_rename(struct _file *filp, const char *oldrelpath, const ch
 
 void    nkcfs_init_fs(void);
 
-
+static struct slist* nkcfs_get_slist(struct _file *filp);
 
 #endif

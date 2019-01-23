@@ -7,6 +7,7 @@
 
 #include <fs.h> 
 
+#include "../../nkc/llnkc.h"
 #include "../../fs/fat/ff.h"
 #include "shell.h"
 
@@ -545,4 +546,23 @@ unsigned char 							/* return 1 for successfull */
     }while(!cr && !single);   
 
     if(single) printf("\n");
+
+    return rtype;
+}
+
+
+static const char progress[] = { '|','/','-','\\' };
+static progress_cnt;
+static BYTE xpos,ypos;
+void start_progress(void){
+	progress_cnt = 0;
+	printf("[");
+	gp_getxy(&xpos,&ypos);
+	printf("\\]");
+}
+
+void do_progress(void){
+		gp_setxy(xpos,ypos);
+		gp_putchar(progress[progress_cnt % 4]);
+	    progress_cnt++;
 }

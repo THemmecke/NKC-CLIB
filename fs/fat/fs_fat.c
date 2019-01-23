@@ -305,6 +305,8 @@ static int     fatfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg
   struct geometry geo;
   struct _dev dev;
 
+  struct slist *pslist;
+
   
   FATFS *pFatFs;
   
@@ -439,13 +441,13 @@ static int     fatfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg
 			      pFatFs = ((struct fstabentry*)arg)->pfs;
 			      
 			      if(pFatFs) {
-				fsfat_dbg("fs_fat.c|FS_IOCTL_UMOUNT (%s)\n",((struct fstabentry*)arg)->devname);
-				sprintf(tmp, "%s:", ((struct fstabentry*)arg)->devname);
-				res = f_mount(NULL, tmp, 0);
-				free(pFatFs);
-				((struct fstabentry*)arg)->pfs = NULL;
-			      } else {
-				fsfat_dbg("fs_fat.c|FS_IOCTL_UMOUNT pFatFS = NULL !! \n");
+      				fsfat_dbg("fs_fat.c|FS_IOCTL_UMOUNT (%s)\n",((struct fstabentry*)arg)->devname);
+      				sprintf(tmp, "%s:", ((struct fstabentry*)arg)->devname);
+      				res = f_mount(NULL, tmp, 0);
+      				free(pFatFs);
+      				((struct fstabentry*)arg)->pfs = NULL;
+      			} else {
+      				fsfat_dbg("fs_fat.c|FS_IOCTL_UMOUNT pFatFS = NULL !! \n");
 			      }		      
 			      //((struct ioctl_mount_fatfs*)arg)->drv === not used yet, we have only one physical drive 0
 			      // same information is in name => hda, hdb....
@@ -509,22 +511,35 @@ static int     fatfs_ioctl(struct fstabentry* pfstab, int cmd, unsigned long arg
 					   ((struct ioctl_mkfs*)arg)->au);			      
 			      break;    
     case FS_IOCTL_INFO:   	
-			      printf("FatFs module (%s, CP:%u/%s) version %s , revision %d\n\n",
+			     fsfat_dbg("FatFs module (%s, CP:%u/%s) version %s , revision %d\n\n",
 					_USE_LFN ? "LFN" : "SFN",
 					_CODE_PAGE,
 					_LFN_UNICODE ? "Unicode" : "ANSI",
 					_FAT_FS_VERSION,_FFCONF
 				    );
-
+           res = EZERO;
 			      break;   
-			      
+		
+    // ****************************** get list of sectors the file occupies on disk ******************************
+    case FS_IOCTL_GET_SLIST:
+      fsfat_dbg(" fs_fat.c| FS_IOCTL_GET_SLIST - \n");    
+      
+      pslist = f_get_slist(((struct ioctl_get_slist*)arg)->filename);
+      fsfat_dbg("fs_fat.c: fatfs_get_slist returned 0x%08x\n", pslist);
+
+      ((struct ioctl_get_slist*)arg)->list = pslist;
+
+      res = EZERO;
+
+      break;
+
     // Low Level FileSystem Services 200+ ==============================  
    
         
     case FS_IOCTL_MKPTABLE:		      // this should be handled in the block driver itself for it is a filesystem independent function ... see hd_block_drv -> ioctl function
       // write disk partition table (this function is FAT FileSystem independent and should be moved...)
       // args: char *name<=NULL, int cmd<=FS_IOCTL_MKPTABLE, unsigned long arg <=pointer to struct ioctl_mkptable
-      printf(" Uuups: FS_IOCTL_MKPTABLE should not be called in fs_fat.c but in a lower level driver ... !\n");
+      fsfat_dbg(" Uuups: FS_IOCTL_MKPTABLE should not be called in fs_fat.c but in a lower level driver ... !\n");
       break;
 		      res = f_fdisk(dn2pdrv(((struct ioctl_mkptable*)arg)->devicename), /* physical drive number mapped via dn2pdrv(HDA...) */  
 					    ((struct ioctl_mkptable*)arg)->szt, 	/* Pointer to the size table for each partition */

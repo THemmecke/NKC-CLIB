@@ -23,6 +23,6 @@ static int     fatfs_readdir(struct _file *filp, DIR *dir,FILINFO* finfo);
 
 void    fatfs_init_fs(void);
 
-
+static struct slist* fatfs_get_slist(struct _file *filp);
 
 #endif

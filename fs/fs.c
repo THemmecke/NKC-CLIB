@@ -373,7 +373,7 @@ unsigned char checkfp(char* fp, struct fpinfo *pfpinfo)
       // check length of drive name, maybe we could check fstable here and store pfstab pointer
       switch(n){      
         case 1: // jados drive name (0,1,2...A,B,C....)
-          printf(" fs.c|checkfp: got jados/alias drive ...\n");
+          fs_dbg(" fs.c|checkfp: got jados/alias drive ...\n");
           strcpy(pfpinfo->psz_deviceID, pfpinfo->psz_driveName); // copy drive to psz_deviceID
           pfpinfo->n_partition = pfpinfo->c_deviceNO = 0; // or: =  pfpinfo->psz_deviceID - (int)'A';
           break;
@@ -1068,9 +1068,10 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
       fs_lldbgwait(" - FS_IOCTL_DISK_INIT - \n");
       
       if(!name) { 
-		fs_lldbgwait(" error: no name given... \n");
-		res = EINVAL; 
-		break; }			// if no name, exit...
+    		fs_lldbgwait(" error: no name given... \n");
+    		res = EINVAL; 
+    		break; 
+      }			// if no name, exit...
       
       
       // example: name = HDA => block driver name = HD, physical device = A (0)
@@ -1143,29 +1144,29 @@ int ioctl(char *name, int cmd, unsigned long arg) // do ioctl on device "name"
       fs_dbg("fs-ioctl default...\n");
       pfsdriver = NULL;
       if(name == NULL && cmd > 100) { // unspecified FAT_IOCTL
-		  fs_dbg("error, unspecified FAT_IOCTL (name = 0x%0x, cmd = %d...\n",name,cmd);
-		  fs_lldbgwait("");
-		  return FR_INVALID_PARAMETER;	  	 	
+  		  fs_dbg("error, unspecified FAT_IOCTL (name = 0x%0x, cmd = %d...\n",name,cmd);
+  		  fs_lldbgwait("");
+  		  return FR_INVALID_PARAMETER;	  	 	
       }	else {
-		fs_lldbgwait("look for fs driver in fstab ...\n");
-		if(name == NULL) {
-		  fs_lldbgwait("error, inavalid parameter (name == NULL) ...\n");
-		  return FR_INVALID_PARAMETER;     			
-	    }
-	
-		pfstab = get_fstabentry(name);
+    		fs_lldbgwait("look for fs driver in fstab ...\n");
+    		if(name == NULL) {
+    		  fs_lldbgwait("error, inavalid parameter (name == NULL) ...\n");
+    		  return FR_INVALID_PARAMETER;     			
+    	  }
+  	
+		    pfstab = get_fstabentry(name);
 	      
-	    if(!pfstab){
-		  // error drive not mounted...
-	      #ifdef CONFIG_DEBUG_FS
-	      strncpy(dbgstr,name,DBGSTR_LEN); dbgstr[DBGSTR_LEN]=0;
-		  fs_dbg("error, no filesystem found for specified drive (%s)...\n",dbgstr);
-		  #endif
-		  res = EINVDRV;
-		  break;
+  	    if(!pfstab){
+  		  // error drive not mounted...
+  	      #ifdef CONFIG_DEBUG_FS
+  	      strncpy(dbgstr,name,DBGSTR_LEN); dbgstr[DBGSTR_LEN]=0;
+  		  fs_dbg("error, no filesystem found for specified drive (%s)...\n",dbgstr);
+  		  #endif
+  		  res = EINVDRV;
+  		  break;
 	    } 
       
-    	pfsdriver = pfstab->pfsdrv;  		// pointer to file system driver
+    	   pfsdriver = pfstab->pfsdrv;  		// pointer to file system driver
 	
       }
       
@@ -1336,7 +1337,7 @@ FRESULT mountfs(char *devicename, char* fsname, MOUNTOPTS options)
     fres = add_fstabentry(devicename,fsname,options);
     
     if(fres == FR_OK) {      
-		pfstab = get_fstabentry( devicename );	// get fstabentry
+		  pfstab = get_fstabentry( devicename );	// get fstabentry
 		
 		if(!pfstab) {
 		  #ifdef CONFIG_DEBUG_FS
@@ -1350,7 +1351,7 @@ FRESULT mountfs(char *devicename, char* fsname, MOUNTOPTS options)
 	
 	pfsdriver = pfstab->pfsdrv;
 	#ifdef CONFIG_DEBUG_FS
-    strncpy(dbgstr,pfstab->devname,DBGSTR_LEN); dbgstr[DBGSTR_LEN]=0;
+  strncpy(dbgstr,pfstab->devname,DBGSTR_LEN); dbgstr[DBGSTR_LEN]=0;
 	fs_dbg("fs.c|mountfs: calling ioctrl with fstabentry:\n");
 	fs_dbg("  devname = %s\n",dbgstr);
 	fs_dbg("  phydrv  = %d\n",pfstab->pdrv);
@@ -1358,7 +1359,7 @@ FRESULT mountfs(char *devicename, char* fsname, MOUNTOPTS options)
 	fs_dbg("  blkdrv  = 0x%x\n",pfstab->pblkdrv);
 	fs_dbg("  part    = %d\n",pfstab->partition);
 	fs_dbg("  extended= %d\n",pfstab->extended);
-    fs_dbg("  extpart = %d\n",pfstab->extpart);
+  fs_dbg("  extpart = %d\n",pfstab->extpart);
 	fs_dbg("  pFS     = 0x%x\n",pfstab->pfs);	
 	fs_dbg("  options = %d",pfstab->options);
 	fs_lldbgwait(" (KEY)\n");
@@ -1534,13 +1535,12 @@ FRESULT add_fstabentry(char *volume, char* fsname, MOUNTOPTS options)
     struct fstabentry *pfstab, *ptail;   
     
     #ifdef CONFIG_DEBUG_FS
-	strncpy(dbgstr,volume,DBGSTR_LEN); dbgstr[DBGSTR_LEN]=0;
-	strncpy(dbgstr1,fsname,DBGSTR_LEN); dbgstr1[DBGSTR_LEN]=0;		
+	  strncpy(dbgstr,volume,DBGSTR_LEN); dbgstr[DBGSTR_LEN]=0;
+	  strncpy(dbgstr1,fsname,DBGSTR_LEN); dbgstr1[DBGSTR_LEN]=0;		
     fs_dbg("add_fstabentry %s - %s ...\n",dbgstr,dbgstr1);
     #endif
     
     pfs_drv = get_driver(fsname);     // file system driver
-
     pblk_drv = get_blk_driver(volume);// block device driver
     
     if(!pfs_drv) { // errorhandling
@@ -1586,6 +1586,7 @@ FRESULT add_fstabentry(char *volume, char* fsname, MOUNTOPTS options)
     pfstab->extended = dn2extended(volume);
     pfstab->extpart = dn2expart(volume);
     pfstab->pfs = NULL;
+    pfstab->start_sector = 0;
     
     #ifdef CONFIG_DEBUG_FS
   	strncpy(dbgstr,pfstab->devname,DBGSTR_LEN); dbgstr[DBGSTR_LEN]=0;	
@@ -1609,10 +1610,10 @@ FRESULT add_fstabentry(char *volume, char* fsname, MOUNTOPTS options)
       fs_dbg("1st entry in fstab ....\n");
 		fstab = pfstab;
     }else{
-		ptail = fstab;
-		while(ptail->next) ptail = ptail->next;
-		ptail->next = pfstab;
-	}
+  		ptail = fstab;
+  		while(ptail->next) ptail = ptail->next;
+  		ptail->next = pfstab;
+	  }
 	
 	
     fs_lldbgwait("add_fstabentry: success (KEY)\n");

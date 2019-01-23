@@ -61,7 +61,7 @@ Disassembly of section .data:
  1c2:	06ff           	.short 0x06ff
  1c4:	ffff           	.short 0xffff
  1c6:	4200           	clrb %d0
- 1c8:	0000 9e0f      	orib #15,%d0
- 1cc:	3d00           	movew %d0,%fp@-
+ 1c8:	0000 0020      	orib #32,%d0
+ 1cc:	0300           	btst %d1,%d0
 	...
  1fe:	55aa           	.short 0x55aa

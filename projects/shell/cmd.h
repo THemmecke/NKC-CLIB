@@ -5,11 +5,6 @@
 
 static const char * partition_type(unsigned char type);
 
-// initialization functions
-
-void init_cmd(void);
-void exit_cmd(void);
-
 // command prototypes
 int cmd_cls(void);
 

@@ -208,7 +208,7 @@ TCHAR* f_gets (TCHAR* buff, int len, FIL* fp);					/* Get a string from the file
 #endif
 
 
-
+struct slist*  f_get_slist (const TCHAR* path);
 
 /*--------------------------------------------------------------*/
 /* Additional user defined functions                            */

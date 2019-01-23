@@ -1,39 +1,26 @@
-Um eine SD-Card zu erstellen, die auf dem NKC booten kann und gleichzeitig von WinXP aus über USB beschreibbar ist muss man etwas tricksen:
+Um eine SD-Card zu erstellen, die auf dem NKC booten kann und gleichzeitig von Win* aus über USB beschreibbar ist muss man etwas tricksen:
 
 - zum editieren der SDCard muss mit HxD zunächst das Medium geöffnet werden (Wechseldatenträger xy). Wenn man das
- (DOS) Laufwerk öffnet, sieht man nur die Partition, also Wechseldatenträger ab Sektor 66 !!
+ (DOS) Laufwerk öffnet, sieht man nur die Partition, also Wechseldatenträger ab Sektor 66 (siehe ptable in mbr.S) !!
 - Es wird eine FAT16 Struktur mit Partitionstabelle benötigt.
 - Mit WinXP kan man aber keine Partitionen auf einer SD-Card erstellen
-- Der LDR_PRT1.BIN wird nach Sektor 0 kopiert.
+- Der MBR mbr.68k wird nach Sektor 0 kopiert.
 - Windows sieht jetzt eine nicht formatierte SD-Card
-- Die wird formatiert (FAT16), WinXP beachtet dabei die Partitionstabelle und schreibt den Windows Boot Record sauber in den Sektor 66 
+- Die wird formatiert (FAT16), Win* beachtet dabei die Partitionstabelle und schreibt den Windows Boot Record sauber in den Sektor 66 
   (wie in der Tabelle vorgegeben)
-- Den LDR_PRT2.BIN kopiert man in den Sektor 1
+- Den Loader ldr.68k kopiert man in den Sektor 1
 - Unter Windows kann man jetzt Dateien in die erstellte Partition kopieren
 
-- der NKC Bootet jetzt LDR1, dieser läd wiederum LDR2 welcher seinerseits NKC68k.rom läd und startet.
-
-- Für die ROM-Version des Kernels läd LDR2 NKC68K.rom nach 0x100000
-  crt0_rom.S kopiert dann Daten, BSS und romfs nachbelieben und startet dann den Kernel
-
-- Für die RAM-Version wird NKC68K.rom nach 0x400 geladen und dort gestartet
-  crt0_ram.S muss dann das ROM-FS (sofern verwendet) verschieben, das BSS Segment initialisieren 
-  und den Kernel starten.
-  
-Erst die RAM Version bietet alle Möglichkeiten, da der Speicher jetzt besser erweitert werden kann !!
-
-
-Voilá !
+- der NKC Bootet jetzt mbr.68k, dieser läd wiederum ldr.68k welcher seinerseits NKC68K.ROM (fname am Ende von ldr.S) läd und startet.
 
 
 
-UNter Linux ganz einfach :-)
+Unter Linux ganz einfach :-)
 
 Achtung: Volume darf nicht ge-mounted sein !
 
 MBR schreiben:
 sudo dd if=mbr.68k of=/dev/sdb bs=512 count=1
-
 
 Loader Part 2 ab Sector 1
 sudo dd if=ldr.68k of=/dev/sdb bs=512 seek=1

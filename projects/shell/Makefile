@@ -14,7 +14,7 @@ include $(BASEDIR)/Makefile.rules
 BUILD_NUMBER_FILE=build-number.txt
 
 
-OBJECTS=cmd.o shell.o fdisk.o wildcmp.o
+OBJECTS=cmd.o shell.o fdisk.o wildcmp.o sys.o helper.o
 #sd.o sdcard.o crc.o
 
 OUTFILE=test
@@ -34,7 +34,8 @@ OD=m68k-uclinux-objdump
 #	$(OD) -D -b binary -m m68k $(OUTFILE).68k > $(OUTFILE).dis
 
 all: $(OBJECTS) $(BUILD_NUMBER_FILE)
-	$(LD) $(BUILD_NUMBER_LDFLAGS)  $(LDFLAGS)  -o $(OUTFILE).elf $(OBJECTS) > $(OUTFILE).map;	
+	$(LD) $(BUILD_NUMBER_LDFLAGS) $(OBJECTS) $(LDFLAGS) -o $(OUTFILE).elf  > $(OUTFILE).map;	
+	#$(LD) $(BUILD_NUMBER_LDFLAGS) $(LDFLAGS) $(OBJECTS) -o $(OUTFILE).elf  > $(OUTFILE).map;	
 	$(BASEDIR)/tools/elf2bin -r -s -l $(LOADADDR) -o $(OUTFILE).68k $(OUTFILE).elf; \
 	#$(OC) -I elf32-m68k -Sgv --adjust-start $(LOADADDR) $(OUTFILE).elf $(OUTFILE).68k; \
 	$(OD) -D -b binary -m m68k $(OUTFILE).68k > $(OUTFILE).dis;\

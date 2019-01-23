@@ -14,13 +14,13 @@
 .org 0x0
 		
 start:  jmp main(%pc)		/* springe zum Bootloader  */
-        nop			/* an diesem NOP erkennt */
-        nop			/* das GP den Loader */
+        nop					/* an diesem NOP erkennt */
+        nop					/* das GP den Loader */
 
         
-main:				/* Part 1 laed den eigentlichen */
-				/* Bootloader aus den folgenden */
-				/* Sektoren */
+main:						/* Part 1 laed den eigentlichen */
+							/* Bootloader aus den folgenden */
+							/* Sektoren */
 		moveq #20,%d7	/* Bildschirm löschen (GP) */
  		trap #1
  		
@@ -33,7 +33,7 @@ m001:
  		bra.s m001        	/* Wiederholen */
 m002:
 		
-					/* Sektor 1 laden */
+							/* Sektor 1 laden */
 		moveq.l #1,%d4		/* select Master IDE */
 		moveq.l #1,%d1		/* Sector Read */
 		moveq.l #1,%d2		/* Start Sector */
@@ -78,7 +78,8 @@ part1:
 		.byte	0xFF			/* Cyl./Sector		*/
 		.byte	0xFF			/* Cylinder		*/
 		.byte	0x42,0x00,0x00,0x00 	/* Startsektor relativ zum Anfang der HD (66) */
-		.byte  	0x9E,0x0F,0x3D,0x00	/* Anzahl der Sektoren in der Partition	(4001694) */
+		/*.byte  	0x9E,0x0F,0x3D,0x00*/	/* Anzahl der Sektoren in der Partition	(4001694)  == 0x3D0F9E */
+		.byte  	0x00,0x20,0x03,0x00	/* Anzahl der Sektoren in der Partition	(204800(100MB))    == 0x032000 */
 part2:
 						/* zweiter Eintrag:		*/
 		.byte	0x00			/* Bootable			*/

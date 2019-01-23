@@ -18,14 +18,14 @@
 
 //void init_ff(void);
 
-DSTATUS disk_initialize ( struct fstabentry *pfstab );
+ DSTATUS disk_initialize ( struct fstabentry *pfstab );
 //DRESULT disk_readp (BYTE*, DWORD, WORD, WORD);
 //DRESULT disk_writep (const BYTE*, DWORD);
 
-DSTATUS disk_status ( struct fstabentry *pfstab );
-DRESULT disk_read ( struct fstabentry *pfstab, BYTE *buff,DWORD sector,UINT count);
-DRESULT disk_write ( struct fstabentry *pfstab, const BYTE *buff,DWORD sector,UINT count);
-DRESULT disk_ioctl ( struct fstabentry *pfstab, int cmd, void* buff);
+ DSTATUS disk_status ( struct fstabentry *pfstab );
+ DRESULT disk_read ( struct fstabentry *pfstab, BYTE *buff,DWORD sector,UINT count);
+ DRESULT disk_write ( struct fstabentry *pfstab, const BYTE *buff,DWORD sector,UINT count);
+ DRESULT disk_ioctl ( struct fstabentry *pfstab, int cmd, void* buff);
 
 
 /* Disk Status Bits (DSTATUS) */

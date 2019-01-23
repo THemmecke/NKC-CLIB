@@ -42,6 +42,8 @@
 #define FS_IOCTL_MKFS 31
 #define FS_IOCTL_INFO 32
 
+#define FS_IOCTL_GET_SLIST 33
+
 // Low Level diskio commands 300+ ===================================
 // inported from 
 /* Generic command (used by FatFs) */
@@ -172,6 +174,19 @@ struct ioctl_nkc_blk {
   unsigned long arg3;
   
 };
+
+
+struct slist {  // used with FS_IOCTL_GET_SLIST
+  unsigned int s; // sector number on medium (LBA)
+  void* next;    // pointer to next slist entry
+};
+
+struct ioctl_get_slist{
+  struct slist *list;
+  char *filename;
+};
+
+
 
 
 #endif
