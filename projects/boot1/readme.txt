@@ -1,3 +1,6 @@
+Diese Version des Booloaders installiert einen MBR mit Bootloader, der den eigentlichen Lader, der ab Sektor 1 steht, in den Speicher laed und ausfuehrt. Der Lader enthlt die MTools, die eine Datei aus einer FAT16 Partition laden und ausfhren koennen (hier NKC68K.ROM).
+
+
 Um eine SD-Card zu erstellen, die auf dem NKC booten kann und gleichzeitig von Win* aus über USB beschreibbar ist muss man etwas tricksen:
 
 - zum editieren der SDCard muss mit HxD zunächst das Medium geöffnet werden (Wechseldatenträger xy). Wenn man das

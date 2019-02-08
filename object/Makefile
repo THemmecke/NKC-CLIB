@@ -61,6 +61,11 @@ LIBOBJECTS += s_copysign.o
 endif
 endif
 
+ifeq ($(CONFIG_GETOPT),1)
+LIBOBJECTS += getopt.o 
+endif
+
+
 #	$(LD) $(LDFLAGS) $(LIBOBJECTS) -o $(LIBDIR)/libCC.o; \
 # create a static library	
 all: $(CLIB_BUILD_NUMBER_FILE)

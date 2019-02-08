@@ -260,8 +260,16 @@ static struct CMDHLP hlptxt[] =
       "fdisk <device> - the fdisk utility\n",
             "fdisk hda\n"},  
 {TEXT_CMDHELP_SYS,
-      "sys <device> <loader> <os> [test]- install bootloader, test=>testrun\n",
-            "sys hda0 MBR.68k OS.SYS\n"},                                
+      "sys <device> <loader> <os> [options]- install bootloader\n",
+            "sys hda0 MBR.68k OS.SYS\n\n"\
+            " MBR.68K is the MBR loader merged to sector 0 of disk/partition\n"\
+            " OS.SYS is the os that should be loaded by the loader\n\n"\
+            " options:\n"\
+            "    -t  run in test mode (nothing will be written to disk)\n"\
+            "    -b  put loader at sector 1 (needs space between MBR and 1st partition !)\n\n"\
+            " example:\n"\
+            "  sys hda MBR.bin shell.68k -b\n"\
+            "   puts MBR.bin at sector 0 of hda and shell.68k to sector 1\n"},                                
 	    
 // TEST -----
 {TEXT_CMDHELP_SP,             
@@ -379,8 +387,7 @@ struct block_header{
 LONGLONG AccSize;			/* Work register for scan_fat_files() */
 
 WORD AccFiles, AccDirs;
-//BYTE Buff[262144];			/* Working buffer FIXME: allocate this buffer dynamic ! */
-BYTE *Buff;
+BYTE *Buff;           /* a work buffer */
 // ---
 FILE* file[2];				/* Pointer to File objects file[0] idt used for read and file[1] ist used for write */
 

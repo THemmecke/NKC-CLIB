@@ -8,6 +8,10 @@ ifeq ($(CONFIG_FS),1)
 MODULES += fs
 endif
 
+ifeq ($(CONFIG_GETOPT),1)
+MODULES += getopt
+endif
+
 
 
 	

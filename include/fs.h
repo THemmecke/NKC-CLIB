@@ -164,33 +164,33 @@ struct BPB_EXT {
 */ 
 struct BPB_EXT_FAT32 {
                   /* sector offset */
-  USHORT  BytsPerSec;   /*   2 0x00b: 16bits, always 512 bytes      - Bytes per Sector            */
-  UCHAR   SecPerClus;   /*   1 0x00d:  8bits, 1,2,4,8,16,32,64,128  - Secors per Cluster          */
-  USHORT  RsvdSecCnt;   /*   2 0x00e: 16bits, Usually 0x20 on FAT32 - Number of Reserved Sectors  */
-  UCHAR   NumFATs;      /*   1 0x010:  8bits, Number of FATs        - Always 2                    */
-  USHORT  RootEntries;  /*   2 0x011: Maximum number of FAT12 or FAT16 root directory entries. 0 for FAT32, 
+  USHORT  BytsPerSec;   /*   2 0x00b 11: 16bits, always 512 bytes      - Bytes per Sector            */
+  UCHAR   SecPerClus;   /*   1 0x00d 13:  8bits, 1,2,4,8,16,32,64,128  - Secors per Cluster          */
+  USHORT  RsvdSecCnt;   /*   2 0x00e 14: 16bits, Usually 0x20 on FAT32 - Number of Reserved Sectors  */
+  UCHAR   NumFATs;      /*   1 0x010 16:  8bits, Number of FATs        - Always 2                    */
+  USHORT  RootEntries;  /*   2 0x011 17: Maximum number of FAT12 or FAT16 root directory entries. 0 for FAT32, 
                                   where the root directory is stored in ordinary data clusters; see offset 0x02C in FAT32 EBPBs.*/
-  USHORT  TotSec16;     /*   2 0x013: Total logical sectors (if zero, use 4 byte value at offset 0x020) */
-  UCHAR   MediaDescr;   /*   1 0x015: -> bpb_media_types[] */
-  USHORT  FATSz16;      /*   2 0x016: Logical sectors per File Allocation Table for FAT12/FAT16. 
+  USHORT  TotSec16;     /*   2 0x013 19: Total logical sectors (if zero, use 4 byte value at offset 0x020) */
+  UCHAR   MediaDescr;   /*   1 0x015 21: -> bpb_media_types[] */
+  USHORT  FATSz16;      /*   2 0x016 22: Logical sectors per File Allocation Table for FAT12/FAT16. 
                                   FAT32 sets this to 0 and uses the 32-bit value at offset 0x024 instead. */
-  USHORT  SecPerTrack;  /*   2 0x018: Physical sectors per track for disks with INT 13h CHS geometry */
-  USHORT  HeadsPerCyl;  /*   2 0x01A: Number of heads for disks with INT 13h CHS geometry */
-  UINT    HiddenSec;    /*   4 0x01C: Count of hidden sectors preceding the partition that contains this FAT volume */  
-  UINT    TotSec32;     /*   4 0x020: Total logical sectors (if greater than 65535; otherwise, see offset 0x013). */
-  UINT    FATSz32;      /*   4 0x024: 32bits, Sectors Per FAT       - Depends on disk Size        */
-  USHORT  ExtFlags;     /*   2 0x028: */
-  USHORT  FSVersion;    /*   2 0x02A: Version (defined as 0.0) */
-  UINT    RootClus;     /*   4 0x02C: 32bits, Root Directory First Cluster - Usually 0x00000002  */
-  USHORT  FSInfoSec;    /*   2 0x030: Logical sector number of FS Information Sector, typically 1, i.e., the second of the three FAT32 boot sectors. */
-  USHORT  BackupBootSec;/*   2 0x032: First logical sector number of a copy of the three FAT32 boot sectors, typically 6. */   
-  UCHAR   reserved[12]; /*  12 0x034: Usually 0 */ 
-  UCHAR   Cf_0x024;     /*   1 0x040: Cf. 0x024 for FAT12/FAT16 (Physical Drive Number) */ 
-  UCHAR   Cf_0x025;     /*   1 0x041: Cf. 0x025 for FAT12/FAT16 (Used for various purposes; see FAT12/FAT16) */ 
-  UCHAR   Cf_0x026;     /*   1 0x042: Cf. 0x026 for FAT12/FAT16 (Extended boot signature, 0x29) */ 
-  UINT    Cf_0x027;     /*   4 0x043: Cf. 0x027 for FAT12/FAT16 (Volume ID) */ 
-  UCHAR   Cf_0x02B[11]; /*  11 0x047: Cf. 0x02B for FAT12/FAT16 (Volume Label) */
-  UCHAR   Cf_0x036[8];  /*   8 0x052: Cf. 0x036 for FAT12/FAT16 (File system type, padded with blanks (0x20), e.g., "FAT32   "). */
+  USHORT  SecPerTrack;  /*   2 0x018 24: Physical sectors per track for disks with INT 13h CHS geometry */
+  USHORT  HeadsPerCyl;  /*   2 0x01A 26: Number of heads for disks with INT 13h CHS geometry */
+  UINT    HiddenSec;    /*   4 0x01C 28: Count of hidden sectors preceding the partition that contains this FAT volume */  
+  UINT    TotSec32;     /*   4 0x020 32: Total logical sectors (if greater than 65535; otherwise, see offset 0x013). */
+  UINT    FATSz32;      /*   4 0x024 36: 32bits, Sectors Per FAT       - Depends on disk Size        */
+  USHORT  ExtFlags;     /*   2 0x028 40: */
+  USHORT  FSVersion;    /*   2 0x02A 42: Version (defined as 0.0) */
+  UINT    RootClus;     /*   4 0x02C 44: 32bits, Root Directory First Cluster - Usually 0x00000002  */
+  USHORT  FSInfoSec;    /*   2 0x030 48: Logical sector number of FS Information Sector, typically 1, i.e., the second of the three FAT32 boot sectors. => FSINFO*/
+  USHORT  BackupBootSec;/*   2 0x032 50: First logical sector number of a copy of the three FAT32 boot sectors, typically 6. */   
+  UCHAR   reserved[12]; /*  12 0x034 52: Usually 0 */ 
+  UCHAR   Cf_0x024;     /*   1 0x040 64: Cf. 0x024 for FAT12/FAT16 (Physical Drive Number) (DrvNum32) */ 
+  UCHAR   Cf_0x025;     /*   1 0x041 65: Cf. 0x025 for FAT12/FAT16 (Used for various purposes; see FAT12/FAT16) */ 
+  UCHAR   Cf_0x026;     /*   1 0x042 66: Cf. 0x026 for FAT12/FAT16 (Extended boot signature, 0x29) (BootSig32)*/ 
+  UINT    Cf_0x027;     /*   4 0x043 67: Cf. 0x027 for FAT12/FAT16 (Volume ID) */ 
+  UCHAR   Cf_0x02B[11]; /*  11 0x047 71: Cf. 0x02B for FAT12/FAT16 (Volume Label) */
+  UCHAR   Cf_0x036[8];  /*   8 0x052 82: Cf. 0x036 for FAT12/FAT16 (File system type, padded with blanks (0x20), e.g., "FAT32   "). */
 }__attribute__ ((packed));  
 
 
@@ -220,6 +220,17 @@ struct VBR_EXT_FAT32 {
   USHORT  Sig;                    /*   2 0x1fe: 16bits, Signature             - Always 0xAA55 */
 }__attribute__ ((packed));  
 
+
+struct FSINFO {
+  DWORD LeadSig;                  /*   4 0x000: First Signature (52h 52h 61h 41h)              */
+  UCHAR UNKNOWN[480];             /* 480 0x004: Unknown, Currently (Mightjust be Null)    */
+  DWORD StructSig;                /*   2 0x1E4: Signature of FSInfo Sector(72h 72h 41h 61h) */
+  DWORD FreeClusters;             /*   2 0x1E8: Number of Free Clusters (Setto -1 if Unknown) */
+  DWORD NextFree;                 /*   2 0x1EC: Cluster Number of Clusterthat was Most Recently Allocated. */
+  UCHAR RES[12];                  /*  12 0x1F0: Reserved */
+  WORD  UNKNOWN_0x1FC;            /*   2 0x1FC: Unknown or Null */
+  WORD  Sig;                      /*   2 0x1FE: Boot Record Signature (55hAAh) */
+}__attribute__ ((packed));  
 
 static const char *const bpb_media_types[] = {
   "\xf0" "Floppy: DS, 80 Tracks, 18/38 sec, 3.5Zoll, 1440KB",

@@ -1,16 +1,17 @@
 #include <stdlib.h>
 #include <ioctl.h>
 #include <errno.h>
+//#include >getopt.h>
 
 #include <fs.h>
 #include <drivers.h>
 #include "sys.h"
 
 #include "helper.h"
-
+#include <getopt.h>
 
 /* master boot record of the drive */
-static struct mbr *pMBR, *pVBR;
+static struct mbr *pMBR, *pVBR, *pbuffer;
 /* block driver */
 static struct blk_driver *driver;
 /* drive geometry */
@@ -36,7 +37,54 @@ partition_type(unsigned char type)
 
 /* DEBUG ENDS */
 
-// "sys <drive> <loader> <os> - install bootloader 'loader' on 'device' to load os 'os'
+
+
+
+static int tflag = 0;
+static int bflag = 0;
+
+int parse_opts(int argc, char **argv)
+{
+  int c;
+
+  char *s = *argv;
+
+  opterr = 1;
+  optind = 1;
+  tflag = 0;
+  bflag = 0;
+
+  str2argv(s);
+
+  while ((c = getopt (__argc, __argv, "tb")) != -1){
+    switch (c)
+      {
+      case 't':
+        tflag = 1;
+        break;
+      case 'b':
+        bflag = 1;
+        break;
+      
+      case '?':
+        if (isprint (optopt))
+          fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+        else
+          fprintf (stderr,
+                   "Unknown option character `\\x%x'.\n",
+                   optopt);
+        return 1;
+      default:
+          fprintf(stderr, "getopt - bad return code ...");
+        break;
+      }
+  }
+
+
+  return 0;
+}
+
+// "sys <drive> <loader> <os> [-b -t]- install bootloader 'loader' on 'device' to load os 'os' -t = test, -b = behind mbr
 /*
  * drive naming convention:
  * [DeviceID][DeviceNo][Partition][xn]:
@@ -60,17 +108,17 @@ int cmd_sys(char* args)
 	char drive[11];
 	char os[21];
 	char loader[21];
-	char option[11];
-	char is_continuous, is_testrun;
+	char is_continuous;
 	BYTE *ploader, partition, i;
 	FILE *pf1;
 	char fullpath[_MAX_PATH];
 	UINT s1, start_sec, nsec;
 	struct blk_driver *driver;
-	UINT size;
+	UINT size, free_sectors, wsect;
 	UINT ldr_offset, ldr_size;
 	BYTE disk_type; /* (0=SCSI, 1=IDE, 2=SD) */
 	char c_in;
+	char *opts;
 
 	struct slist *list,*next;
   	struct ioctl_get_slist ioctl_args_get_slist;
@@ -98,24 +146,19 @@ int cmd_sys(char* args)
 
 	// 'os' the bootloader should load and execute
 	// this file has to reside in the root directory of drive and must be contignious
+	opts = args;
 	if (!xatos(&args, os,20)) {
 		printf(" bad os argument.\n");
 		return 0; 
 	}
 
-	// option
-	option[0] = 0;
-	if (!xatos(&args, option,10)) {
-	}
-
-	// check possible options
-	is_testrun = 0;
-	if( !strcmp("test",option) ){
-		is_testrun = 1;
-	}
+	/* check options with getopt() */
+	parse_opts(2,&opts);
 
 
-	printf("OS: %s LOADER: %s on %s, is_test = %d...\n",os,loader,drive,is_testrun);
+
+	printf("OS: %s LOADER: %s on %s, tflag = %d, bflag = %d...\n",os,loader,drive,tflag,bflag);
+
 
 	// check if 'drive' is registered in block device list
 	/* get pointer to all block drivers */
@@ -161,6 +204,16 @@ int cmd_sys(char* args)
 		partition = drive[3] - '0';
 	}
 
+	if(bflag){
+		free_sectors = 0;
+		for(i=0; i<4; i++){
+			if(ENDIAN(pMBR->pt[i].num_sector)){
+				free_sectors = ENDIAN(pMBR->pt[i].start_sector) - 1;
+				break;
+			}
+		}
+	}
+
 	// DEBUG print partition table
 	#if 1
 	printf("%-6s  %-4s %10s %10s %10s %10s %-2s %-4s\n","Device","Boot","Start","End","Sectors","Size(MB)","Id","Type");
@@ -182,6 +235,8 @@ int cmd_sys(char* args)
 				                   pMBR->pt[i].type, partition_type(pMBR->pt[i].type));
 		}
 	}
+	if(bflag)
+		printf("there are %d free sectors after the mbr ... \n", free_sectors);
 	#endif
 
 	/* if loader should be written to a partition, load vbr */
@@ -228,6 +283,8 @@ int cmd_sys(char* args)
 
 	if (pf1==NULL) {
       printf("error opening loader '%s' !\n",fullpath);
+      free(pMBR);
+	  free(geo.model);	
       return 0;
     }
 
@@ -254,53 +311,131 @@ int cmd_sys(char* args)
 	}
 	fclose(pf1); // close file
 
-	// check if 'os' exists in root directory of 'device' and if it's contignious, at which sector it starts and the size in (512Bytes)sectors
+	
+	// check if 'os' exists 
 	checkargs(os, fullpath, NULL);
 	printf("check '%s' parameters...\n",fullpath);
-  	ioctl_args_get_slist.filename = fullpath;
-  	ioctl_args_get_slist.list = NULL;
 
-    // checkargs above has stored drive information in FPInfo1, so we use it ... FIXME: dieses Hilfskonstrukt muss verbessert werden
-  	if(strlen(FPInfo1.psz_driveName))
-  		ioctl(FPInfo1.psz_driveName,FS_IOCTL_GET_SLIST,&ioctl_args_get_slist);
-  	else
-  		ioctl(FPInfo1.psz_cdrive,FS_IOCTL_GET_SLIST,&ioctl_args_get_slist);
+	if(!bflag){
+		// check if os is contignious, at which sector it starts and the size in (512Bytes)sectors
+	  	ioctl_args_get_slist.filename = fullpath;
+	  	ioctl_args_get_slist.list = NULL;
 
-  	if(ioctl_args_get_slist.list == NULL){
-    	printf(" hat nicht geklappt...\n");
-    	// free allocated memory
-    	free(ploader);
-    	free(pVBR);
-    	free(pMBR);
-		free(geo.model);
-    	return 0;
-  	}
+	    // checkargs above has stored drive information in FPInfo1, so we use it ... FIXME: dieses Hilfskonstrukt muss verbessert werden
+	  	if(strlen(FPInfo1.psz_driveName))
+	  		ioctl(FPInfo1.psz_driveName,FS_IOCTL_GET_SLIST,&ioctl_args_get_slist);
+	  	else
+	  		ioctl(FPInfo1.psz_cdrive,FS_IOCTL_GET_SLIST,&ioctl_args_get_slist);
 
-  	list = ioctl_args_get_slist.list;
-  	nsec = 0;
-  	start_sec = list->s;
+	  	if(ioctl_args_get_slist.list == NULL){
+	    	printf(" hat nicht geklappt...\n");
+	    	// free allocated memory
+	    	free(ploader);
+	    	free(pVBR);
+	    	free(pMBR);
+			free(geo.model);
+	    	return 0;
+	  	}
 
-  	is_continuous = 1;
-  	while(list != NULL){
-  		nsec++;  			
-    	next = list->next;    	
-    	if( (next != NULL) && (list->s + 1 != next->s) ){
-    		printf("gap between sector %d and %d !\n", list->s, next->s);
-    		is_continuous = 0;
-    	}
-    	free(list);
-    	list = next;
-  	}
-  	
-  	//printf("\n");
-  	if(nsec==0){
-  		printf("os %s not suitable\n",os);
-  	}else{
-  		if(is_continuous)
-  			printf("os starts at sector %d and spans %u sectors\n",start_sec, nsec);
-  		else
-  			printf("os starts at sector %d but is not continuous at one or more sectors on disk ....\n",start_sec);  		
-  	}
+	  	list = ioctl_args_get_slist.list;
+	  	nsec = 0;
+	  	start_sec = list->s;
+
+	  	is_continuous = 1;
+	  	while(list != NULL){
+	  		nsec++;  			
+	    	next = list->next;    	
+	    	if( (next != NULL) && (list->s + 1 != next->s) ){
+	    		printf("gap between sector %d and %d !\n", list->s, next->s);
+	    		is_continuous = 0;
+	    	}
+	    	free(list);
+	    	list = next;
+	  	}
+	  	
+	  	//printf("\n");
+	  	if(nsec==0){
+	  		printf("os %s not suitable\n",os);
+	  	}else{
+	  		if(is_continuous)
+	  			printf("os starts at sector %d and spans %u sectors\n",start_sec, nsec);
+	  		else
+	  			printf("os starts at sector %d but is not continuous at one or more sectors on disk ....\n",start_sec);  		
+	  	}
+	  } else{
+	  	// check size of os and if it fits in free sectors 
+	  	pf1 = fopen(fullpath,"rb");
+
+		if (pf1==NULL) {
+		  printf("error opening os '%s' !\n",fullpath);
+		  free(ploader);
+	      free(pVBR);
+	      free(pMBR);
+		  free(geo.model);
+	      return 0;
+	    }
+
+	    // get size of file
+	    fseek(pf1,0,SEEK_END);
+	    s1 = ftell(pf1); // size in bytes
+
+	    if( s1 < free_sectors * 512 ){
+	    	// os fits to free sectors, write it ...
+	    	pbuffer = malloc(512);
+
+			if(!pbuffer){
+				printf("error allocation memory for pbuffer\n");
+				free(ploader);
+		      	free(pVBR);
+		      	free(pMBR);
+			  	free(geo.model);
+				return 0;
+			}
+
+			fseek(pf1,0,SEEK_SET);
+			wsect = 1;
+
+			printf("write '%s' to free sectors behind mbr...\n", os);
+
+			if(!tflag){
+				for (;;) {
+				     s1 = fread(pbuffer, 1, 512, pf1); 
+				     if (s1 == 0) {
+				       break;   /* eof */
+				     }
+
+				     if(wsect > free_sectors){
+				     	printf("error, os too large to fit into free sectors\n");
+				     	free(pbuffer);
+				     	free(ploader);
+		      			free(pVBR);
+		      			free(pMBR);
+			  			free(geo.model);
+		      			return 0;
+				     }
+				     			     
+				     driver->blk_oper->write( &devp, pbuffer, wsect++, 1);    /* write sector */ 
+			    }
+			}
+
+			free(pbuffer);
+
+			start_sec = 1;
+			nsec = free_sectors;
+
+	    }else{
+	      printf("os does not fit into free sectors ...\n");
+	      free(ploader);
+	      free(pVBR);
+	      free(pMBR);
+		  free(geo.model);
+	      return 0;
+
+	    }
+
+	  }
+
+
 
 	if(partition < 255) {
 		// merge 'loader' to VBR
@@ -315,14 +450,15 @@ int cmd_sys(char* args)
 		((MBRINFO*)pVBR)->sector = start_sec;	/* 0x0B: start sector of OS.SYS */
 		((MBRINFO*)pVBR)->nsector = nsec;		/* 0x0F: size in sectors of OS.SYS */
 		((MBRINFO*)pVBR)->target = 0x1000;		/* 0x10: FIXME: target address for OS.SYS */
-		size = strlen(os);
-		if(size > 12) size = 12;
-		memcpy(((MBRINFO*)pVBR)->name,os,size);
-
+		if(!bflag) {
+			size = strlen(os);
+			if(size > 12) size = 12;
+			memcpy(((MBRINFO*)pVBR)->name,os,size);
+		}
 
 		// write back partitions boot sector		
 		printf("writing loader to VBR[%d] at sector %u\n",partition,ENDIAN(pMBR->pt[partition].start_sector));
-		if(!is_testrun){
+		if(!tflag){
 			printf("Are you shure ? [y/N]: "); c_in = getchar();
 			if(c_in != 'Y' && c_in != 'y'){          
 					printf("nothing written ...\n");
@@ -338,6 +474,7 @@ int cmd_sys(char* args)
 		memcpy(pMBR,ploader,440);		
 
 		// set os info 
+		
 		((MBRINFO*)pMBR)->disk = driver->type;	/* 0x08: disk type (0=SCSI, 1=IDE, 2=SD) */
 		((MBRINFO*)pMBR)->drive = devp.pdrv+1;	/* 0x09: physical drive numberf (1=1st drive) */
 		((MBRINFO*)pMBR)->partition = 0;		/* 0x0A: FIXME: partition (0=1st partition, 0xff=no partition table) */
@@ -347,9 +484,10 @@ int cmd_sys(char* args)
 		size = strlen(os);
 		if(size > 12) size = 12;
 		memcpy(((MBRINFO*)pMBR)->name,os,size);
+
 		// write back partitions boot sector
 		printf("writing loader to MBR at sector 0\n");
-		if(!is_testrun){
+		if(!tflag){
 			printf("Are you shure ? [y/N]: "); c_in = getchar();
 			if(c_in != 'Y' && c_in != 'y'){          
 					printf("nothing written ...\n");
@@ -361,7 +499,7 @@ int cmd_sys(char* args)
 		}
 		else printf("(test mode)\n");
 	}
-
+	
   	// free allocated memory
   	free(ploader);
   	free(pVBR);

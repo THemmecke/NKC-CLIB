@@ -14,8 +14,8 @@ include $(BASEDIR)/Makefile.rules
 BUILD_NUMBER_FILE=build-number.txt
 
 
-OBJECTS=cmd.o shell.o fdisk.o wildcmp.o sys.o helper.o
-#sd.o sdcard.o crc.o
+OBJECTS=cmd.o shell.o fdisk.o wildcmp.o sys.o helper.o 
+#sd.o sdcard.o crc.o getopt.o
 
 OUTFILE=test
 LOADADDR=1024
