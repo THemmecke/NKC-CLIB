@@ -9,7 +9,7 @@ include $(BASEDIR)/Makefile.rules
 # ############### m68k-tools ###################################
  
 
-OBJECTS= atof.o atoi.o strtoul.o
+OBJECTS= atof.o atoi.o strtoul.o itoa.o
 
 
 all: 	$(OBJECTS)
