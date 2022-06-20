@@ -293,15 +293,14 @@ LDFLAGS += --static
 LDFLAGS += -L$(CLIBPATH)
 
 
-# ######### tell use the CLIB #########################
-LDFLAGS += -l$(CLIB)
-
-
 # ######### use IEEE754 fdlibm.a ################################
 ifeq ($(CONFIG_IEEE_MATH),1)
 # include the complete ieee math library
 LDFLAGS += -lfdlibm
 endif
+
+# ######### tell use the CLIB #########################
+LDFLAGS += -l$(CLIB)
 
 
 # ######### specify linker script #####################
